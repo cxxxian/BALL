@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dc53bdbb4b367c42b5d769377e6ba56, type: 3}
+  m_Name: DefaultGameConfig
+  m_EditorClassIdentifier: 
+  ballLaunchSpeed: 8
+  ballMinSpeed: 5
+  ballMaxSpeed: 20
+  ballBounciness: 1
+  ballFriction: 0
+  ballRadius: 0.15
+  respawnInvincibleDuration: 0.5
+  respawnDelay: 0.3
+  launchAngleRange: {x: 60, y: 80}
+  initialLives: 3
+  maxLives: 6
+  flipperRestAngle: -30
+  flipperActivatedAngle: 15
+  flipperAnimDuration: 0.08
+  scorePerGruntHit: 10
+  scorePerGruntKill: 50
+  worldWidth: 9
+  worldHeight: 16
