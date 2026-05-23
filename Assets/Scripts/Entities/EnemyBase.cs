@@ -4,28 +4,66 @@ using UnityEngine.Events;
 public abstract class EnemyBase : MonoBehaviour
 {
     [Header("Stats")]
-    public int maxHits = 2;
-    public float moveSpeed = 0.5f;
-    public int scoreOnHit = 10;
-    public int scoreOnKill = 50;
+    public int   maxHits           = 2;
+    public float moveSpeed         = 0.5f;
+    public int   scoreOnHit        = 10;
+    public int   scoreOnKill       = 50;
+    public int   damageToPlayer    = 1;
+    public bool  isBomber          = false;
+    public float bomberDisableDuration = 5f;
 
-    public int CurrentHits { get; protected set; } = 0;
-    public bool IsDead { get; protected set; } = false;
+    [Header("Bottom Detection")]
+    [Tooltip("禁用底线检测（Boss 设为 false）")]
+    public bool  checkBottomLine   = true;
+
+    public static float BottomLineY = -7.5f;
+
+    public int  CurrentHits { get; protected set; } = 0;
+    public bool IsDead      { get; protected set; } = false;
 
     public UnityEvent<EnemyBase> onDeath = new UnityEvent<EnemyBase>();
 
+    protected Rigidbody2D _rb;
+
+    protected virtual void Awake()
+    {
+        _rb = GetComponent<Rigidbody2D>();
+    }
+
     protected virtual void Update()
+    {
+        if (IsDead) return;
+        if (checkBottomLine && transform.position.y <= BottomLineY)
+            OnReachBottom();
+    }
+
+    protected virtual void FixedUpdate()
     {
         if (IsDead) return;
         if (GameManager.Instance == null) return;
         var state = GameManager.Instance.State;
         if (state == GameState.GameOver || state == GameState.BuffSelection || state == GameState.Idle) return;
-        MoveDown();
+        ApplyMovement();
     }
 
-    protected virtual void MoveDown()
+    protected virtual void ApplyMovement()
     {
-        transform.Translate(Vector3.down * moveSpeed * Time.deltaTime);
+        if (_rb != null)
+            _rb.velocity = Vector2.down * moveSpeed * WaveManager.MinionSpeedMultiplier;
+        else
+            transform.Translate(Vector3.down * moveSpeed * WaveManager.MinionSpeedMultiplier * Time.deltaTime);
+    }
+
+    protected virtual void OnReachBottom()
+    {
+        if (IsDead) return;
+        IsDead = true;
+        if (_rb != null) _rb.velocity = Vector2.zero;
+        GameManager.Instance?.TakeDamage(damageToPlayer);
+        if (isBomber)
+            WaveManager.Instance?.TriggerBomberEffect(bomberDisableDuration);
+        WaveManager.Instance?.UnregisterMinion(this);
+        Destroy(gameObject);
     }
 
     private void OnCollisionEnter2D(Collision2D col)
@@ -45,9 +83,7 @@ public abstract class EnemyBase : MonoBehaviour
         CurrentHits++;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit);
-
         OnHit();
-
         if (CurrentHits >= maxHits)
             Die();
     }
@@ -57,6 +93,7 @@ public abstract class EnemyBase : MonoBehaviour
     protected virtual void Die()
     {
         IsDead = true;
+        if (_rb != null) _rb.velocity = Vector2.zero;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnKill);
         onDeath.Invoke(this);

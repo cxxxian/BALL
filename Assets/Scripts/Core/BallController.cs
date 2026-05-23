@@ -14,6 +14,12 @@ public class BallController : MonoBehaviour
     public bool IsWaitingForLaunch { get; private set; } = false;
     public Rigidbody2D Rb => _rb;
 
+    // ── 斩杀连锁技能状态 ──────────────────────────────────────────────
+    private bool  _executeChainActive = false;
+    private int   _chainsRemaining    = 0;
+    private Color _originalTrailColor;
+    private float _originalTrailWidth;
+
     private Rigidbody2D      _rb;
     private CircleCollider2D _col;
     private SpriteRenderer   _sr;
@@ -34,6 +40,54 @@ public class BallController : MonoBehaviour
         _sr    = GetComponent<SpriteRenderer>();
         _trail = GetComponent<TrailRenderer>();
         _spawnPosition = transform.position;
+
+        if (_trail != null)
+        {
+            _originalTrailColor = _trail.startColor;
+            _originalTrailWidth = _trail.startWidth;
+        }
+    }
+
+    // ── 激活斩杀连锁状态 ──────────────────────────────────────────────────
+    public void StartExecuteChain(int maxChains)
+    {
+        _executeChainActive = true;
+        _chainsRemaining    = maxChains;
+        IsInvincible        = true;
+        _launched           = true;
+
+        if (_trail != null)
+        {
+            _trail.startWidth = _originalTrailWidth * 2.2f;
+            _trail.endWidth   = _originalTrailWidth * 0.4f;
+            _trail.startColor = new Color(1f, 0f, 0.47f, 1f);
+            _trail.endColor   = new Color(1f, 0f, 0.47f, 0.05f);
+        }
+
+        // 所有 Bumper 进入穿透模式（碰撞体关闭 + 视觉暗化），弹珠自由穿场锁敌
+        foreach (var b in FindObjectsOfType<Bumper>())
+            b.SetPassthrough(true);
+
+        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+    }
+
+    public void StopExecuteChain()
+    {
+        _executeChainActive = false;
+        _chainsRemaining    = 0;
+        IsInvincible        = false;
+
+        if (_trail != null)
+        {
+            _trail.startWidth = _originalTrailWidth;
+            _trail.endWidth   = _originalTrailWidth * 0.1f;
+            _trail.startColor = _originalTrailColor;
+            _trail.endColor   = new Color(_originalTrailColor.r, _originalTrailColor.g, _originalTrailColor.b, 0f);
+        }
+
+        // 恢复全体 Bumper
+        foreach (var b in FindObjectsOfType<Bumper>())
+            b.SetPassthrough(false);
     }
 
     private void Start()
@@ -95,6 +149,7 @@ public class BallController : MonoBehaviour
     private void OnGameOver()
     {
         StopAllCoroutines();
+        if (_executeChainActive) StopExecuteChain(); // 清除斩杀状态、恢复 trail 和 Bumper
         IsWaitingForLaunch = false;
         LaunchGuide.Instance?.Hide();
         _rb.velocity = Vector2.zero;
@@ -106,6 +161,7 @@ public class BallController : MonoBehaviour
 
     private void OnBallLost()
     {
+        if (_executeChainActive) StopExecuteChain(); // 死亡中断斩杀链，trail 立即恢复正常
         _rb.velocity = Vector2.zero;
         _rb.angularVelocity = 0f;
         _launched = false;
@@ -177,9 +233,53 @@ public class BallController : MonoBehaviour
             _rb.velocity = _rb.velocity.normalized * config.ballMaxSpeed;
     }
 
+    public void SetSizeMultiplier(float multiplier)
+    {
+        multiplier = Mathf.Clamp(multiplier, 0.5f, 3f);
+        transform.localScale = Vector3.one * multiplier;
+        if (_col != null) _col.radius = 0.275f * multiplier;
+    }
+
     private void OnCollisionEnter2D(Collision2D col)
     {
         if (!_launched || ImpactFX.Instance == null) return;
+
+        // ── 斩杀连锁逻辑 ──────────────────────────────────────────────────
+        if (_executeChainActive)
+        {
+            EnemyBase enemy = col.gameObject.GetComponentInParent<EnemyBase>();
+
+            if (enemy != null && !enemy.IsDead)
+            {
+                // Boss 只打 1 次普通伤害，小兵才触发瞬杀（打满剩余 HP）
+                bool isBoss = enemy is Boss;
+                if (!isBoss)
+                {
+                    int hitsNeeded = enemy.maxHits - enemy.CurrentHits;
+                    for (int i = 0; i < hitsNeeded; i++) enemy.TakeHit();
+                }
+                else
+                {
+                    enemy.TakeHit();
+                }
+
+                // ★ 只有打中敌人才消耗连锁次数；打墙/打 Bumper（已穿透）不计
+                _chainsRemaining--;
+                if (_chainsRemaining > 0)
+                {
+                    Transform target = GetClosestEnemyTarget();
+                    if (target != null)
+                    {
+                        StartCoroutine(RedirectToTargetRoutine(target));
+                        return;
+                    }
+                }
+                StopExecuteChain();
+                return;
+            }
+            // 撞到墙壁：什么都不做，正常物理反弹，保留剩余连锁次数
+        }
+
         // Bumper/Slingshot 已有自己的 ImpactFX 调用，跳过避免重复
         if (col.gameObject.GetComponent<Bumper>()    != null) return;
         if (col.gameObject.GetComponent<Slingshot>() != null) return;
@@ -195,5 +295,47 @@ public class BallController : MonoBehaviour
         float intensity = Mathf.Clamp01(velMag / 12f) * 0.85f + 0.15f;
 
         ImpactFX.Instance.SpawnHit(hitPos, hitColor, intensity);
+    }
+
+    // ── 斩杀连锁：扫描并获取最近的有效敌方目标 ─────────────────────────────────
+    private Transform GetClosestEnemyTarget()
+    {
+        var enemies = FindObjectsOfType<EnemyBase>();
+        Transform closest = null;
+        float minDist     = float.MaxValue;
+        Vector3 pos       = transform.position;
+
+        foreach (var e in enemies)
+        {
+            if (e == null || e.IsDead) continue;
+            float dist = (e.transform.position - pos).sqrMagnitude;
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closest = e.transform;
+            }
+        }
+        return closest;
+    }
+
+    // ── 斩杀连锁：在碰撞微小的反弹后，下一物理帧强行重定向，破空冲刺 ─────────────
+    private IEnumerator RedirectToTargetRoutine(Transform target)
+    {
+        yield return new WaitForFixedUpdate();
+
+        if (target == null || !_executeChainActive) yield break;
+
+        Vector2 dir = ((Vector2)target.position - (Vector2)transform.position).normalized;
+        if (_rb != null)
+        {
+            _rb.velocity = dir * config.ballMaxSpeed * 1.25f; // 超高速破空重弹
+        }
+
+        // 斩击爆发时的豪华声光反馈
+        CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
+        if (ImpactFX.Instance != null)
+        {
+            ImpactFX.Instance.SpawnHit(transform.position, new Color(1f, 0f, 0.47f, 1f), 1.2f);
+        }
     }
 }

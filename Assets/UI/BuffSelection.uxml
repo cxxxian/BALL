@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Style src="BuffSelection.uss" />
+
+    <!-- 全屏半透明遮罩 -->
+    <ui:VisualElement name="overlay" class="overlay">
+
+        <!-- 标题 -->
+        <ui:Label name="title-label" text="— CHOOSE YOUR POWER —" class="title" />
+        <ui:Label name="wave-label"  text="WAVE CLEAR"             class="wave-tag" />
+
+        <!-- 三张卡片容器 -->
+        <ui:VisualElement name="cards-container" class="cards-container">
+
+            <ui:VisualElement name="card-0" class="card">
+                <ui:Label name="rarity-0" text="COMMON"       class="rarity-label rarity-common" />
+                <ui:Label name="name-0"   text="Buff Name"    class="buff-name" />
+                <ui:Label name="desc-0"   text="Description." class="buff-desc" />
+                <ui:Button name="btn-0"   text="SELECT"       class="select-btn" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="card-1" class="card">
+                <ui:Label name="rarity-1" text="RARE"         class="rarity-label rarity-rare" />
+                <ui:Label name="name-1"   text="Buff Name"    class="buff-name" />
+                <ui:Label name="desc-1"   text="Description." class="buff-desc" />
+                <ui:Button name="btn-1"   text="SELECT"       class="select-btn" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="card-2" class="card">
+                <ui:Label name="rarity-2" text="EPIC"         class="rarity-label rarity-epic" />
+                <ui:Label name="name-2"   text="Buff Name"    class="buff-name" />
+                <ui:Label name="desc-2"   text="Description." class="buff-desc" />
+                <ui:Button name="btn-2"   text="SELECT"       class="select-btn" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

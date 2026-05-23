@@ -15,12 +15,16 @@ public class GameManager : MonoBehaviour
     public int Score { get; private set; }
     public int Wave { get; private set; } = 0;
 
-    public UnityEvent<int> onLivesChanged = new UnityEvent<int>();
-    public UnityEvent<int> onScoreChanged = new UnityEvent<int>();
-    public UnityEvent<int> onWaveChanged = new UnityEvent<int>();
-    public UnityEvent onGameOver = new UnityEvent();
-    public UnityEvent onGameStart = new UnityEvent();
-    public UnityEvent onBallLost = new UnityEvent();
+    public UnityEvent<int> onLivesChanged  = new UnityEvent<int>();
+    public UnityEvent<int> onScoreChanged  = new UnityEvent<int>();
+    public UnityEvent<int> onWaveChanged   = new UnityEvent<int>();
+    public UnityEvent      onGameOver      = new UnityEvent();
+    public UnityEvent      onGameStart     = new UnityEvent();
+    public UnityEvent      onBallLost      = new UnityEvent();
+    public UnityEvent      onBuffSelection = new UnityEvent();   // Wave 结束时通知 Buff UI
+
+    private int _maxHPBonus = 0;
+    public  int MaxLives => config.initialLives + _maxHPBonus;
 
     private void Awake()
     {
@@ -43,17 +47,18 @@ public class GameManager : MonoBehaviour
     public void BallFellDown()
     {
         if (State != GameState.Playing) return;
-        Lives--;
+        State = GameState.BallRespawning;
+        onBallLost.Invoke();
+    }
+
+    public void TakeDamage(int amount)
+    {
+        if (State != GameState.Playing && State != GameState.BallRespawning) return;
+        Lives = Mathf.Max(0, Lives - amount);
         onLivesChanged.Invoke(Lives);
+        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
         if (Lives <= 0)
-        {
             TriggerGameOver();
-        }
-        else
-        {
-            State = GameState.BallRespawning;
-            onBallLost.Invoke();
-        }
     }
 
     public void OnBallRespawned()
@@ -73,12 +78,26 @@ public class GameManager : MonoBehaviour
         Wave++;
         onWaveChanged.Invoke(Wave);
         State = GameState.BuffSelection;
+        onBuffSelection.Invoke();
     }
 
     public void OnBuffSelectionDone()
     {
         if (State == GameState.BuffSelection)
             State = GameState.Playing;
+    }
+
+    public void Heal(int amount)
+    {
+        Lives = Mathf.Min(MaxLives, Lives + amount);
+        onLivesChanged.Invoke(Lives);
+    }
+
+    public void SetMaxHPBonus(int bonus)
+    {
+        _maxHPBonus = bonus;
+        Lives = Mathf.Min(MaxLives, Lives);
+        onLivesChanged.Invoke(Lives);
     }
 
     public void TriggerGameOver()

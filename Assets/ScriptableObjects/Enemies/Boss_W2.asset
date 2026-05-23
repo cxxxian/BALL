@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f664279dc7be5c34f8abdbbb057739a9, type: 3}
+  m_Name: Boss_W2
+  m_EditorClassIdentifier: 
+  bossName: Shielded Nexus
+  baseColor: {r: 1, g: 0.95, b: 0, a: 1}
+  sprite: {fileID: 0}
+  maxHP: 15
+  scoreOnHit: 30
+  scoreOnKill: 800
+  moveSpeed: 1.2
+  moveRangeX: 6
+  phase2SpeedMult: 1.3
+  spawnInterval: 4
+  spawnCount: 1
+  spawnIntervalP2: 2.5
+  spawnCountP2: 2
+  spawnTypes:
+  - {fileID: 11400000, guid: 33dd324ebbf0c644bab6f5d131e9a490, type: 2}
+  - {fileID: 11400000, guid: 463ac14172e129d4eaa1d02ab3dd303a, type: 2}

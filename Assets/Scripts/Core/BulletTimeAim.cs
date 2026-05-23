@@ -40,7 +40,8 @@ public class BulletTimeAim : MonoBehaviour
         _ballRb = ball.Rb;
         if (_ballRb == null) return;
 
-        float spd = Mathf.Max(_ballRb.velocity.magnitude, Config?.ballMinSpeed ?? 5f);
+        // 手动瞄准射击时，直接让发射速度拉满至配置中的最大速度，确保发射一瞬间就极度爽快！
+        float spd = Config != null ? Config.ballMaxSpeed : 12f;
         _savedSpeed = spd;
 
         // 默认方向 = 当前速度方向，若接近零则朝上

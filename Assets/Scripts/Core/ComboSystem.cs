@@ -43,6 +43,10 @@ public class ComboSystem : MonoBehaviour
         CurrentCombo++;
         _lastHitTime = Time.time;
         onComboChanged.Invoke(CurrentCombo);
+
+        // 里程碑震动：combo 5 中震，10/15/20/... 重震
+        if      (CurrentCombo == 5)                          CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+        else if (CurrentCombo >= 10 && CurrentCombo % 5 == 0) CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
     }
 
     public void ResetCombo()
