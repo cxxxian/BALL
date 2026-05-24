@@ -1,26 +1,41 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public enum ActiveSkillType { BulletTimeAim, ExecuteChain }
+public enum ActiveSkillType { ExecuteChain, BlockShield }
+
+[System.Serializable]
+public class SkillSlot
+{
+    public ActiveSkillType type        = ActiveSkillType.ExecuteChain;
+    public float           maxCooldown = 12f;
+
+    [System.NonSerialized] public float currentCD = 0f;
+
+    public float CooldownRatio => maxCooldown > 0f ? Mathf.Clamp01(currentCD / maxCooldown) : 0f;
+    public bool  IsReady       => currentCD <= 0f;
+}
 
 public class SkillManager : MonoBehaviour
 {
     public static SkillManager Instance { get; private set; }
 
-    [Header("Skill Settings")]
-    public ActiveSkillType activeSkill = ActiveSkillType.ExecuteChain; // Default to the epic new ExecuteChain!
+    [Header("技能槽（最多 2 个）")]
+    public SkillSlot[] slots = new SkillSlot[]
+    {
+        new SkillSlot { type = ActiveSkillType.ExecuteChain, maxCooldown = 12f },
+        new SkillSlot { type = ActiveSkillType.BlockShield,  maxCooldown = 15f }
+    };
 
-    public float CooldownRatio => _maxCD > 0f ? Mathf.Clamp01(_currentCD / _maxCD) : 0f;
-    public bool  IsReady       => _currentCD <= 0f;
-    public bool  IsActive      { get; private set; }
+    // ── 瞄准状态（仅 ExecuteChain 需要）─────────────────────────────────
+    public bool IsAiming   { get; private set; }
+    public int  AimingSlot { get; private set; } = -1;
 
-    public UnityEvent<float>   onCooldownChanged = new UnityEvent<float>();   // 0..1，0=就绪
-    public UnityEvent          onActivated       = new UnityEvent();
-    public UnityEvent          onExecuteChainStarted = new UnityEvent();      // 专门给斩杀连锁的事件
-    public UnityEvent<Vector2> onFired           = new UnityEvent<Vector2>(); // zero=取消
-
-    private float _currentCD;
-    private float _maxCD;
+    // ── 事件 ──────────────────────────────────────────────────────────────
+    [HideInInspector] public UnityEvent<int, float> onSlotCooldownChanged  = new UnityEvent<int, float>();
+    [HideInInspector] public UnityEvent<int>        onSlotActivated        = new UnityEvent<int>();
+    [HideInInspector] public UnityEvent             onExecuteChainActivated = new UnityEvent();
+    [HideInInspector] public UnityEvent<Vector2>    onFired                = new UnityEvent<Vector2>();
+    [HideInInspector] public UnityEvent             onExecuteChainStarted  = new UnityEvent();
 
     private GameConfig Config => GameManager.Instance?.config;
 
@@ -40,61 +55,98 @@ public class SkillManager : MonoBehaviour
 
     private void Update()
     {
-        if (IsActive || IsReady) return;
         if (GameManager.Instance?.State != GameState.Playing) return;
 
-        _currentCD = Mathf.Max(0f, _currentCD - Time.deltaTime);
-        onCooldownChanged.Invoke(CooldownRatio);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            var slot = slots[i];
+            if (slot.IsReady) continue;
+            slot.currentCD = Mathf.Max(0f, slot.currentCD - Time.deltaTime);
+            onSlotCooldownChanged.Invoke(i, slot.CooldownRatio);
+        }
     }
 
     private void OnComboChanged(int combo)
     {
-        if (combo <= 0 || IsActive || IsReady) return;
+        if (combo <= 0) return;
         float reduce = Config != null ? Config.skillComboCDReduce : 0.4f;
-        _currentCD = Mathf.Max(0f, _currentCD - reduce);
-        onCooldownChanged.Invoke(CooldownRatio);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            var slot = slots[i];
+            if (slot.IsReady) continue;
+            slot.currentCD = Mathf.Max(0f, slot.currentCD - reduce);
+            onSlotCooldownChanged.Invoke(i, slot.CooldownRatio);
+        }
     }
 
-    public bool TryActivate()
+    // ── 激活指定槽位 ─────────────────────────────────────────────────────
+    public bool TryActivate(int slotIndex)
     {
-        if (!IsReady || IsActive) return false;
+        if (slotIndex < 0 || slotIndex >= slots.Length) return false;
+        var slot = slots[slotIndex];
+        if (!slot.IsReady) return false;
+        if (IsAiming)      return false;
         if (GameManager.Instance?.State != GameState.Playing) return false;
-        if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
 
-        // 统一在激活时开启时缓和瞄准导向
-        IsActive = true;
-        onActivated.Invoke();
+        switch (slot.type)
+        {
+            case ActiveSkillType.ExecuteChain:
+                if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
+                IsAiming   = true;
+                AimingSlot = slotIndex;
+                onSlotActivated.Invoke(slotIndex);
+                onExecuteChainActivated.Invoke();
+                break;
+
+            case ActiveSkillType.BlockShield:
+                BlockShield.Instance?.Activate();
+                StartCooldown(slotIndex);
+                onSlotActivated.Invoke(slotIndex);
+                break;
+        }
         return true;
     }
 
+    // ── BulletTimeAim 瞄准完成后调用 ─────────────────────────────────────
     public void Fire(Vector2 direction)
     {
-        if (!IsActive) return;
-        IsActive   = false;
-        _maxCD     = Config != null ? Config.skillCooldown : 12f;
-        // 应用被动 Buff 减 CD（连击大师等）
-        if (BuffManager.Instance != null)
-            _maxCD = Mathf.Max(2f, _maxCD * (1f - BuffManager.Instance.ComboThresholdReduction * 0.15f));
+        if (!IsAiming) return;
+        int idx    = AimingSlot;
+        IsAiming   = false;
+        AimingSlot = -1;
 
-        _currentCD = _maxCD;
-        onCooldownChanged.Invoke(CooldownRatio);
-
-        // 发射事件（通知 BulletTimeAim 恢复时间并给予初始发射速度）
+        StartCooldown(idx);
         onFired.Invoke(direction);
 
-        // 核心融合：发射后，弹珠立即进入 3 次极速斩杀连锁锁定模式！
         if (BallController.Instance != null && direction.sqrMagnitude > 0.001f)
         {
-            BallController.Instance.StartExecuteChain(3); // 3 连斩启动！
+            BallController.Instance.StartExecuteChain(3);
             onExecuteChainStarted.Invoke();
         }
     }
 
+    // ── 开始冷却（含 Buff 减 CD 修正）────────────────────────────────────
+    private void StartCooldown(int slotIndex)
+    {
+        var slot  = slots[slotIndex];
+        float cd  = slot.maxCooldown;
+        if (BuffManager.Instance != null)
+            cd = Mathf.Max(2f, cd * (1f - BuffManager.Instance.ComboThresholdReduction * 0.15f));
+        slot.currentCD = cd;
+        onSlotCooldownChanged.Invoke(slotIndex, slot.CooldownRatio);
+    }
+
+    // ── 向后兼容：无参版本默认激活槽 0 ──────────────────────────────────
+    public bool TryActivate() => TryActivate(0);
+
     private void OnGameStart()
     {
-        IsActive   = false;
-        _currentCD = 0f;
-        _maxCD     = Config != null ? Config.skillCooldown : 12f;
-        onCooldownChanged.Invoke(0f);
+        IsAiming   = false;
+        AimingSlot = -1;
+        for (int i = 0; i < slots.Length; i++)
+        {
+            slots[i].currentCD = 0f;
+            onSlotCooldownChanged.Invoke(i, 0f);
+        }
     }
 }

@@ -33,8 +33,14 @@ public abstract class EnemyBase : MonoBehaviour
     protected virtual void Update()
     {
         if (IsDead) return;
-        if (checkBottomLine && transform.position.y <= BottomLineY)
-            OnReachBottom();
+        if (checkBottomLine)
+        {
+            // 护盾激活时：在护盾线处截击；否则在普通底线触发
+            bool shieldUp = BlockShield.Instance != null && BlockShield.Instance.IsActive;
+            float checkY  = shieldUp ? BlockShield.Instance.shieldY : BottomLineY;
+            if (transform.position.y <= checkY)
+                OnReachBottom();
+        }
     }
 
     protected virtual void FixedUpdate()
@@ -59,11 +65,29 @@ public abstract class EnemyBase : MonoBehaviour
         if (IsDead) return;
         IsDead = true;
         if (_rb != null) _rb.velocity = Vector2.zero;
+
+        // 护盾激活时拦截伤害：护盾吸收 → 触发清场效果
+        if (BlockShield.Instance != null && BlockShield.Instance.IsActive)
+        {
+            BlockShield.Instance.TriggerAbsorb();
+            WaveManager.Instance?.UnregisterMinion(this);
+            Destroy(gameObject);
+            return;
+        }
+
         GameManager.Instance?.TakeDamage(damageToPlayer);
         if (isBomber)
             WaveManager.Instance?.TriggerBomberEffect(bomberDisableDuration);
         WaveManager.Instance?.UnregisterMinion(this);
         Destroy(gameObject);
+    }
+
+    // ── 护盾清场：强制击杀（给分，触发死亡流程）───────────────────────────
+    public void ForceKill()
+    {
+        if (IsDead) return;
+        CurrentHits = maxHits - 1;
+        TakeHit();
     }
 
     private void OnCollisionEnter2D(Collision2D col)

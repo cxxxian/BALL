@@ -35,14 +35,15 @@ public class InputManager : MonoBehaviour
 
     private void HandleMouseInput()
     {
-        // PC 挡板由键盘控制；右键激活技能，左键发射确认/瞄准（BulletTimeAim 自行处理）
         bool waiting = BallController.Instance != null && BallController.Instance.IsWaitingForLaunch;
         if (Input.GetMouseButtonDown(0) && waiting)
             LaunchPressed = true;
+
+        // 右键激活斩杀连锁（slot 0）
         if (Input.GetMouseButtonDown(1) && !waiting)
         {
             SkillPressed = true;
-            SkillManager.Instance?.TryActivate();
+            SkillManager.Instance?.TryActivate(0);
         }
     }
 
@@ -59,8 +60,8 @@ public class InputManager : MonoBehaviour
                 continue;
             }
 
-            // 技能犄准中：BulletTimeAim 自行消费触摸
-            if (SkillManager.Instance != null && SkillManager.Instance.IsActive) continue;
+            // 技能瞄准中：BulletTimeAim 自行消费触摸
+            if (SkillManager.Instance != null && SkillManager.Instance.IsAiming) continue;
 
             // 底部区域：左半=左挡板，右半=右挡板
             float yRatio = touch.position.y / Screen.height;
@@ -92,11 +93,11 @@ public class InputManager : MonoBehaviour
                 LaunchPressed = true;
         }
 
-        // 键盘备用：E 键也可激活技能（可选）
+        // 键盘备用：E 键激活护盾格挡（slot 1）
         if (Input.GetKeyDown(KeyCode.E))
         {
             SkillPressed = true;
-            SkillManager.Instance?.TryActivate();
+            SkillManager.Instance?.TryActivate(1);
         }
     }
 }

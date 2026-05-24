@@ -16,7 +16,7 @@ public class BulletTimeAim : MonoBehaviour
     {
         if (SkillManager.Instance != null)
         {
-            SkillManager.Instance.onActivated.AddListener(OnActivated);
+            SkillManager.Instance.onExecuteChainActivated.AddListener(OnActivated);
             SkillManager.Instance.onFired.AddListener(OnFired);
         }
         if (GameManager.Instance != null)
