@@ -12,6 +12,7 @@ public class BallController : MonoBehaviour
 
     public bool IsInvincible       { get; private set; } = false;
     public bool IsWaitingForLaunch { get; private set; } = false;
+    public float SpeedMultiplier   { get; set; } = 1f;  // 动态速度倍率限制（加速齿轮等机制使用）
     public Rigidbody2D Rb => _rb;
 
     // ── 斩杀连锁技能状态 ──────────────────────────────────────────────
@@ -227,10 +228,12 @@ public class BallController : MonoBehaviour
     {
         if (!_launched) return;
         float speed = _rb.velocity.magnitude;
-        if (speed < config.ballMinSpeed && speed > 0.1f)
-            _rb.velocity = _rb.velocity.normalized * config.ballMinSpeed;
-        else if (speed > config.ballMaxSpeed)
-            _rb.velocity = _rb.velocity.normalized * config.ballMaxSpeed;
+        float minS  = config.ballMinSpeed * SpeedMultiplier;
+        float maxS  = config.ballMaxSpeed * SpeedMultiplier;
+        if (speed < minS && speed > 0.1f)
+            _rb.velocity = _rb.velocity.normalized * minS;
+        else if (speed > maxS)
+            _rb.velocity = _rb.velocity.normalized * maxS;
     }
 
     public void SetSizeMultiplier(float multiplier)
@@ -280,9 +283,11 @@ public class BallController : MonoBehaviour
             // 撞到墙壁：什么都不做，正常物理反弹，保留剩余连锁次数
         }
 
-        // Bumper/Slingshot 已有自己的 ImpactFX 调用，跳过避免重复
+        // Bumper/Slingshot 已有自己的 ImpactFX 和音效调用，跳过避免重复
         if (col.gameObject.GetComponent<Bumper>()    != null) return;
         if (col.gameObject.GetComponent<Slingshot>() != null) return;
+
+        AudioManager.Instance?.PlayBounce();
 
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
 

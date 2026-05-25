@@ -1,0 +1,2 @@
+# Music Asset Folder Place Holder
+This directory is designated for Background Music (.mp3, .wav, .ogg) assets.

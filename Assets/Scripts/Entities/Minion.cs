@@ -23,13 +23,13 @@ public class Minion : EnemyBase
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
 
-        // 强制使用 Unlit 材质，保证亮黄色 100% 亮度输出，不受 scene 2D 光照变暗影响
-        _sr.material = new Material(Shader.Find("Sprites/Default"));
+        // 强制使用 Unlit 材质，保证 100% 亮度输出
+        _sr.material = CyberVisualFactory.UnlitMaterial;
 
         if (def.sprite != null)
             _sr.sprite = def.sprite;
         else
-            _sr.sprite = GenerateCircleSprite(48, def.baseColor);
+            _sr.sprite = CyberVisualFactory.CreateMinionSprite(def.baseColor, def.isBomber);
 
         _baseColor   = def.baseColor;
         _sr.color    = _baseColor;

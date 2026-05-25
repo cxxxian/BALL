@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class WaveManager : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class WaveManager : MonoBehaviour
 
     // ── 全局小兵速度倍率（掉球时临时提升）────────────────────────────────
     public static float MinionSpeedMultiplier { get; private set; } = 1f;
+
+    [HideInInspector] public UnityEvent<int> onWaveStart = new UnityEvent<int>(); // 每波开始时广播（波次索引）
 
     [Header("Boss Definitions (按 Wave 顺序，超出后循环末尾)")]
     public BossDefinition[] bossDefinitions;
@@ -119,6 +122,7 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator RunWave(int waveIndex)
     {
+        onWaveStart.Invoke(waveIndex);   // 通知所有机关：新波次开始，重置状态
         _currentBoss = SpawnBoss(waveIndex);
 
         yield return new WaitForSeconds(firstSpawnDelay);

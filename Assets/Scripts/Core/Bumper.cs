@@ -84,6 +84,8 @@ public class Bumper : MonoBehaviour
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
         ImpactFX.Instance?.SpawnHit(hitPos, _baseColor, 1f);
 
+        AudioManager.Instance?.PlayBounce();
+
         if (!_flashing) StartCoroutine(Flash());
     }
 

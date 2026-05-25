@@ -30,6 +30,60 @@ public class GameManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        ApplyCyberVisuals();
+    }
+
+    private void ApplyCyberVisuals()
+    {
+        // ── 1. 升级所有的 Bumper ──
+        foreach (var b in FindObjectsOfType<Bumper>())
+        {
+            var sr = b.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreateBumperSprite(new Color(0f, 1.8f, 2.5f, 1f)); // 赛博亮蓝
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
+
+        // ── 2. 升级所有的 SpringBoard ──
+        foreach (var s in FindObjectsOfType<SpringBoard>())
+        {
+            var sr = s.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreateSpringBoardSprite(s.chargedColor);
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
+
+        // ── 3. 升级所有的 BoostGear ──
+        foreach (var bg in FindObjectsOfType<BoostGear>())
+        {
+            var sr = bg.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreateBoostGearSprite(bg.boostTrailColor);
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
+
+        // ── 4. 升级所有的 Portal ──
+        foreach (var p in FindObjectsOfType<Portal>())
+        {
+            var sr = p.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreatePortalSprite(p.portalColor);
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
+
+        // ── 5. ReflectivePrism（已从场景移除，代码保留供后续重设计）──
+        // foreach (var pr in FindObjectsOfType<ReflectivePrism>()) { ... }
+
+        // ── 6. EnergyCannon（已从场景移除，代码保留供后续重设计）──
+        // foreach (var ec in FindObjectsOfType<EnergyCannon>()) { ... }
     }
 
     public void StartGame()

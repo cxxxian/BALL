@@ -13,6 +13,7 @@ public class FlipperController : MonoBehaviour
     private float _activatedAngle;
     private float _targetAngle;
     private bool _isActivated = false;
+    public  bool IsActivated  => _isActivated;
     private Rigidbody2D _rb;
 
     private float _prevAngle;

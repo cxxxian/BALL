@@ -1,0 +1,2 @@
+# SFX Asset Folder Place Holder
+This directory is designated for Sound Effects (.wav, .mp3) assets like impact, shield activated, and button clicks.
