@@ -170,11 +170,19 @@ public class WaveManager : MonoBehaviour
         rb.interpolation    = RigidbodyInterpolation2D.Interpolate;
 
         var col             = go.AddComponent<BoxCollider2D>();
-        col.size            = new Vector2(0.85f, 0.85f);
+        col.size            = new Vector2(1.5f, 1.5f);
 
         var boss = go.AddComponent<Boss>();
         boss.Initialize(def, minX, maxX);
         boss.onDeath.AddListener(_ => _currentBoss = null);
+
+        // Boss 与现有小兵忽略物理碰撞，防止互相卡住
+        foreach (var m in _activeMinions)
+        {
+            if (m == null) continue;
+            var mc = m.GetComponent<Collider2D>();
+            if (mc != null) Physics2D.IgnoreCollision(col, mc);
+        }
 
         return boss;
     }
@@ -203,12 +211,19 @@ public class WaveManager : MonoBehaviour
         rb.interpolation    = RigidbodyInterpolation2D.Interpolate;
 
         var col             = go.AddComponent<CircleCollider2D>();
-        col.radius          = 0.27f;
+        col.radius          = 0.42f;
 
         var minion = go.AddComponent<Minion>();
         minion.Initialize(def);
         RegisterMinion(minion);
         minion.onDeath.AddListener(_ => UnregisterMinion(minion));
+
+        // 新小兵与当前 Boss 忽略物理碰撞，防止小兵被 Boss 压住
+        if (_currentBoss != null)
+        {
+            var bossCol = _currentBoss.GetComponent<Collider2D>();
+            if (bossCol != null) Physics2D.IgnoreCollision(col, bossCol);
+        }
     }
 
     // ── 小兵注册管理 ─────────────────────────────────────────────────────

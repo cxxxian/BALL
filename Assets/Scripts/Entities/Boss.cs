@@ -38,9 +38,34 @@ public class Boss : EnemyBase
         _sr.material = new Material(Shader.Find("Sprites/Default"));
 
         if (def.sprite != null)
+        {
             _sr.sprite = def.sprite;
+            float spriteWidth = def.sprite.rect.width / def.sprite.pixelsPerUnit;
+            if (spriteWidth > 0f)
+            {
+                float targetScale = 1.6f / spriteWidth;
+                transform.localScale = new Vector3(targetScale, targetScale, 1f);
+
+                // 配合 localScale 缩放动态调整 Collider 大小，确保在世界坐标下的实际碰撞包边始终为 1.5f * 1.5f
+                var boxCol = GetComponent<BoxCollider2D>();
+                if (boxCol != null)
+                {
+                    float localColSize = (1.5f / 1.6f) * spriteWidth;
+                    boxCol.size = new Vector2(localColSize, localColSize);
+                }
+            }
+        }
         else
+        {
             _sr.sprite = GenerateBossSprite(64, def.baseColor);
+            transform.localScale = Vector3.one;
+
+            var boxCol = GetComponent<BoxCollider2D>();
+            if (boxCol != null)
+            {
+                boxCol.size = new Vector2(1.5f, 1.5f); // 降级回退标准大小
+            }
+        }
 
         _baseColor   = def.baseColor;
         _sr.color    = _baseColor;

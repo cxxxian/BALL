@@ -28,6 +28,9 @@ public class BoostGear : MonoBehaviour
     private MaterialPropertyBlock _mpb;
     private float                 _currentRotSpeed;
     private Coroutine             _boostRoutine;
+    private bool                  _isBoosting;
+    private Color                 _savedTrailStart = Color.white;
+    private Color                 _savedTrailEnd   = Color.clear;
 
     // ──────────────────────────────────────────────────────
     private void Awake()
@@ -62,13 +65,17 @@ public class BoostGear : MonoBehaviour
         _currentRotSpeed = activeRotationSpeed;
         SetGearColor(gearActiveColor);
 
-        // 保存并更换拖尾颜色
+        // 只在非加速状态时保存原始颜色：防止球再次触碰齿轮时把金色存为"原始色"
         var trail = ball.GetComponent<TrailRenderer>();
-        Color savedStart = Color.white, savedEnd = Color.clear;
+        if (!_isBoosting && trail != null)
+        {
+            _savedTrailStart = trail.startColor;
+            _savedTrailEnd   = trail.endColor;
+        }
+        _isBoosting = true;
+
         if (trail != null)
         {
-            savedStart = trail.startColor;
-            savedEnd   = trail.endColor;
             trail.startColor = boostTrailColor;
             trail.endColor   = new Color(boostTrailColor.r, boostTrailColor.g, boostTrailColor.b, 0.05f);
         }
@@ -89,14 +96,15 @@ public class BoostGear : MonoBehaviour
         // ── 还原 ──────────────────────────────────────────
         _currentRotSpeed = idleRotationSpeed;
         SetGearColor(Color.white);
+        _isBoosting = false;
 
         if (ball != null)
         {
             ball.SpeedMultiplier = 1f;
             if (trail != null)
             {
-                trail.startColor = savedStart;
-                trail.endColor   = savedEnd;
+                trail.startColor = _savedTrailStart;
+                trail.endColor   = _savedTrailEnd;
             }
         }
 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minionName: Armored
   baseColor: {r: 0.55, g: 1, b: 0.1, a: 1}
-  sprite: {fileID: 0}
+  sprite: {fileID: 21300000, guid: 22430fb837293d64cbcef399dab06864, type: 3}
   maxHP: 3
   moveSpeed: 0.35
   scoreOnHit: 20

@@ -21,11 +21,16 @@ public class ImpactFX : MonoBehaviour
     /// <summary>在 worldPos 产生 Tron 风格像素粒子爆发。color 取碰撞物体的 Neon 颜色。</summary>
     public void SpawnHit(Vector2 worldPos, Color neonColor, float intensity = 1f)
     {
+        // 降低辉光过载倍率，防止颜色过曝粘连成“一坨”，保持原汁原味的霓虹色彩
         Color hdr = neonColor * (2.8f * intensity);
         hdr.a = 1f;
 
-        EmitAt(_burstPS, worldPos, hdr, Mathf.RoundToInt(Mathf.Lerp(10f, 22f, intensity)));
-        EmitAt(_dustPS,  worldPos, hdr * 0.6f, Mathf.RoundToInt(Mathf.Lerp(6f, 14f, intensity)));
+        // 保持原本清爽、克制且粒粒分明的数量
+        int burstCount = Mathf.RoundToInt(Mathf.Lerp(10f, 22f, intensity));
+        int dustCount  = Mathf.RoundToInt(Mathf.Lerp(6f,  14f, intensity));
+
+        EmitAt(_burstPS, worldPos, hdr,          burstCount);
+        EmitAt(_dustPS,  worldPos, hdr * 0.6f,   dustCount);
         StartCoroutine(RingRoutine(worldPos, neonColor, intensity));
     }
 
@@ -84,12 +89,12 @@ public class ImpactFX : MonoBehaviour
     // ── 粒子系统构建 ─────────────────────────────────────────────────────
     private void BuildSystems()
     {
-        _squareTex  = MakeSquareTex(8);
+        _squareTex   = MakeSquareTex(8);
         _particleMat = new Material(Shader.Find("Sprites/Default"));
         _particleMat.mainTexture = _squareTex;
 
         _burstPS = BuildPS("Burst", 0.25f, 0.55f, 2.5f, 9f, 0.05f, 0.18f, 500);
-        _dustPS  = BuildPS("Dust",  0.4f,  0.85f, 0.5f, 3f, 0.02f, 0.07f, 300);
+        _dustPS  = BuildPS("Dust",  0.4f,  0.85f, 0.5f, 3f,  0.02f, 0.07f, 300);
     }
 
     private ParticleSystem BuildPS(string goName,

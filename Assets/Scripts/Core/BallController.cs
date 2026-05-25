@@ -163,6 +163,15 @@ public class BallController : MonoBehaviour
     private void OnBallLost()
     {
         if (_executeChainActive) StopExecuteChain(); // 死亡中断斩杀链，trail 立即恢复正常
+
+        // 重置加速齿轮残留状态，防止黄色 trail 持续到下一条命
+        SpeedMultiplier = 1f;
+        if (_trail != null)
+        {
+            _trail.startColor = _originalTrailColor;
+            _trail.endColor   = new Color(_originalTrailColor.r, _originalTrailColor.g, _originalTrailColor.b, 0f);
+        }
+
         _rb.velocity = Vector2.zero;
         _rb.angularVelocity = 0f;
         _launched = false;
@@ -254,33 +263,34 @@ public class BallController : MonoBehaviour
 
             if (enemy != null && !enemy.IsDead)
             {
-                // Boss 只打 1 次普通伤害，小兵才触发瞬杀（打满剩余 HP）
                 bool isBoss = enemy is Boss;
                 if (!isBoss)
                 {
+                    // 小兵：瞬杀，消耗连锁次数，尝试追踪下一个小兵目标
                     int hitsNeeded = enemy.maxHits - enemy.CurrentHits;
                     for (int i = 0; i < hitsNeeded; i++) enemy.TakeHit();
+
+                    _chainsRemaining--;
+                    if (_chainsRemaining > 0)
+                    {
+                        Transform target = GetClosestEnemyTarget(); // 只返回小兵
+                        if (target != null)
+                        {
+                            StartCoroutine(RedirectToTargetRoutine(target));
+                            return;
+                        }
+                    }
                 }
                 else
                 {
+                    // Boss：1 次普通伤害，立即终止连锁（Boss 不是有效的链式目标）
                     enemy.TakeHit();
                 }
 
-                // ★ 只有打中敌人才消耗连锁次数；打墙/打 Bumper（已穿透）不计
-                _chainsRemaining--;
-                if (_chainsRemaining > 0)
-                {
-                    Transform target = GetClosestEnemyTarget();
-                    if (target != null)
-                    {
-                        StartCoroutine(RedirectToTargetRoutine(target));
-                        return;
-                    }
-                }
                 StopExecuteChain();
                 return;
             }
-            // 撞到墙壁：什么都不做，正常物理反弹，保留剩余连锁次数
+            // 撞到墙壁/Bumper（已穿透）：不消耗连锁次数，正常物理反弹
         }
 
         // Bumper/Slingshot 已有自己的 ImpactFX 和音效调用，跳过避免重复
@@ -312,7 +322,7 @@ public class BallController : MonoBehaviour
 
         foreach (var e in enemies)
         {
-            if (e == null || e.IsDead) continue;
+            if (e == null || e.IsDead || e is Boss) continue; // Boss 不是有效的连锁目标
             float dist = (e.transform.position - pos).sqrMagnitude;
             if (dist < minDist)
             {

@@ -46,16 +46,8 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // ── 2. 升级所有的 SpringBoard ──
-        foreach (var s in FindObjectsOfType<SpringBoard>())
-        {
-            var sr = s.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-            {
-                sr.sprite = CyberVisualFactory.CreateSpringBoardSprite(s.chargedColor);
-                sr.material = CyberVisualFactory.UnlitMaterial;
-            }
-        }
+        // ── 2. SpringBoard（已从场景移除，代码保留供后续重设计）──
+        // foreach (var s in FindObjectsOfType<SpringBoard>()) { ... }
 
         // ── 3. 升级所有的 BoostGear ──
         foreach (var bg in FindObjectsOfType<BoostGear>())
@@ -68,16 +60,8 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // ── 4. 升级所有的 Portal ──
-        foreach (var p in FindObjectsOfType<Portal>())
-        {
-            var sr = p.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-            {
-                sr.sprite = CyberVisualFactory.CreatePortalSprite(p.portalColor);
-                sr.material = CyberVisualFactory.UnlitMaterial;
-            }
-        }
+        // ── 4. Portal（已从场景移除，代码保留供后续重设计）──
+        // foreach (var p in FindObjectsOfType<Portal>()) { ... }
 
         // ── 5. ReflectivePrism（已从场景移除，代码保留供后续重设计）──
         // foreach (var pr in FindObjectsOfType<ReflectivePrism>()) { ... }

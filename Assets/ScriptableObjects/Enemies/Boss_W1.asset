@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bossName: Corrupted Core
   baseColor: {r: 1, g: 0.95, b: 0, a: 1}
-  sprite: {fileID: 0}
+  sprite: {fileID: 21300000, guid: 5ab42459eeb4ea643ac1b998821205f1, type: 3}
   maxHP: 8
   scoreOnHit: 30
   scoreOnKill: 500
