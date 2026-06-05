@@ -1,0 +1,44 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="MainMenu.uss" />
+    <ui:VisualElement name="MainContainer" class="main-container">
+        <!-- 主菜单 -->
+        <ui:VisualElement name="MainMenuPanel" class="panel">
+            <ui:Label text="弹 珠 神 罚" class="title" />
+            <ui:Label text="- PINBALL DOOM -" class="subtitle" />
+            <ui:VisualElement class="button-group">
+                <ui:Button name="BtnEndless" text="无尽挑战" class="menu-btn endless-btn" />
+                <ui:Button name="BtnCampaign" text="战役模式" class="menu-btn campaign-btn" />
+                <ui:Button name="BtnSettings" text="设  置" class="menu-btn" />
+                <ui:Button name="BtnQuit" text="退  出" class="menu-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 战役选关 -->
+        <ui:VisualElement name="CampaignPanel" class="panel" style="display: none; flex-direction: row;">
+            <!-- 左侧滑动区 -->
+            <ui:VisualElement class="campaign-left">
+                <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
+                    <ui:Label text="星 区 选 择" class="header-title" />
+                    <ui:Button name="BtnBack" text="◀ 返回主页" class="back-btn" />
+                </ui:VisualElement>
+                <ui:ScrollView name="LevelScrollView" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="level-scroll" />
+            </ui:VisualElement>
+            
+            <!-- 右侧详情板 -->
+            <ui:VisualElement class="campaign-right">
+                <ui:Label name="DetailStage" text="STAGE 01" class="detail-stage" />
+                <ui:Label name="DetailTitle" text="石巨像之怒" class="detail-title" />
+                <ui:VisualElement class="divider" />
+                <ui:Label name="DetailDesc" text="石巨像苏醒！它在场地上方徘徊，不断派遣装甲兵压迫底线。利用两侧的反射棱镜，可以形成在 BOSS 身后的高频反弹狂暴连穿！" class="detail-desc" />
+                
+                <ui:VisualElement style="margin-top: 40px;">
+                    <ui:Label name="DetailBoss" text="核心目标: 石巨像" class="detail-info highlight-info" />
+                    <ui:Label name="DetailPower" text="推荐战力: 100" class="detail-info" />
+                    <ui:Label name="DetailScore" text="最高得分: 0" class="detail-info" style="color: rgb(255, 245, 0);" />
+                </ui:VisualElement>
+                
+                <ui:Button name="BtnLaunch" text="神 罚 启 动" class="launch-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
