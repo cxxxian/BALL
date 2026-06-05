@@ -67,18 +67,8 @@ public class BoostGear : MonoBehaviour
 
         // 只在非加速状态时保存原始颜色：防止球再次触碰齿轮时把金色存为"原始色"
         var trail = ball.GetComponent<TrailRenderer>();
-        if (!_isBoosting && trail != null)
-        {
-            _savedTrailStart = trail.startColor;
-            _savedTrailEnd   = trail.endColor;
-        }
         _isBoosting = true;
-
-        if (trail != null)
-        {
-            trail.startColor = boostTrailColor;
-            trail.endColor   = new Color(boostTrailColor.r, boostTrailColor.g, boostTrailColor.b, 0.05f);
-        }
+        ball.SetOverrideTrailColor(boostTrailColor, new Color(boostTrailColor.r, boostTrailColor.g, boostTrailColor.b, 0.05f));
 
         // 立即提速：先设倍率，再推一把当前速度
         ball.SpeedMultiplier = multiplier;
@@ -100,11 +90,10 @@ public class BoostGear : MonoBehaviour
 
         if (ball != null)
         {
-            ball.SpeedMultiplier = 1f;
-            if (trail != null)
+            if (Mathf.Approximately(ball.SpeedMultiplier, multiplier))
             {
-                trail.startColor = _savedTrailStart;
-                trail.endColor   = _savedTrailEnd;
+                ball.SpeedMultiplier = 1f;
+                ball.ResetTrailColor();
             }
         }
 

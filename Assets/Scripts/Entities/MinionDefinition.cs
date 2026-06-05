@@ -18,6 +18,16 @@ public class MinionDefinition : ScriptableObject
     [Tooltip("触底时对玩家造成的伤害")]
     public int   damageToPlayer = 1;
 
+    [Header("Health Bar")]
+    [Tooltip("出生时是否默认显示血条。适合装甲兵/精英兵")]
+    public bool  showHealthBarOnSpawn = false;
+    [Tooltip("受击后血条至少保持可见的时间")]
+    public float healthBarVisibleDuration = 1.2f;
+    [Tooltip("血条相对小兵头顶的偏移")]
+    public float healthBarYOffset = 0.85f;
+    [Tooltip("血条宽度倍率")]
+    public float healthBarWidthScale = 1f;
+
     [Header("Bomber")]
     [Tooltip("触底时禁用场上所有 Bumper")]
     public bool  isBomber               = false;

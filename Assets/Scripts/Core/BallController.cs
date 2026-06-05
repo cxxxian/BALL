@@ -252,6 +252,24 @@ public class BallController : MonoBehaviour
         if (_col != null) _col.radius = 0.275f * multiplier;
     }
 
+    public void SetOverrideTrailColor(Color startColor, Color endColor)
+    {
+        if (_trail != null)
+        {
+            _trail.startColor = startColor;
+            _trail.endColor = endColor;
+        }
+    }
+
+    public void ResetTrailColor()
+    {
+        if (_trail != null)
+        {
+            _trail.startColor = _originalTrailColor;
+            _trail.endColor = new Color(_originalTrailColor.r, _originalTrailColor.g, _originalTrailColor.b, 0f);
+        }
+    }
+
     private void OnCollisionEnter2D(Collision2D col)
     {
         if (!_launched || ImpactFX.Instance == null) return;

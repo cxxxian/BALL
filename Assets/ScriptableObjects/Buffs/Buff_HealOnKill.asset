@@ -15,6 +15,6 @@ MonoBehaviour:
   buffName: "\u751F\u547D\u6C72\u53D6"
   description: "\u6BCF\u51FB\u6740 5 \u53EA\u5C0F\u5175\u56DE\u590D 1 \u70B9\u751F\u547D"
   rarity: 1
-  effectType: 5
+  effectType: 3
   effectValue: 5
   maxStacks: 2

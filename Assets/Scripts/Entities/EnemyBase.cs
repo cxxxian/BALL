@@ -101,12 +101,12 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
-    public virtual void TakeHit()
+    public virtual void TakeHit(int damage = 1)
     {
         if (IsDead) return;
-        CurrentHits++;
+        CurrentHits += damage;
         if (GameManager.Instance != null)
-            GameManager.Instance.AddScore(scoreOnHit);
+            GameManager.Instance.AddScore(scoreOnHit * damage);
         OnHit();
         if (CurrentHits >= maxHits)
             Die();

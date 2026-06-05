@@ -37,6 +37,11 @@ public class Minion : EnemyBase
         bomberDisableDuration   = def.bomberDisableDuration;
         checkBottomLine         = true;
 
+        var healthBar = GetComponent<MinionHealthBar>();
+        if (healthBar == null)
+            healthBar = gameObject.AddComponent<MinionHealthBar>();
+        healthBar.Configure(def.showHealthBarOnSpawn, def.healthBarVisibleDuration, def.healthBarYOffset, def.healthBarWidthScale);
+
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
 

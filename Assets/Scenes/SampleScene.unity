@@ -9384,12 +9384,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buffPool:
-  - {fileID: 11400000, guid: 59a406ec982902c4e9ab815053cdedc6, type: 2}
   - {fileID: 11400000, guid: 1365907d31857de42b5d8245c2e493db, type: 2}
   - {fileID: 11400000, guid: 953bbd5e777334348b85f66f18a0368a, type: 2}
+  - {fileID: 11400000, guid: 151e73f2a02dc5d47bc86c8c6f1a615f, type: 2}
+  - {fileID: 11400000, guid: 93d282a96452fe948937b0efb728ec95, type: 2}
   - {fileID: 11400000, guid: 8ce6700c6128b3e49a665001597a3e45, type: 2}
   - {fileID: 11400000, guid: 28908977d1363c64589bb6b84c7574d8, type: 2}
-  - {fileID: 11400000, guid: 646b0a7f023b5874195b7dafaabd520b, type: 2}
+  - {fileID: 11400000, guid: 0ccf901d4a688704d87bf001f6dddce5, type: 2}
 --- !u!114 &1471881118
 MonoBehaviour:
   m_ObjectHideFlags: 0

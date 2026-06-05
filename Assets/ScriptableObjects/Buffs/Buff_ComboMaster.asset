@@ -15,6 +15,6 @@ MonoBehaviour:
   buffName: "\u8FDE\u51FB\u5927\u5E08"
   description: "Combo \u6280\u80FD\u89E6\u53D1\u9608\u503C -2"
   rarity: 1
-  effectType: 3
+  effectType: 2
   effectValue: 2
   maxStacks: 3

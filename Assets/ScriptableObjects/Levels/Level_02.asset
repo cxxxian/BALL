@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef948463fe996854dba16da630cffd6b, type: 3}
+  m_Name: Level_02
+  m_EditorClassIdentifier: 
+  levelID: 2
+  levelName: "\u7535\u78C1\u6838\u5FC3\u4E4B\u707E"
+  description: "\u7B2C\u4E8C\u6CE2\u6B21\uFF1A\u7535\u78C1\u6838\u5FC3\u3002\u5B83\u6D3E\u9063\u66F4\u591A\u7684\u7206\u5F39\u5175\u3002\u4E00\u65E6\u7206\u5F39\u5175\u89E6\u5E95\uFF0C\u5168\u573A
+    Bumper \u90FD\u4F1A\u88AB\u762B\u75EA 5 \u79D2\uFF01\u5FC5\u987B\u4F18\u5148\u7528\u5F39\u73E0\u62E6\u622A\u7206\u5F39\u5175\uFF01"
+  bossDef: {fileID: 11400000, guid: 2cc2f586377269a489a0981e2dce7ccc, type: 2}
+  isUnlockedByDefault: 0

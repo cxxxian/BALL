@@ -71,6 +71,10 @@ public class Boss : EnemyBase
         _sr.color    = _baseColor;
         _sr.sortingOrder = 2;
 
+        var hb = GetComponent<BossHealthBar>();
+        if (hb == null) hb = gameObject.AddComponent<BossHealthBar>();
+        hb.Bind(this);
+
         _spawnCoroutine = StartCoroutine(SpawnCycle());
     }
 
