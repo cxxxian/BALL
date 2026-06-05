@@ -8,16 +8,16 @@ public class BuffManager : MonoBehaviour
     [Header("Buff Pool (assign all BuffDefinition assets here)")]
     public List<BuffDefinition> buffPool = new List<BuffDefinition>();
 
-    // ── 当前叠加层数追踪 ──────────────────────────────────────────────────
     private readonly Dictionary<BuffEffectType, int> _stacks = new Dictionary<BuffEffectType, int>();
 
-    // ── 对外暴露的数值属性 ────────────────────────────────────────────────
+    // ── 对外暴露的数值属性 ─────────────────────────────────────
     public int   BallDamageBonus         { get; private set; } = 0;
-    public float BallSizeMultiplier      { get; private set; } = 1f;
     public int   MaxHPBonus              { get; private set; } = 0;
     public int   ComboThresholdReduction { get; private set; } = 0;
-    public float BumperForceMultiplier   { get; private set; } = 1f;
-    public int   KillsPerHeal            { get; private set; } = 0;   // 0 = 未激活
+    public int   KillsPerHeal            { get; private set; } = 0;
+    public int   TeslaCoilLevel          { get; private set; } = 0;
+    public int   FrostTowerLevel         { get; private set; } = 0;
+    public int   ElectricShellLevel      { get; private set; } = 0;
 
     private int _killCounter = 0;
 
@@ -39,13 +39,11 @@ public class BuffManager : MonoBehaviour
             GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
     }
 
-    // ── 获取随机 Buff 卡（供 UI 面板调用）────────────────────────────────
     public BuffDefinition[] GetRandomSelection(int count = 3)
     {
         if (buffPool == null || buffPool.Count == 0) return new BuffDefinition[0];
 
         var pool = new List<BuffDefinition>(buffPool);
-        // 移除已满层数的 Buff（已满则不展示，避免浪费选择）
         pool.RemoveAll(b => b != null && GetStacks(b.effectType) >= b.maxStacks);
 
         var result = new List<BuffDefinition>();
@@ -59,7 +57,6 @@ public class BuffManager : MonoBehaviour
         return result.ToArray();
     }
 
-    // ── 应用一个 Buff ─────────────────────────────────────────────────────
     public void ApplyBuff(BuffDefinition def)
     {
         if (def == null) return;
@@ -70,15 +67,15 @@ public class BuffManager : MonoBehaviour
         Debug.Log($"[BuffManager] Applied: {def.buffName}  stacks={_stacks[def.effectType]}/{def.maxStacks}");
     }
 
-    // ── 重新计算所有数值 ──────────────────────────────────────────────────
     private void RecalculateStats()
     {
         BallDamageBonus         = 0;
-        BallSizeMultiplier      = 1f;
         MaxHPBonus              = 0;
         ComboThresholdReduction = 0;
-        BumperForceMultiplier   = 1f;
         KillsPerHeal            = 0;
+        TeslaCoilLevel          = 0;
+        FrostTowerLevel         = 0;
+        ElectricShellLevel      = 0;
 
         foreach (var def in buffPool)
         {
@@ -90,27 +87,29 @@ public class BuffManager : MonoBehaviour
                 case BuffEffectType.BallDamageUp:
                     BallDamageBonus += Mathf.RoundToInt(def.effectValue * stacks);
                     break;
-                case BuffEffectType.BallSizeUp:
-                    BallSizeMultiplier += (def.effectValue - 1f) * stacks;
-                    break;
                 case BuffEffectType.MaxHPUp:
                     MaxHPBonus += Mathf.RoundToInt(def.effectValue * stacks);
                     break;
                 case BuffEffectType.ComboThresholdDown:
                     ComboThresholdReduction += Mathf.RoundToInt(def.effectValue * stacks);
                     break;
-                case BuffEffectType.BumperForceUp:
-                    BumperForceMultiplier += (def.effectValue - 1f) * stacks;
-                    break;
                 case BuffEffectType.HealOnKill:
                     KillsPerHeal = Mathf.RoundToInt(def.effectValue);
+                    break;
+                case BuffEffectType.DeployTeslaCoil:
+                    TeslaCoilLevel += stacks;
+                    break;
+                case BuffEffectType.DeployFrostTower:
+                    FrostTowerLevel += stacks;
+                    break;
+                case BuffEffectType.ElectricShell:
+                    ElectricShellLevel += stacks;
                     break;
             }
         }
 
-        // 通知需要感知 Buff 变化的系统
         ApplyMaxHPChange();
-        ApplyBallSize();
+        NotifyTowerManager();
     }
 
     private void ApplyMaxHPChange()
@@ -119,13 +118,19 @@ public class BuffManager : MonoBehaviour
         GameManager.Instance.SetMaxHPBonus(MaxHPBonus);
     }
 
-    private void ApplyBallSize()
+    private void NotifyTowerManager()
     {
-        if (BallController.Instance == null) return;
-        BallController.Instance.SetSizeMultiplier(BallSizeMultiplier);
+        // 自动注入 TowerManager（如果它还不存在）
+        if (TowerManager.Instance == null)
+        {
+            var go = new GameObject("TowerManager_Auto");
+            go.AddComponent<TowerManager>();
+        }
+
+        // 通知塔系统刷新建造
+        TowerManager.Instance.UpdateTowers();
     }
 
-    // ── 击杀回调（由 EnemyBase 调用）─────────────────────────────────────
     public void OnEnemyKilled()
     {
         if (KillsPerHeal <= 0) return;
@@ -137,7 +142,6 @@ public class BuffManager : MonoBehaviour
         }
     }
 
-    // ── 重置（每局开始）──────────────────────────────────────────────────
     private void ResetForNewGame()
     {
         _stacks.Clear();

@@ -100,7 +100,20 @@ public class BuffSelectionController : MonoBehaviour
     {
         if (_currentSelection == null || index >= _currentSelection.Length) return;
         var def = _currentSelection[index];
-        if (def != null) BuffManager.Instance?.ApplyBuff(def);
+        if (def != null) 
+        {
+            BuffManager.Instance?.ApplyBuff(def);
+            
+            // 如果刚刚获得了一个新的建筑，挂起进入“放置阶段”
+            if (TowerManager.Instance != null && TowerManager.Instance.IsPlacementPending)
+            {
+                _overlay.style.display = DisplayStyle.None;
+                TowerManager.Instance.StartPlacement(() => {
+                    Hide(); // 等玩家点完了再彻底隐藏并进入下一波
+                });
+                return;
+            }
+        }
         Hide();
     }
 
