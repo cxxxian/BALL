@@ -133,6 +133,23 @@ public class SlowMoFX : MonoBehaviour
         if (fxVolume != null) fxVolume.enabled = false;
     }
 
+    /// <summary>
+    /// Boss 击杀等外部事件：仅驱动 Vignette，不改动色差/去饱和。
+    /// </summary>
+    public void SetBossKillVignette(float intensity, Color color)
+    {
+        if (_vignette == null) return;
+
+        if (fxVolume != null && intensity > 0f)
+            fxVolume.enabled = true;
+
+        _vignette.intensity.Override(Mathf.Clamp01(intensity));
+        _vignette.color.Override(new Color(color.r, color.g, color.b, 1f));
+
+        if (intensity <= 0f && _coroutine == null && fxVolume != null)
+            fxVolume.enabled = false;
+    }
+
     // ── 设置 URP 后处理参数（t: 0=关闭, 1=最强） ─────────────────────
     private void SetPostFX(float t)
     {

@@ -18,6 +18,10 @@ public class Bumper : MonoBehaviour
     private bool _disabled   = false;
     private bool _passthrough = false; // 斩杀连锁期间：碰撞体关闭，球穿透飞过
 
+    // ── 碰撞冷却（防穿模抖动） ─────────────────────────────────────────
+    private float _lastHitTime = -1f;
+    private const float COLLISION_COOLDOWN = 0.05f;
+
     private void Awake()
     {
         _sr  = GetComponentInChildren<SpriteRenderer>();
@@ -68,6 +72,12 @@ public class Bumper : MonoBehaviour
     {
         if (_disabled) return;
         if (!col.gameObject.CompareTag("Ball")) return;
+
+        // ── 碰撞冷却检测：防止穿模抖动 ─────────────────────────────────────
+        float currentTime = Time.time;
+        if (currentTime - _lastHitTime < COLLISION_COOLDOWN) return;
+        _lastHitTime = currentTime;
+
         var rb = col.rigidbody;
         if (rb != null)
         {
@@ -77,7 +87,7 @@ public class Bumper : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit);
 
-        ComboSystem.Instance?.RegisterHit();
+        ComboSystem.Instance?.RegisterAirtimeHit();
         CameraShake.Instance?.Shake(CameraShake.Preset.Light);
 
         // Tron 像素粒子爆发（取自身 Neon 颜色）

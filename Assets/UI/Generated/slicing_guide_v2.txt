@@ -1,0 +1,56 @@
+═══════════════════════════════════════════════════════
+精灵表裁切坐标指南 v2
+═══════════════════════════════════════════════════════
+生成后把两张原图给我，我会用 Python 精确裁切 + 缩放。
+
+─────────────────────────────────────────────────────
+图1: prompt_v2_panels.txt → 1024×1792 PNG (竖屏)
+─────────────────────────────────────────────────────
+[ 1] panel_main   → crop [0,    0,  1024, 512] → resize 1000×1500  9s=44px
+[ 2] panel_result → crop [0,  524,  1024, 346] → resize 1000×1400  9s=44px
+[ 3] panel_dialog → crop [0,  882,  1024, 244] → resize  900×560   9s=32px
+[ 4] panel_hud    → crop [0, 1138,  1024, 140] → resize  360×110   9s=22px
+[ 5] card_common  → crop [0, 1290,   341, 502] → resize  320×480   9s=26px
+[ 6] card_rare    → crop [341,1290,  341, 502] → resize  320×480   9s=26px
+[ 7] card_epic    → crop [682,1290,  342, 502] → resize  320×480   9s=26px
+
+─────────────────────────────────────────────────────
+图2: prompt_v2_elements.txt → 1024×1792 PNG (竖屏)
+─────────────────────────────────────────────────────
+Sec1 (Y 0-280):   文字
+[ 8] text_victory    → crop [0,   0,  341, 280]  → resize 900×280
+[ 9] text_defeat     → crop [341, 0,  341, 280]  → resize 900×280
+[10] text_new_record → crop [682, 0,  342, 280]  → resize 900×280
+
+Sec2 (Y 292-572): 场景物件
+[11] bumper_body     → crop [0,  292, 341, 280]  → resize 256×256
+[12] flipper_left    → crop [341,292, 341, 280]  → resize 540×110 (extract from cell)
+[13] flipper_right   → crop [682,292, 342, 280]  → resize 540×110 (extract from cell)
+
+Sec3 (Y 584-834): 按钮
+[14] btn_flipper_l   → crop [0,  584, 341, 250]  → resize 440×250
+[15] btn_flipper_r   → crop [341,584, 341, 250]  → resize 440×250
+[16] btn_circle      → crop [682,584, 342, 250]  → resize 128×128 (center crop)
+
+Sec4 (Y 846-1126): 图标 (3×2)
+[17] icon_heart_full    → crop [0,  846, 341, 140] → resize 96×96
+[18] icon_heart_empty   → crop [341,846, 341, 140] → resize 96×96
+[19] icon_skill_exec    → crop [682,846, 342, 140] → resize 128×128
+[20] icon_skill_shield  → crop [0,  986, 341, 140] → resize 128×128
+[21] icon_star_full     → crop [341,986, 341, 140] → resize 64×64
+[22] icon_star_empty    → crop [682,986, 342, 140] → resize 64×64
+
+Sec5 (Y 1138-1394): CD环
+[23] cd_ring         → crop [0, 1138, 1024, 256]  → resize 256×256 (center crop)
+
+Sec6 (Y 1406-1530): 装饰
+[24] corner_bracket  → crop [0,  1406, 341, 124]  → resize 88×88
+[25] arrow_chevron   → crop [341,1406, 341, 124]  → resize 64×64
+[26] divider_line    → crop [682,1406, 342, 124]  → resize 800×24 (horizontal divider)
+
+═══════════════════════════════════════════════════════
+注意: DALL-E 3 不会像素级精确排列元素。
+      裁切时会先用 OpenCV 找每个元素的包围盒，
+      再做微调修正，最后缩放到目标尺寸。
+      面板类会自动标注 9-slice border。
+═══════════════════════════════════════════════════════

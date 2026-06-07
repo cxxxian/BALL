@@ -21,6 +21,12 @@ public class BallController : MonoBehaviour
     private Color _originalTrailColor;
     private float _originalTrailWidth;
 
+    // ── 水平死区检测（引力过载） ───────────────────────────────────────
+    private float _horizontalDeadZoneTimer = 0f;
+    private bool  _gravityOverloadActive   = false;
+    private const float HORIZONTAL_THRESHOLD = 0.15f;  // 水平速度阈值
+    private const float DEADZONE_DURATION    = 1.5f;   // 触发引力过载的时长
+
     private Rigidbody2D      _rb;
     private CircleCollider2D _col;
     private SpriteRenderer   _sr;
@@ -114,10 +120,30 @@ public class BallController : MonoBehaviour
         _col.sharedMaterial = mat;
         _col.radius = config.ballRadius;
 
-        if (_sr != null && _sr.sprite == null)
+        RestoreBallVisual();
+    }
+
+    private static Material _defaultBallMaterial;
+
+    /// <summary>恢复 TronUnlit + HDR 球色（场景默认外观）。</summary>
+    private void RestoreBallVisual()
+    {
+        if (_sr == null) return;
+
+        if (_sr.sprite == null)
             _sr.sprite = GruntEnemy.CreateCircleSprite(64, Color.white);
-        // Tron: 球始终使用 HDR 白，配合 2D Point Light 产生白色光晕
-        if (_sr != null) _sr.color = new Color(3.5f, 3.5f, 3.8f, 1f);
+
+        transform.localScale = Vector3.one;
+        _sr.color = new Color(3.5f, 3.5f, 3.8f, 1f);
+
+        if (_defaultBallMaterial == null)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            if (shader != null)
+                _defaultBallMaterial = new Material(shader);
+        }
+        if (_defaultBallMaterial != null)
+            _sr.sharedMaterial = _defaultBallMaterial;
     }
 
     private void Update()
@@ -125,7 +151,8 @@ public class BallController : MonoBehaviour
         if (!IsWaitingForLaunch) return;
 
         // 引导线摆动
-        _guideAngle += _guideSwingDir * config.guideSwingSpeed * Time.deltaTime;
+        float guideDt = Time.timeScale > 0f ? Time.deltaTime : Time.unscaledDeltaTime;
+        _guideAngle += _guideSwingDir * config.guideSwingSpeed * guideDt;
         if (_guideAngle >= config.guideMaxAngle) { _guideAngle = config.guideMaxAngle; _guideSwingDir = -1f; }
         if (_guideAngle <= config.guideMinAngle) { _guideAngle = config.guideMinAngle; _guideSwingDir =  1f; }
 
@@ -142,6 +169,7 @@ public class BallController : MonoBehaviour
     private void OnGameStart()
     {
         StopAllCoroutines();
+        RestoreBallVisual();
         RestoreComponents();
         transform.position = _spawnPosition;
         BeginWaitForLaunch();
@@ -182,7 +210,7 @@ public class BallController : MonoBehaviour
     private IEnumerator RespawnRoutine()
     {
         HideComponents();
-        yield return new WaitForSeconds(config.respawnDelay);
+        yield return new WaitForSecondsRealtime(config.respawnDelay);
 
         if (GameManager.Instance != null && GameManager.Instance.State == GameState.GameOver)
             yield break;
@@ -192,9 +220,8 @@ public class BallController : MonoBehaviour
         IsInvincible = true;
         BeginWaitForLaunch();
 
-        // 等待玩家发射 + 无敌时间
         yield return new WaitUntil(() => !IsWaitingForLaunch);
-        yield return new WaitForSeconds(config.respawnInvincibleDuration);
+        yield return new WaitForSecondsRealtime(config.respawnInvincibleDuration);
         IsInvincible = false;
         if (GameManager.Instance != null)
             GameManager.Instance.OnBallRespawned();
@@ -217,6 +244,7 @@ public class BallController : MonoBehaviour
         LaunchGuide.Instance?.Hide();
         _rb.velocity = dir.normalized * config.ballLaunchSpeed;
         _launched    = true;
+        ComboSystem.Instance?.ForceResetCombo();
     }
 
     private void HideComponents()
@@ -236,6 +264,8 @@ public class BallController : MonoBehaviour
     private void FixedUpdate()
     {
         if (!_launched) return;
+
+        // ── 速度限制 ──────────────────────────────────────────────────────
         float speed = _rb.velocity.magnitude;
         float minS  = config.ballMinSpeed * SpeedMultiplier;
         float maxS  = config.ballMaxSpeed * SpeedMultiplier;
@@ -243,6 +273,27 @@ public class BallController : MonoBehaviour
             _rb.velocity = _rb.velocity.normalized * minS;
         else if (speed > maxS)
             _rb.velocity = _rb.velocity.normalized * maxS;
+
+        // ── 水平死区检测（引力过载） ───────────────────────────────────────
+        if (_executeChainActive || _gravityOverloadActive) return;
+
+        Vector2 vel = _rb.velocity;
+        float absVx = Mathf.Abs(vel.x);
+        float absVy = Mathf.Abs(vel.y);
+
+        // 检测是否处于水平死区：横向速度占主导，纵向速度很小
+        if (absVx > absVy && absVy < HORIZONTAL_THRESHOLD)
+        {
+            _horizontalDeadZoneTimer += Time.fixedDeltaTime;
+            if (_horizontalDeadZoneTimer >= DEADZONE_DURATION)
+            {
+                StartCoroutine(GravityOverloadRoutine());
+            }
+        }
+        else
+        {
+            _horizontalDeadZoneTimer = 0f;
+        }
     }
 
     public void SetSizeMultiplier(float multiplier)
@@ -281,6 +332,8 @@ public class BallController : MonoBehaviour
 
             if (enemy != null && !enemy.IsDead)
             {
+                ComboSystem.Instance?.RegisterAirtimeHit();
+
                 bool isBoss = enemy is Boss;
                 if (!isBoss)
                 {
@@ -310,6 +363,9 @@ public class BallController : MonoBehaviour
             }
             // 撞到墙壁/Bumper（已穿透）：不消耗连锁次数，正常物理反弹
         }
+
+        if (col.gameObject.GetComponentInParent<FlipperController>() != null)
+            ComboSystem.Instance?.BreakOnFlipper();
 
         // Bumper/Slingshot 已有自己的 ImpactFX 和音效调用，跳过避免重复
         if (col.gameObject.GetComponent<Bumper>()    != null) return;
@@ -370,5 +426,48 @@ public class BallController : MonoBehaviour
         {
             ImpactFX.Instance.SpawnHit(transform.position, new Color(1f, 0f, 0.47f, 1f), 1.2f);
         }
+    }
+
+    // ── 引力过载：强制将弹珠拉向底部，打破水平死区 ─────────────────────────
+    private IEnumerator GravityOverloadRoutine()
+    {
+        _gravityOverloadActive = true;
+        _horizontalDeadZoneTimer = 0f;
+
+        // 视觉特效：蓝色电光拖尾
+        Color originalStart = _trail.startColor;
+        Color originalEnd = _trail.endColor;
+        Color electricBlue = new Color(0f, 0.8f, 1f, 1f);
+        
+        if (_trail != null)
+        {
+            _trail.startColor = electricBlue;
+            _trail.endColor = new Color(electricBlue.r, electricBlue.g, electricBlue.b, 0.05f);
+        }
+
+        // 施加强力向下推力
+        float forceMagnitude = config.ballMaxSpeed * 1.5f;
+        _rb.velocity = new Vector2(_rb.velocity.x * 0.3f, -forceMagnitude);
+
+        // 音效和震屏
+        AudioManager.Instance?.PlayBounce();
+        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+        
+        // 粒子特效
+        if (ImpactFX.Instance != null)
+        {
+            ImpactFX.Instance.SpawnHit(transform.position, electricBlue, 1.0f);
+        }
+
+        // 持续0.5秒后恢复
+        yield return new WaitForSeconds(0.5f);
+
+        if (_trail != null && !_executeChainActive)
+        {
+            _trail.startColor = originalStart;
+            _trail.endColor = originalEnd;
+        }
+
+        _gravityOverloadActive = false;
     }
 }

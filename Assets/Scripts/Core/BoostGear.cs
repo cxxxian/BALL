@@ -52,6 +52,8 @@ public class BoostGear : MonoBehaviour
         var ball = other.GetComponent<BallController>();
         if (ball == null) return;
 
+        ComboSystem.Instance?.RegisterAirtimeHit();
+
         // 如果已在加速中，重启计时
         if (_boostRoutine != null) StopCoroutine(_boostRoutine);
         _boostRoutine = StartCoroutine(BoostRoutine(ball));

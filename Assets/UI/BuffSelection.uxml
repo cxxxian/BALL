@@ -33,5 +33,16 @@
             </ui:VisualElement>
 
         </ui:VisualElement>
+
+        <!-- 塔类 Buff 二次选择 -->
+        <ui:VisualElement name="tower-choice" class="tower-choice">
+            <ui:Label name="tower-choice-title" text="— 塔类 Buff —" class="title" />
+            <ui:Label name="tower-choice-hint" text="选择如何使用本次塔卡。" class="wave-tag" />
+            <ui:VisualElement class="tower-choice-buttons">
+                <ui:Button name="tower-btn-place" text="放置新塔" class="select-btn" />
+                <ui:Button name="tower-btn-upgrade" text="升级已有塔" class="select-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>

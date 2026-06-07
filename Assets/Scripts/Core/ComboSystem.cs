@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+/// <summary>
+/// 滞空连击：球在场期间命中敌人/机关累加 Combo；任意挡板接触严格清零；超时亦清零。
+/// </summary>
 public class ComboSystem : MonoBehaviour
 {
     public static ComboSystem Instance { get; private set; }
@@ -22,7 +25,10 @@ public class ComboSystem : MonoBehaviour
     private void Start()
     {
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.onGameStart.AddListener(OnGameStart);
+            GameManager.Instance.onBallLost.AddListener(OnBallLost);
+        }
     }
 
     private void Update()
@@ -32,10 +38,16 @@ public class ComboSystem : MonoBehaviour
             ResetCombo();
     }
 
-    // Bumper/Slingshot 命中时调用
-    public void RegisterHit()
+    /// <summary>兼容旧调用；等同于 RegisterAirtimeHit。</summary>
+    public void RegisterHit() => RegisterAirtimeHit();
+
+    /// <summary>滞空段有效命中（敌人 / Bumper / 弹弓 / 加速齿轮等）。</summary>
+    public void RegisterAirtimeHit()
     {
         if (Config == null) return;
+
+        var ball = BallController.Instance;
+        if (ball == null || ball.IsWaitingForLaunch) return;
 
         if (Time.time - _lastHitTime > Config.comboTimeout)
             CurrentCombo = 0;
@@ -44,15 +56,23 @@ public class ComboSystem : MonoBehaviour
         _lastHitTime = Time.time;
         onComboChanged.Invoke(CurrentCombo);
 
-        // 里程碑震动：combo 5 中震，10/15/20/... 重震
         if      (CurrentCombo == 5)                          CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
         else if (CurrentCombo >= 10 && CurrentCombo % 5 == 0) CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
     }
 
+    /// <summary>挡板严格断连：任意挡板接触即清零。</summary>
+    public void BreakOnFlipper() => ResetCombo();
+
     public void ResetCombo()
     {
         if (CurrentCombo == 0) return;
+        ForceResetCombo();
+    }
+
+    public void ForceResetCombo()
+    {
         CurrentCombo = 0;
+        _lastHitTime = -99f;
         onComboChanged.Invoke(0);
     }
 
@@ -61,5 +81,10 @@ public class ComboSystem : MonoBehaviour
         CurrentCombo = 0;
         _lastHitTime = -99f;
         onComboChanged.Invoke(0);
+    }
+
+    private void OnBallLost()
+    {
+        ForceResetCombo();
     }
 }

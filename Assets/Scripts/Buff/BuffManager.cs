@@ -15,8 +15,6 @@ public class BuffManager : MonoBehaviour
     public int   MaxHPBonus              { get; private set; } = 0;
     public int   ComboThresholdReduction { get; private set; } = 0;
     public int   KillsPerHeal            { get; private set; } = 0;
-    public int   TeslaCoilLevel          { get; private set; } = 0;
-    public int   FrostTowerLevel         { get; private set; } = 0;
     public int   ElectricShellLevel      { get; private set; } = 0;
 
     private int _killCounter = 0;
@@ -73,8 +71,6 @@ public class BuffManager : MonoBehaviour
         MaxHPBonus              = 0;
         ComboThresholdReduction = 0;
         KillsPerHeal            = 0;
-        TeslaCoilLevel          = 0;
-        FrostTowerLevel         = 0;
         ElectricShellLevel      = 0;
 
         foreach (var def in buffPool)
@@ -97,10 +93,7 @@ public class BuffManager : MonoBehaviour
                     KillsPerHeal = Mathf.RoundToInt(def.effectValue);
                     break;
                 case BuffEffectType.DeployTeslaCoil:
-                    TeslaCoilLevel += stacks;
-                    break;
                 case BuffEffectType.DeployFrostTower:
-                    FrostTowerLevel += stacks;
                     break;
                 case BuffEffectType.ElectricShell:
                     ElectricShellLevel += stacks;
@@ -109,7 +102,7 @@ public class BuffManager : MonoBehaviour
         }
 
         ApplyMaxHPChange();
-        NotifyTowerManager();
+        EnsureTowerManagerExists();
     }
 
     private void ApplyMaxHPChange()
@@ -118,17 +111,11 @@ public class BuffManager : MonoBehaviour
         GameManager.Instance.SetMaxHPBonus(MaxHPBonus);
     }
 
-    private void NotifyTowerManager()
+    private void EnsureTowerManagerExists()
     {
-        // 自动注入 TowerManager（如果它还不存在）
-        if (TowerManager.Instance == null)
-        {
-            var go = new GameObject("TowerManager_Auto");
-            go.AddComponent<TowerManager>();
-        }
-
-        // 通知塔系统刷新建造
-        TowerManager.Instance.UpdateTowers();
+        if (TowerManager.Instance != null) return;
+        var go = new GameObject("TowerManager_Auto");
+        go.AddComponent<TowerManager>();
     }
 
     public void OnEnemyKilled()

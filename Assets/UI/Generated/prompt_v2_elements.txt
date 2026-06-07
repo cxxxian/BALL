@@ -1,0 +1,98 @@
+=== GPT Image 2 Prompt: UI Elements Sprite Sheet ===
+Generate at: 1024 x 1792 px (portrait)
+Style: --style raw
+Background: pure black #000000
+
+═══════════════════════════════════════════════
+flat 2D sci-fi game UI sprite sheet containing 18 game interface elements arranged in a clean 6-section vertical stack on a pure black (#000000) background. Each section is separated by a thin horizontal cyan divider line (#00C8FF, 1px) with at least 10px solid black gap above and below. This is a raw asset sprite sheet — NO labels, NO captions, NO descriptive words anywhere on the image.
+
+STYLE: Tron Legacy meets XCOM2 HUD meets Mass Effect omni-tool. Cyberpunk neon aesthetics. Flat 2D vector-clean art. Overhead orthographic view. Ultra crisp sharp edges. No perspective, no shadows, no rounded corners.
+
+COLOR KEY:
+- Primary: electric cyan #00C8FF (glow, borders, accents)
+- Amber orange #FF9500 (buttons, flippers, health)
+- Red #FF3366 (defeat, heart full)
+- Gold #FFD700 (stars, new record)
+- Purple #B43CFF (for contrast where noted)
+- All glows: soft 6-12px neon bloom with bright white core fading to edge color
+
+═══════════════════════════════════════════════
+SECTION 1 — TEXT BANNERS (Y: 0-280, H: 280)
+Three text banners side by side, each ~341 x 280 px, pure black cell background.
+
+LEFT: VICTORY — large bold all-caps "VICTORY" in futuristic sci-fi chrome font. Letters have white-blue bright core transitioning to cyan #00C8FF at edges. 15px soft cyan-blue outer bloom. Subtle light rays emanating upward from behind text. No frame, no border, text only on black.
+
+CENTER: DEFEAT — large bold all-caps "DEFEAT" in same font style. Letters: dark chrome with bright orange-white core fading to crimson red #FF2200 edges. 15px intense red-orange outer bloom. Subtle downward light drain from letters. No frame, text only on black.
+
+RIGHT: NEW RECORD! — slightly smaller to fit, same font. Polished gold chrome #FFD700 to white-gold. 18px warm golden bloom. 4-6 tiny sparkle star particles floating around text. No frame, text only on black.
+
+─── divider ───
+
+SECTION 2 — SCENE OBJECTS (Y: 292-572, H: 280)
+Three game-world objects in one row, pure black cell backgrounds.
+
+LEFT (~341px wide): bumper_body — a circular sci-fi pinball bumper. Multiple concentric glowing cyan rings: thick outer ring (3px bright cyan), thinner inner ring (2px dim cyan) with 16px gap between. Center: filled bright cyan-white circle. Thin cyan crosshair lines (horizontal + vertical) through center. At 12/3/6/9 o'clock on outer ring: small triangular spike ornaments pointing outward. Pure black interior between rings — no fill. 256px diameter centered in cell.
+
+CENTER (~341px wide): flipper_scene — a sci-fi pinball flipper paddle, elongated tapered wedge shape: one end rounded and wider (~80px pivot end), other end tapers to narrow rounded tip (~30px). Aspect ratio ~5:1. Surface: metallic dark amber #1A0E00 with subtle angled groove lines. Border: 2px warm orange #FF8800 with 6px orange outer glow. Single bright highlight stripe (3px, lighter orange) along top surface edge. Small circular pivot dot at the wide end, glowing bright white-amber. 540 x 110 px on black.
+
+RIGHT (~341px wide): flipper_scene_mirror — the mirror image of the flipper above, pointing the opposite direction. Pivot dot on the opposite end.
+
+─── divider ───
+
+SECTION 3 — BUTTONS (Y: 584-834, H: 250)
+Three touch buttons in one row.
+
+LEFT (~341px): btn_flipper — a trapezoidal/hexagonal sci-fi game controller touch button, wider on one side. Border: 2.5px warm amber orange #FF9500, 8px orange outer glow. Dark fill with subtle metallic texture. Center: a lightning bolt symbol, glowing bright orange-white (~50px tall), white core with orange corona. Inner background has extremely faint hexagonal mesh pattern. NO text labels.
+
+CENTER (~341px): btn_flipper_mirror — mirror image of above, wider on opposite side.
+
+RIGHT (~341px): btn_circle — a circular sci-fi button, 128px diameter. Border: 2px electric cyan #00C8FF, 5px soft outer glow. Inner: dark fill with subtle radial lighter center spot. Outer ring has 4 tiny tick notch decorations at 12/3/6/9 o'clock. Center area is empty (for code-placed icon). Perfect circle.
+
+─── divider ───
+
+SECTION 4 — HUD ICONS (Y: 846-1126, H: 280)
+Six icons arranged 3 per row, 2 rows. Each ~341 x 140 px cell on black.
+
+TOP ROW (3 icons):
+1. icon_heart_full — geometric angular heart shape (not organic curves), filled solid bright neon coral-red #FF3366 with 6px soft red-pink glow. Inner bright white-pink highlight spot on upper-left. ~96px.
+
+2. icon_heart_empty — same geometric heart but outline only: 1.5px dim red outline, no fill, no glow. ~96px.
+
+3. icon_skill_execute — a sharp angular lightning bolt symbol, electric cyan #00C8FF with white core, 2px cyan outline with 4px glow. ~128px.
+
+BOTTOM ROW (3 icons):
+4. icon_skill_shield — a hexagonal shield shape, electric cyan outline (2px) with 4px glow. Center: cyan chevron/hook mark. Geometric, angular. ~128px.
+
+5. icon_star_full — sharp 5-pointed geometric star, filled solid bright gold #FFD700 with white-gold center. Thin white outline. ~64px.
+
+6. icon_star_empty — same 5-pointed star, outline only (1px dim gold). No fill, no glow. ~64px.
+
+─── divider ───
+
+SECTION 5 — COOLDOWN RING (Y: 1138-1394, H: 256)
+A single element centered in its section, full width.
+
+cd_ring — a circular sci-fi ability cooldown indicator ring. Two concentric rings: outer ring (bright cyan, 3px) and inner ring (dim cyan, 2px) with gap between. The space between rings is dark #080F1A. 12 evenly-spaced tick mark notches around the inner ring edge (every 30 degrees). Four triangular spike ornaments pointing outward at cardinal positions. Center: 40px circle with faint cyan fill and thin border. 256px diameter.
+
+─── divider ───
+
+SECTION 6 — DECORATIONS (Y: 1406-1530, H: 124)
+Three small decorative elements in one row on black.
+
+LEFT (~341px): corner_bracket — L-shaped UI corner bracket, top-left orientation. Two cyan lines, each 3px wide, 60px arm length. At intersection: 6x6px white square. At arm ends: small 12px perpendicular tick notches. ~88px.
+
+CENTER (~341px): arrow_chevron — double chevron arrow pointing down. Two stacked V-shapes: upper dim cyan, lower bright cyan with 4px glow. Outline only, no fill. ~64px.
+
+RIGHT (~341px): divider_line — horizontal sci-fi divider line. 2px height electric cyan line centered vertically. Brightest at center (near white-cyan core), fades to transparent at both ends. 6px soft glow above and below. Small bright diamond dot at exact center. ~800 x 24 px but scaled to fit.
+
+═══════════════════════════════════════════════
+QUALITY REQUIREMENTS:
+- Every element on pure black background within its cell
+- Absolute ZERO text labels, captions, watermarks, signatures
+- NO rounded corners anywhere — strict 90-degree angles
+- NO 3D shading, NO bevels, NO drop shadows, NO gradients (except where specified for metallic surfaces)
+- All neon glows soft and uniform, white-hot core fading to color
+- Perfect straight lines for all borders and edges
+- Overhead flat 2D orthographic view throughout
+- Elements should feel like premium sci-fi game UI production assets
+- Clean separation between all elements — no touching, no overlap

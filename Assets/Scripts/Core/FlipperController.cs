@@ -82,6 +82,9 @@ public class FlipperController : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D col)
     {
         if (!col.gameObject.CompareTag("Ball")) return;
+
+        ComboSystem.Instance?.BreakOnFlipper();
+
         var rb = col.rigidbody;
         if (rb == null) return;
 

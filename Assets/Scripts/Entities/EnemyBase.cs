@@ -97,19 +97,27 @@ public abstract class EnemyBase : MonoBehaviour
         {
             BallController ball = col.gameObject.GetComponent<BallController>();
             if (ball != null && ball.IsInvincible) return;
-            TakeHit();
+            TakeHit(1, true); // 标记来自球的碰撞
         }
     }
 
-    public virtual void TakeHit(int damage = 1)
+    public virtual void TakeHit(int damage = 1, bool isFromBall = false)
     {
         if (IsDead) return;
         CurrentHits += damage;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit * damage);
         OnHit();
+        
         if (CurrentHits >= maxHits)
+        {
+            // Boss 击杀触发完整特效
+            if (isFromBall && this is Boss)
+            {
+                VFXDirector.Instance?.TriggerBossKillEffect(transform.position);
+            }
             Die();
+        }
     }
 
     protected virtual void OnHit() { }

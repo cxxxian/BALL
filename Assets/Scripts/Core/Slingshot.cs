@@ -11,6 +11,10 @@ public class Slingshot : MonoBehaviour
     private SpriteRenderer _sr;
     private Color _baseColor;
 
+    // ── 碰撞冷却（防穿模抖动） ─────────────────────────────────────────
+    private float _lastHitTime = -1f;
+    private const float COLLISION_COOLDOWN = 0.05f;
+
     private void Awake()
     {
         _sr = GetComponentInChildren<SpriteRenderer>();
@@ -20,6 +24,12 @@ public class Slingshot : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D col)
     {
         if (!col.gameObject.CompareTag("Ball")) return;
+
+        // ── 碰撞冷却检测：防止穿模抖动 ─────────────────────────────────────
+        float currentTime = Time.time;
+        if (currentTime - _lastHitTime < COLLISION_COOLDOWN) return;
+        _lastHitTime = currentTime;
+
         var rb = col.rigidbody;
         if (rb != null)
         {
@@ -31,7 +41,7 @@ public class Slingshot : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit);
 
-        ComboSystem.Instance?.RegisterHit();
+        ComboSystem.Instance?.RegisterAirtimeHit();
         CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
 
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;

@@ -4,8 +4,8 @@ using System.Collections;
 public class FrostTower : MonoBehaviour
 {
     public int level = 1;
-    public float attackRadius = 6.0f; // 冰霜塔的影响范围很大
-    public float baseAttackInterval = 8.0f; // 频率比电塔低
+    public float attackRadius = 6.0f;
+    public float baseAttackInterval = 8.0f;
     public float freezeDuration = 1.5f;
 
     private float _timer = 0f;
@@ -14,7 +14,7 @@ public class FrostTower : MonoBehaviour
     {
         var sr = gameObject.AddComponent<SpriteRenderer>();
         sr.sprite = CreateTowerSprite();
-        sr.color = new Color(0.6f, 0.9f, 1f, 1f); // 冰霜淡蓝
+        sr.color = new Color(0.6f, 0.9f, 1f, 1f);
         sr.material = new Material(Shader.Find("Sprites/Default"));
         sr.sortingOrder = 3;
     }
@@ -34,8 +34,8 @@ public class FrostTower : MonoBehaviour
     private void AttackFrostNova()
     {
         Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, attackRadius);
-        
-        float currentFreezeDuration = freezeDuration + (level * 0.5f); // 等级提高冰冻时间
+
+        float currentFreezeDuration = freezeDuration + (level * 0.5f);
 
         foreach (var c in cols)
         {
@@ -43,9 +43,7 @@ public class FrostTower : MonoBehaviour
             {
                 var minion = c.GetComponent<Minion>();
                 if (minion != null && !minion.IsDead)
-                {
                     StartCoroutine(ApplyFreeze(minion, currentFreezeDuration));
-                }
             }
         }
 
@@ -55,22 +53,21 @@ public class FrostTower : MonoBehaviour
 
     private IEnumerator ApplyFreeze(Minion minion, float duration)
     {
-        // 如果怪物已经在被冰冻，不用重复加
         if (minion.moveSpeed <= 0f) yield break;
 
         float originalSpeed = minion.moveSpeed;
-        minion.moveSpeed = 0f; // 完全冻结
-        
+        minion.moveSpeed = 0f;
+
         var sr = minion.GetComponent<SpriteRenderer>();
         Color origColor = sr != null ? sr.color : Color.white;
-        if (sr != null) sr.color = new Color(0.5f, 0.8f, 1f, 1f); // 变成冰块色
+        if (sr != null) sr.color = new Color(0.5f, 0.8f, 1f, 1f);
 
         yield return new WaitForSeconds(duration);
 
         if (minion != null && !minion.IsDead)
         {
-            minion.moveSpeed = originalSpeed; // 恢复速度
-            if (sr != null) sr.color = origColor; // 恢复颜色
+            minion.moveSpeed = originalSpeed;
+            if (sr != null) sr.color = origColor;
         }
     }
 
@@ -78,7 +75,7 @@ public class FrostTower : MonoBehaviour
     {
         transform.localScale = new Vector3(1.3f, 1.3f, 1f);
         float t = 0;
-        while(t < 0.2f)
+        while (t < 0.2f)
         {
             t += Time.deltaTime;
             transform.localScale = Vector3.Lerp(new Vector3(1.3f, 1.3f, 1f), Vector3.one, t / 0.2f);
@@ -97,7 +94,7 @@ public class FrostTower : MonoBehaviour
         sr.material = new Material(Shader.Find("Sprites/Default"));
         sr.sortingOrder = 4;
 
-        float duration = 0.5f; 
+        float duration = 0.5f;
         float elapsed = 0f;
         Vector3 targetScale = new Vector3(attackRadius * 2, attackRadius * 2, 1f);
 
@@ -105,11 +102,10 @@ public class FrostTower : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
-            
-            // 冰霜扩散稍微平缓一点，用 ease-out
+
             float easeOut = 1f - Mathf.Pow(1f - t, 3f);
             nova.transform.localScale = Vector3.Lerp(Vector3.zero, targetScale, easeOut);
-            
+
             Color c = sr.color;
             c.a = Mathf.Lerp(0.7f, 0f, t);
             sr.color = c;
@@ -132,7 +128,7 @@ public class FrostTower : MonoBehaviour
             {
                 float dx = Mathf.Abs(x - half) / half;
                 float dy = Mathf.Abs(y - half) / half;
-                if (Mathf.Max(dx, dy) <= 0.7f) // 冰塔做成方形/菱形
+                if (Mathf.Max(dx, dy) <= 0.7f)
                 {
                     if (Mathf.Max(dx, dy) > 0.5f) tex.SetPixel(x, y, Color.white);
                     else tex.SetPixel(x, y, new Color(0.3f, 0.6f, 0.9f, 0.8f));
@@ -158,17 +154,13 @@ public class FrostTower : MonoBehaviour
                 float dx = (x - half);
                 float dy = (y - half);
                 float dist = Mathf.Sqrt(dx * dx + dy * dy);
-                
-                // 充满内部的半透明冰雾
+
                 if (dist <= r)
                 {
                     float alpha = 1f - (dist / r);
                     tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha * 0.5f));
                 }
-                else
-                {
-                    tex.SetPixel(x, y, Color.clear);
-                }
+                else tex.SetPixel(x, y, Color.clear);
             }
         }
         tex.Apply();

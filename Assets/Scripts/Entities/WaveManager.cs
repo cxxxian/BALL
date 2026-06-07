@@ -134,6 +134,10 @@ public class WaveManager : MonoBehaviour
             GameManager.Instance == null ||
             GameManager.Instance.State == GameState.GameOver);
 
+        // Boss 击杀特效播完后再进入 Buff 选择，避免界面立刻打断反馈
+        if (VFXDirector.Instance != null)
+            yield return VFXDirector.Instance.WaitForEffectComplete();
+
         // 清理残余小兵；若 Boss 因 GameOver 退出（未被球击杀），显式销毁
         ClearMinions();
         if (_currentBoss != null)
