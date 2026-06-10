@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Buff_ComboMaster
   m_EditorClassIdentifier: 
   buffName: "\u8FDE\u51FB\u5927\u5E08"
-  description: "Combo \u6280\u80FD\u89E6\u53D1\u9608\u503C -2"
+  description: "Combo \u5956\u52B1\u9608\u503C -2\uFF08\u4E0B\u9650 3\uFF09"
   rarity: 1
   effectType: 2
   effectValue: 2
-  maxStacks: 3
+  maxStacks: 2

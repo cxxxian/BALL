@@ -55,8 +55,7 @@ public class TeslaTower : MonoBehaviour
             }
         }
 
-        if (hitAny)
-            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+        JuiceRouter.TowerFire(transform.position, NeonRole.TowerTesla, hitAny);
 
         StartCoroutine(SpawnNovaEffect(actualRadius));
     }

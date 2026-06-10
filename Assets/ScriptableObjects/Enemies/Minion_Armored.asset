@@ -22,3 +22,7 @@ MonoBehaviour:
   damageToPlayer: 2
   isBomber: 0
   bomberDisableDuration: 5
+  showHealthBarOnSpawn: 1
+  healthBarVisibleDuration: 2
+  healthBarYOffset: 0.55
+  healthBarWidthScale: 0.95

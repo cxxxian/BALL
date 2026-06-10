@@ -7,6 +7,7 @@ public class ImpactFX : MonoBehaviour
 
     private ParticleSystem _burstPS;   // 主方块爆发
     private ParticleSystem _dustPS;    // 细小漂散尘埃
+    private ParticleSystem _dissolvePS; // 触底像素解体（方案 1）
     private Material       _particleMat;
     private Texture2D      _squareTex;
 
@@ -21,9 +22,7 @@ public class ImpactFX : MonoBehaviour
     /// <summary>在 worldPos 产生 Tron 风格像素粒子爆发。color 取碰撞物体的 Neon 颜色。</summary>
     public void SpawnHit(Vector2 worldPos, Color neonColor, float intensity = 1f)
     {
-        // 降低辉光过载倍率，防止颜色过曝粘连成“一坨”，保持原汁原味的霓虹色彩
-        Color hdr = neonColor * (2.8f * intensity);
-        hdr.a = 1f;
+        Color hdr = NeonColors.Active.ForParticle(neonColor, intensity);
 
         // 保持原本清爽、克制且粒粒分明的数量
         int burstCount = Mathf.RoundToInt(Mathf.Lerp(10f, 22f, intensity));
@@ -32,6 +31,46 @@ public class ImpactFX : MonoBehaviour
         EmitAt(_burstPS, worldPos, hdr,          burstCount);
         EmitAt(_dustPS,  worldPos, hdr * 0.6f,   dustCount);
         StartCoroutine(RingRoutine(worldPos, neonColor, intensity));
+    }
+
+    /// <summary>墙边短 HDR 闪条（沿墙切线方向）。</summary>
+    public void SpawnWallFlash(Vector2 worldPos, Vector2 normal, Color neonColor, float intensity = 1f)
+    {
+        StartCoroutine(WallFlashRoutine(worldPos, normal, neonColor, intensity));
+    }
+
+    /// <summary>护心符横向 cyan 波纹（比触底解体弱一档）。</summary>
+    public void SpawnShieldRipple(float shieldY, float halfWidth, Color neonColor, float intensity = 1f)
+    {
+        StartCoroutine(ShieldRippleRoutine(shieldY, halfWidth, neonColor, intensity));
+    }
+
+    /// <summary>
+    /// 触底扣血：密集像素块向下飞散（方案 1，不裁切 Sprite）。
+    /// </summary>
+    public void SpawnBottomDissolve(Vector2 worldPos, Color neonColor, float intensity = 1f)
+    {
+        Color hdr = NeonColors.Active.ForParticle(neonColor, intensity);
+
+        int count = Mathf.RoundToInt(Mathf.Lerp(32f, 52f, intensity));
+        float spread = 0.32f + intensity * 0.12f;
+
+        for (int i = 0; i < count; i++)
+        {
+            var ep = new ParticleSystem.EmitParams();
+            Vector2 offset = Random.insideUnitCircle * spread;
+            ep.position = new Vector3(worldPos.x + offset.x, worldPos.y + offset.y, -0.18f);
+            ep.startColor = hdr * Random.Range(0.8f, 1f);
+            ep.startSize = Random.Range(0.07f, 0.14f) * intensity;
+            ep.startLifetime = Random.Range(0.26f, 0.38f);
+            float vx = Random.Range(-2.8f, 2.8f);
+            float vy = Random.Range(-6f, -1.2f);
+            ep.velocity = new Vector3(vx, vy, 0f);
+            _dissolvePS.Emit(ep, 1);
+        }
+
+        CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+        StartCoroutine(BottomLineFlashRoutine(worldPos.y, neonColor, intensity));
     }
 
     // ── 内部工具 ──────────────────────────────────────────────────────────
@@ -68,8 +107,7 @@ public class ImpactFX : MonoBehaviour
         var ringMat = new Material(Shader.Find("Sprites/Default"));
         lr.material = ringMat;
 
-        Color hdrRing = neonColor * 3.5f;
-        hdrRing.a = 1f;
+        Color hdrRing = NeonColors.Active.ForParticle(neonColor, 1f + intensity * 0.15f);
 
         float dur = 0.20f;
         float endScale = 1.6f + intensity * 0.8f;
@@ -86,6 +124,108 @@ public class ImpactFX : MonoBehaviour
         Destroy(go);
     }
 
+    private IEnumerator WallFlashRoutine(Vector2 worldPos, Vector2 normal, Color neonColor, float intensity)
+    {
+        Vector2 tangent = new Vector2(-normal.y, normal.x);
+        if (tangent.sqrMagnitude < 0.001f) tangent = Vector2.right;
+        tangent.Normalize();
+
+        float halfLen = 0.22f + intensity * 0.12f;
+        var go = new GameObject("WallFlash");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.sortingOrder = 11;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+        lr.startWidth = 0.06f * intensity;
+        lr.endWidth = lr.startWidth;
+
+        Color flash = NeonColors.Active.ForParticle(neonColor, 1f + intensity * 0.2f);
+        const float dur = 0.15f;
+        for (float t = 0f; t < dur; t += Time.deltaTime)
+        {
+            float p = t / dur;
+            float alpha = 1f - p;
+            var c = new Color(flash.r, flash.g, flash.b, alpha);
+            lr.startColor = c;
+            lr.endColor = c;
+            lr.startWidth = Mathf.Lerp(0.08f * intensity, 0.02f, p);
+            lr.endWidth = lr.startWidth;
+
+            Vector2 center = worldPos + normal * 0.04f;
+            lr.SetPosition(0, center - tangent * halfLen);
+            lr.SetPosition(1, center + tangent * halfLen);
+            yield return null;
+        }
+        Destroy(go);
+    }
+
+    private IEnumerator ShieldRippleRoutine(float shieldY, float halfWidth, Color neonColor, float intensity)
+    {
+        var go = new GameObject("ShieldRipple");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.sortingOrder = 14;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+
+        Color flash = NeonColors.Active.ForParticle(neonColor, 0.95f + intensity * 0.15f);
+        const float dur = 0.28f;
+        for (float t = 0f; t < dur; t += Time.deltaTime)
+        {
+            float p = t / dur;
+            float expand = Mathf.SmoothStep(0f, 1f, p);
+            float half = halfWidth * expand;
+            float alpha = (1f - p) * (1f - p);
+
+            lr.SetPosition(0, new Vector3(-half, shieldY, -0.1f));
+            lr.SetPosition(1, new Vector3( half, shieldY, -0.1f));
+
+            var c = new Color(flash.r, flash.g, flash.b, alpha);
+            lr.startColor = c;
+            lr.endColor = c;
+            float w = Mathf.Lerp(0.04f, 0.14f, expand) * intensity;
+            lr.startWidth = w;
+            lr.endWidth = w;
+            yield return null;
+        }
+        Destroy(go);
+    }
+
+    /// <summary>底线位置短横线闪白（创战纪式擦除感）。</summary>
+    private IEnumerator BottomLineFlashRoutine(float y, Color neonColor, float intensity)
+    {
+        var cfg = GameManager.Instance != null ? GameManager.Instance.config : null;
+        float halfW = cfg != null ? cfg.worldWidth * 0.48f : 4.3f;
+
+        var go = new GameObject("BottomLineFlash");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.sortingOrder = 12;
+        lr.startWidth = 0.07f * intensity;
+        lr.endWidth   = lr.startWidth;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+        lr.SetPosition(0, new Vector3(-halfW, y, -0.12f));
+        lr.SetPosition(1, new Vector3( halfW, y, -0.12f));
+
+        Color flash = NeonColors.Active.ForParticle(Color.Lerp(Color.white, neonColor, 0.35f), 1f + intensity * 0.15f);
+
+        const float dur = 0.14f;
+        for (float t = 0f; t < dur; t += Time.deltaTime)
+        {
+            float p = t / dur;
+            float alpha = 1f - p;
+            var c = new Color(flash.r, flash.g, flash.b, alpha);
+            lr.startColor = c;
+            lr.endColor   = c;
+            lr.startWidth = Mathf.Lerp(0.09f * intensity, 0.02f, p);
+            lr.endWidth   = lr.startWidth;
+            yield return null;
+        }
+        Destroy(go);
+    }
+
     // ── 粒子系统构建 ─────────────────────────────────────────────────────
     private void BuildSystems()
     {
@@ -95,6 +235,53 @@ public class ImpactFX : MonoBehaviour
 
         _burstPS = BuildPS("Burst", 0.25f, 0.55f, 2.5f, 9f, 0.05f, 0.18f, 500);
         _dustPS  = BuildPS("Dust",  0.4f,  0.85f, 0.5f, 3f,  0.02f, 0.07f, 300);
+        _dissolvePS = BuildDissolvePS();
+    }
+
+    private ParticleSystem BuildDissolvePS()
+    {
+        var go = new GameObject("ImpactPS_Dissolve");
+        go.transform.SetParent(transform);
+        var ps = go.AddComponent<ParticleSystem>();
+
+        var main = ps.main;
+        main.loop = false;
+        main.playOnAwake = false;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.startLifetime = 0.35f;
+        main.startSpeed = 0f;
+        main.startSize = 0.1f;
+        main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
+        main.gravityModifier = 0.15f;
+        main.maxParticles = 600;
+
+        var em = ps.emission;
+        em.enabled = false;
+
+        var shape = ps.shape;
+        shape.enabled = false;
+
+        // 保持块大小，末尾快速消失（避免拖尾感）
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size = new ParticleSystem.MinMaxCurve(1f,
+            new AnimationCurve(
+                new Keyframe(0f, 1f), new Keyframe(0.78f, 1f), new Keyframe(1f, 0f)));
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        var grad = new Gradient();
+        grad.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.75f), new GradientAlphaKey(0f, 0.9f) });
+        col.color = new ParticleSystem.MinMaxGradient(grad);
+
+        var rend = ps.GetComponent<ParticleSystemRenderer>();
+        rend.renderMode = ParticleSystemRenderMode.Billboard;
+        rend.material = _particleMat;
+        rend.sortingOrder = 11;
+
+        return ps;
     }
 
     private ParticleSystem BuildPS(string goName,
@@ -117,7 +304,7 @@ public class ImpactFX : MonoBehaviour
         main.startSize       = new ParticleSystem.MinMaxCurve(sizeMin, sizeMax);
         main.startRotation   = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
         main.startColor      = Color.white;
-        main.gravityModifier = 0f;
+        main.gravityModifier = 0.15f;
         main.maxParticles    = maxParticles;
 
         // Emission off (manual)

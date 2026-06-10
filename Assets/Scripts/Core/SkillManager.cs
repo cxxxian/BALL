@@ -26,11 +26,9 @@ public class SkillManager : MonoBehaviour
         new SkillSlot { type = ActiveSkillType.BlockShield,  maxCooldown = 15f }
     };
 
-    // ── 瞄准状态（仅 ExecuteChain 需要）─────────────────────────────────
     public bool IsAiming   { get; private set; }
     public int  AimingSlot { get; private set; } = -1;
 
-    // ── 事件 ──────────────────────────────────────────────────────────────
     [HideInInspector] public UnityEvent<int, float> onSlotCooldownChanged  = new UnityEvent<int, float>();
     [HideInInspector] public UnityEvent<int>        onSlotActivated        = new UnityEvent<int>();
     [HideInInspector] public UnityEvent             onExecuteChainActivated = new UnityEvent();
@@ -55,7 +53,8 @@ public class SkillManager : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance?.State != GameState.Playing) return;
+        if (GameManager.Instance == null) return;
+        if (!GameManager.Instance.IsWaveSimActive()) return;
 
         for (int i = 0; i < slots.Length; i++)
         {
@@ -79,7 +78,13 @@ public class SkillManager : MonoBehaviour
         }
     }
 
-    // ── 激活指定槽位 ─────────────────────────────────────────────────────
+    public void CancelAiming()
+    {
+        if (!IsAiming) return;
+        IsAiming   = false;
+        AimingSlot = -1;
+    }
+
     public bool TryActivate(int slotIndex)
     {
         if (slotIndex < 0 || slotIndex >= slots.Length) return false;
@@ -107,7 +112,6 @@ public class SkillManager : MonoBehaviour
         return true;
     }
 
-    // ── BulletTimeAim 瞄准完成后调用 ─────────────────────────────────────
     public void Fire(Vector2 direction)
     {
         if (!IsAiming) return;
@@ -125,18 +129,13 @@ public class SkillManager : MonoBehaviour
         }
     }
 
-    // ── 开始冷却（含 Buff 减 CD 修正）────────────────────────────────────
     private void StartCooldown(int slotIndex)
     {
-        var slot  = slots[slotIndex];
-        float cd  = slot.maxCooldown;
-        if (BuffManager.Instance != null)
-            cd = Mathf.Max(2f, cd * (1f - BuffManager.Instance.ComboThresholdReduction * 0.15f));
-        slot.currentCD = cd;
+        var slot = slots[slotIndex];
+        slot.currentCD = slot.maxCooldown;
         onSlotCooldownChanged.Invoke(slotIndex, slot.CooldownRatio);
     }
 
-    // ── 向后兼容：无参版本默认激活槽 0 ──────────────────────────────────
     public bool TryActivate() => TryActivate(0);
 
     private void OnGameStart()

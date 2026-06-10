@@ -22,7 +22,7 @@ MonoBehaviour:
   respawnDelay: 0.3
   launchAngleRange: {x: 60, y: 80}
   initialLives: 3
-  maxLives: 6
+  maxLives: 5
   flipperRestAngle: -30
   flipperActivatedAngle: 15
   flipperAnimDuration: 0.08
@@ -30,3 +30,5 @@ MonoBehaviour:
   scorePerGruntKill: 50
   worldWidth: 9
   worldHeight: 16
+  minionBottomLineY: -8.5
+  neonPalette: {fileID: 11400000, guid: 1a2de9d420a62ab41868e26fab8a0e51, type: 2}

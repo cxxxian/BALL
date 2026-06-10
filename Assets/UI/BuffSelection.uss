@@ -67,46 +67,69 @@
     border-radius: 2px;
 }
 
-/* 1. Common (普通白) */
+/* 1. Common (普通白) — 边框静止 */
 .rarity-common {
     color: rgb(255, 255, 255);
     background-color: rgba(255, 255, 255, 0.12);
     border-color: rgb(255, 255, 255);
     border-width: 1px;
 }
-.card:has(.rarity-common) {
+.card-rarity-common {
     border-color: rgba(255, 255, 255, 0.35);
 }
-.card:has(.rarity-common):hover {
+.card-rarity-common:hover {
     border-color: rgb(255, 255, 255);
 }
 
-/* 2. Rare (赛博青) */
+/* 2. Rare (赛博青) — 边框静止 */
 .rarity-rare {
     color: rgb(0, 242, 255);
     background-color: rgba(0, 242, 255, 0.12);
     border-color: rgb(0, 242, 255);
     border-width: 1px;
 }
-.card:has(.rarity-rare) {
+.card-rarity-rare {
     border-color: rgba(0, 242, 255, 0.4);
 }
-.card:has(.rarity-rare):hover {
+.card-rarity-rare:hover {
     border-color: rgb(0, 242, 255);
 }
 
-/* 3. Epic (爆裂粉) */
+/* 3. Epic (爆裂粉) — 边框呼吸由 C# 驱动（禁 transition 避免抹平脉冲） */
 .rarity-epic {
     color: rgb(255, 0, 119);
     background-color: rgba(255, 0, 119, 0.12);
     border-color: rgb(255, 0, 119);
     border-width: 1px;
 }
-.card:has(.rarity-epic) {
-    border-color: rgba(255, 0, 119, 0.4);
+.card-rarity-epic {
+    transition-duration: 0s;
 }
-.card:has(.rarity-epic):hover {
-    border-color: rgb(255, 0, 119);
+.card-rarity-epic:hover {
+    transition-duration: 0s;
+}
+
+/* ── 空槽占位（满层后预留，后续可接新 Buff）──────────────── */
+.card-empty {
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(3, 7, 20, 0.55);
+    opacity: 0.45;
+}
+
+.card-empty:hover {
+    scale: 1 1;
+    background-color: rgba(3, 7, 20, 0.55);
+}
+
+.card-empty .select-btn {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.25);
+    background-color: transparent;
+    cursor: arrow;
+}
+
+.card-empty .buff-name {
+    color: rgba(255, 255, 255, 0.35);
 }
 
 

@@ -36,17 +36,18 @@ public class FrostTower : MonoBehaviour
         Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, attackRadius);
 
         float currentFreezeDuration = freezeDuration + (level * 0.5f);
+        bool hitAny = false;
 
         foreach (var c in cols)
         {
-            if (c.CompareTag("Enemy"))
-            {
-                var minion = c.GetComponent<Minion>();
-                if (minion != null && !minion.IsDead)
-                    StartCoroutine(ApplyFreeze(minion, currentFreezeDuration));
-            }
+            if (!c.CompareTag("Enemy")) continue;
+            var minion = c.GetComponent<Minion>();
+            if (minion == null || minion.IsDead) continue;
+            hitAny = true;
+            StartCoroutine(ApplyFreeze(minion, currentFreezeDuration));
         }
 
+        JuiceRouter.TowerFire(transform.position, NeonRole.TowerFrost, hitAny);
         StartCoroutine(SpawnFrostEffect());
         StartCoroutine(TowerPulse());
     }

@@ -13,10 +13,10 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
     [SerializeField] private Vector2 panelOffset = new Vector2(0f, -30f); // 置顶
 
     [Header("Style")]
-    [SerializeField] private Color fillColor = new Color(1f, 0f, 0.5f, 1f); // Magenta
-    [SerializeField] private Color bufferColor = new Color(1f, 0.9f, 0.2f, 1f); // Yellow buffer
-    [SerializeField] private Color frameColor = new Color(0.1f, 0.05f, 0.15f, 0.9f); // Dark metal
-    [SerializeField] private Color glowColor = new Color(1f, 0f, 0.5f, 0.3f); // Glow border
+    [SerializeField] private Color fillColor = new Color(1f, 0f, 0.5f, 1f); // Magenta — 当前血量
+    [SerializeField] private Color bufferColor = new Color(1f, 0.62f, 0.12f, 1f); // 橙黄 — 延迟扣血缓冲
+    [SerializeField] private Color frameColor = new Color(0.1f, 0.05f, 0.15f, 0.9f);
+    [SerializeField] private Color glowColor = new Color(1f, 0.55f, 0.1f, 0.22f); // 暖色边框，避免品红块
     [SerializeField] private Color textColor = new Color(0.95f, 0.9f, 1f, 0.95f);
 
     private EnemyBase _enemy;
@@ -48,6 +48,29 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
     public void Bind(EnemyBase enemy)
     {
         _enemy = enemy;
+        _boss = enemy as Boss;
+        RefreshAvatar();
+    }
+
+    private void RefreshAvatar()
+    {
+        if (_avatarImage == null) return;
+        Sprite sprite = null;
+        if (_boss != null && _boss.definition != null)
+            sprite = _boss.definition.sprite;
+        if (sprite != null)
+        {
+            _avatarImage.sprite = sprite;
+            _avatarImage.color = Color.white;
+            _avatarImage.enabled = true;
+            _avatarImage.type = Image.Type.Simple;
+        }
+        else
+        {
+            _avatarImage.sprite = GetWhiteSprite();
+            _avatarImage.color = new Color(1f, 0.92f, 0.25f, 1f);
+            _avatarImage.enabled = true;
+        }
     }
 
     private IEnumerator IntroAnimation()
@@ -167,10 +190,11 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         _group.interactable = false;
         _group.blocksRaycasts = false;
 
-        // Glow Border
+        // Glow Border（offset 扩展，避免 Stretch + sizeDelta 撑出面板）
         var glow = CreateImage("Glow", panelObj.transform, glowColor);
         Stretch(glow.rectTransform);
-        glow.rectTransform.sizeDelta = new Vector2(10f, 10f); // 比边框稍微大一点
+        glow.rectTransform.offsetMin = new Vector2(-3f, -3f);
+        glow.rectTransform.offsetMax = new Vector2(3f, 3f);
 
         // Metal Frame
         var frame = CreateImage("Frame", panelObj.transform, frameColor);
@@ -191,8 +215,10 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         var avatarMaskImg = avatarMaskObj.AddComponent<Image>();
         avatarMaskImg.sprite = GetWhiteSprite();
         avatarMaskImg.color = Color.white;
+        avatarMaskImg.type = Image.Type.Simple;
         var mask = avatarMaskObj.AddComponent<Mask>();
-        mask.showMaskGraphic = false;
+        mask.showMaskGraphic = true;
+        avatarMaskImg.color = new Color(0.15f, 0.05f, 0.2f, 1f);
         var maskRt = avatarMaskObj.GetComponent<RectTransform>();
         Stretch(maskRt);
         maskRt.sizeDelta = new Vector2(-6f, -6f);
@@ -200,9 +226,9 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         var avatarImgObj = new GameObject("AvatarImg");
         avatarImgObj.transform.SetParent(avatarMaskObj.transform, false);
         _avatarImage = avatarImgObj.AddComponent<Image>();
-        _avatarImage.color = Color.white;
-        if (_boss != null && _boss.definition != null && _boss.definition.sprite != null)
-            _avatarImage.sprite = _boss.definition.sprite;
+        _avatarImage.type = Image.Type.Simple;
+        _avatarImage.preserveAspect = true;
+        RefreshAvatar();
         var avatarRt = avatarImgObj.GetComponent<RectTransform>();
         Stretch(avatarRt);
         avatarRt.localEulerAngles = new Vector3(0f, 0f, -45f); // 抵消父节点的旋转
@@ -236,19 +262,21 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         barBg.rectTransform.sizeDelta = new Vector2(-120f, 24f); // 留出空间
         barBg.rectTransform.anchoredPosition = new Vector2(30f, 12f);
 
-        // Buffer Bar
+        // Buffer Bar（橙黄，在 Fill 下层）
         var buffer = CreateImage("Buffer", barBg.transform, bufferColor);
         _bufferRect = buffer.rectTransform;
         Stretch(_bufferRect);
         _bufferRect.anchorMax = Vector2.one;
         _bufferRect.pivot = new Vector2(0f, 0.5f);
+        buffer.type = Image.Type.Simple;
 
-        // Fill Bar
+        // Fill Bar（品红，当前血量，叠在 Buffer 上）
         var fill = CreateImage("Fill", barBg.transform, fillColor);
         _fillRect = fill.rectTransform;
         Stretch(_fillRect);
         _fillRect.anchorMax = Vector2.one;
         _fillRect.pivot = new Vector2(0f, 0.5f);
+        fill.type = Image.Type.Simple;
     }
 
     private void Shake()

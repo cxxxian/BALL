@@ -26,7 +26,7 @@ public class Bumper : MonoBehaviour
     {
         _sr  = GetComponentInChildren<SpriteRenderer>();
         _col = GetComponent<Collider2D>();
-        if (_sr != null) _baseColor = _sr.color;
+        RefreshFromPalette();
 
         var glowT = transform.Find("Glow");
         if (glowT != null)
@@ -43,9 +43,9 @@ public class Bumper : MonoBehaviour
         _passthrough = passthrough;
         if (_col != null) _col.enabled = !passthrough;
 
-        Color dim = new Color(_baseColor.r * 0.15f, _baseColor.g * 0.15f, _baseColor.b * 0.15f, 1f);
+        Color dim = NeonPalette.Dim(_baseColor, 0.15f);
         if (_sr != null) _sr.color = passthrough ? dim : (_disabled
-            ? new Color(_baseColor.r * 0.25f, _baseColor.g * 0.25f, _baseColor.b * 0.25f, 1f)
+            ? NeonPalette.Dim(_baseColor, 0.25f)
             : _baseColor);
         if (_glowSR != null) _glowSR.color = passthrough
             ? new Color(_glowBaseColor.r, _glowBaseColor.g, _glowBaseColor.b, 0.08f)
@@ -65,7 +65,14 @@ public class Bumper : MonoBehaviour
                 _glowSR.color = _glowBaseColor;
             }
         }
-        if (_sr != null) _sr.color = disabled ? new Color(_baseColor.r * 0.25f, _baseColor.g * 0.25f, _baseColor.b * 0.25f, 1f) : _baseColor;
+        if (_sr != null) _sr.color = disabled ? NeonPalette.Dim(_baseColor, 0.25f) : _baseColor;
+    }
+
+    public void RefreshFromPalette()
+    {
+        _baseColor = NeonColors.Active.GetBase(NeonRole.Bumper);
+        if (_sr != null && !_flashing && !_passthrough)
+            _sr.color = _disabled ? NeonPalette.Dim(_baseColor, 0.25f) : _baseColor;
     }
 
     private void OnCollisionEnter2D(Collision2D col)
@@ -88,11 +95,9 @@ public class Bumper : MonoBehaviour
             GameManager.Instance.AddScore(scoreOnHit);
 
         ComboSystem.Instance?.RegisterAirtimeHit();
-        CameraShake.Instance?.Shake(CameraShake.Preset.Light);
 
-        // Tron 像素粒子爆发（取自身 Neon 颜色）
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
-        ImpactFX.Instance?.SpawnHit(hitPos, _baseColor, 1f);
+        JuiceRouter.Play(JuiceRouter.Tier.Hit, hitPos, _baseColor);
 
         AudioManager.Instance?.PlayBounce();
 
@@ -102,20 +107,19 @@ public class Bumper : MonoBehaviour
     private IEnumerator Flash()
     {
         _flashing = true;
-        // HDR 超曝白：值 > 1 才能触发 URP Bloom，产生亮眼白色脉冲
-        if (_sr != null) _sr.color = new Color(6f, 6f, 6f, 1f);
+        var palette = NeonColors.Active;
+        if (_sr != null) _sr.color = palette.GetFlash(NeonRole.Bumper);
 
-        // Glow 冲击扩张 + HDR 青色脉冲
         if (_glowSR != null)
         {
             _glowSR.transform.localScale = _glowBaseScale * 2.4f;
-            _glowSR.color = new Color(1.5f, 5f, 5f, 1f);
+            _glowSR.color = palette.GetBumperFlashGlow();
         }
 
         yield return new WaitForSeconds(flashDuration);
 
         if (_sr != null) _sr.color = _disabled
-            ? new Color(_baseColor.r * 0.25f, _baseColor.g * 0.25f, _baseColor.b * 0.25f, 1f)
+            ? NeonPalette.Dim(_baseColor, 0.25f)
             : _baseColor;
         if (_glowSR != null)
         {

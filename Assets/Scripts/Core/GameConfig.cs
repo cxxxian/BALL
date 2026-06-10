@@ -18,7 +18,7 @@ public class GameConfig : ScriptableObject
 
     [Header("Life System")]
     public int initialLives = 3;
-    public int maxLives = 6;
+    public int maxLives = 5;
 
     [Header("Flipper Settings")]
     public float flipperRestAngle = -30f;
@@ -35,7 +35,7 @@ public class GameConfig : ScriptableObject
     [Header("Combo")]
     public float comboTimeout = 2f;                  // 超时重置连击
     public int comboDisplayThreshold = 3;            // 达到此数显示 Combo UI
-    public float comboEnergyBase = 0.06f;            // 每次命中的基础蓝条增量
+    // comboEnergyBase 已废弃：充能豆推迟至弹药型弹珠技能
 
     [Header("Camera Shake")]
     public float shakeTraumaLight = 0.32f;           // Bumper
@@ -60,4 +60,12 @@ public class GameConfig : ScriptableObject
     [Header("Camera / World")]
     public float worldWidth = 9f;
     public float worldHeight = 16f;
+
+    [Header("Danger Line")]
+    [Tooltip("小兵中心 Y ≤ 此值时扣玩家血并消失（挡板下方落水线，须在弹珠发射点以下）")]
+    public float minionBottomLineY = -8.5f;
+
+    [Header("Neon Visuals")]
+    [Tooltip("统一霓虹语法 Palette；改此资产即可全局换色")]
+    public NeonPalette neonPalette;
 }

@@ -24,7 +24,7 @@ public class MinionDefinition : ScriptableObject
     [Tooltip("受击后血条至少保持可见的时间")]
     public float healthBarVisibleDuration = 1.2f;
     [Tooltip("血条相对小兵头顶的偏移")]
-    public float healthBarYOffset = 0.85f;
+    public float healthBarYOffset = 0.52f;
     [Tooltip("血条宽度倍率")]
     public float healthBarWidthScale = 1f;
 

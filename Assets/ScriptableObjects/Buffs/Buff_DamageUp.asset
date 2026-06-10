@@ -17,4 +17,4 @@ MonoBehaviour:
   rarity: 0
   effectType: 0
   effectValue: 1
-  maxStacks: 5
+  maxStacks: 4

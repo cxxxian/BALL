@@ -23,11 +23,12 @@ public class BlockShield : MonoBehaviour
     private Coroutine    _routine;
     private float        _timer;
 
-    // 可见颜色（Sprites/Default 不支持 HDR，保持 0-1 范围）
-    private static readonly Color ColActive = new Color(0f,   0.9f, 1f,   1f);   // 亮青蓝
-    private static readonly Color ColDim    = new Color(0f,   0.5f, 0.8f, 1f);   // 暗青
-    private static readonly Color ColAbsorb = new Color(0.5f, 1f,   1f,   1f);   // 高亮白青
-    private static readonly Color ColOff    = new Color(0f,   0f,   0f,   0f);
+    private static readonly Color ColOff = new Color(0f, 0f, 0f, 0f);
+
+    private Color ColActive => NeonColors.Active.GetBase(NeonRole.SkillShield);
+    private Color ColDim    => NeonPalette.Dim(ColActive, 0.55f);
+    private Color ColAbsorb => Color.Lerp(ColActive, Color.white, 0.45f);
+    private Color ColParticle => NeonPalette.Dim(ColActive, 0.6f);
 
     private void Awake()
     {
@@ -84,6 +85,7 @@ public class BlockShield : MonoBehaviour
 
         // 入场：从中心向两侧展开
         yield return StartCoroutine(ExpandRoutine(0.25f));
+        JuiceRouter.ShieldActivate(shieldY, shieldHalfWidth);
 
         // 正常脉动阶段
         while (_timer > blinkStartTime)
@@ -118,9 +120,7 @@ public class BlockShield : MonoBehaviour
         _line.startWidth = 0.40f;
         _line.endWidth   = 0.40f;
 
-        // 震屏 + 粒子
-        CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
-        SpawnAbsorbFX();
+        JuiceRouter.ShieldAbsorb(shieldY, shieldHalfWidth);
 
         // 击杀下半屏所有小兵
         KillLowerHalfMinions();
@@ -180,18 +180,6 @@ public class BlockShield : MonoBehaviour
         _line.endColor   = c;
     }
 
-    private void SpawnAbsorbFX()
-    {
-        if (ImpactFX.Instance == null) return;
-        int steps = 7;
-        for (int i = 0; i <= steps; i++)
-        {
-            float t = (float)i / steps;
-            float x = Mathf.Lerp(-shieldHalfWidth, shieldHalfWidth, t);
-            ImpactFX.Instance.SpawnHit(new Vector2(x, shieldY), new Color(0f, 0.5f, 1f), 1.3f);
-        }
-    }
-
     // ── 击杀下半屏小兵 ────────────────────────────────────────────────────
     private void KillLowerHalfMinions()
     {
@@ -209,7 +197,7 @@ public class BlockShield : MonoBehaviour
         {
             if (e == null || e.IsDead) continue;
             if (ImpactFX.Instance != null)
-                ImpactFX.Instance.SpawnHit(e.transform.position, new Color(0f, 0.5f, 1f), 1.0f);
+                ImpactFX.Instance.SpawnHit(e.transform.position, ColParticle, 1.0f);
             e.ForceKill();
         }
     }

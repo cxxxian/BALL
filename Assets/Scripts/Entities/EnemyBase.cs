@@ -14,33 +14,41 @@ public abstract class EnemyBase : MonoBehaviour
 
     [Header("Bottom Detection")]
     [Tooltip("禁用底线检测（Boss 设为 false）")]
-    public bool  checkBottomLine   = true;
+    public bool checkBottomLine = true;
 
-    public static float BottomLineY = -7.5f;
+    private const float FallbackBottomLineY = -8.5f;
 
     public int  CurrentHits { get; protected set; } = 0;
     public bool IsDead      { get; protected set; } = false;
 
     public UnityEvent<EnemyBase> onDeath = new UnityEvent<EnemyBase>();
 
-    protected Rigidbody2D _rb;
+    protected Rigidbody2D     _rb;
+    public SpriteRenderer MainSR { get; protected set; }
+    public    Color          BaseColor { get; protected set; } = Color.white;
 
     protected virtual void Awake()
     {
-        _rb = GetComponent<Rigidbody2D>();
+        _rb    = GetComponent<Rigidbody2D>();
+        MainSR = GetComponent<SpriteRenderer>();
     }
 
-    protected virtual void Update()
+    protected virtual void LateUpdate()
     {
         if (IsDead) return;
         if (checkBottomLine)
         {
-            // 护盾激活时：在护盾线处截击；否则在普通底线触发
             bool shieldUp = BlockShield.Instance != null && BlockShield.Instance.IsActive;
-            float checkY  = shieldUp ? BlockShield.Instance.shieldY : BottomLineY;
+            float checkY  = shieldUp ? BlockShield.Instance.shieldY : GetMinionBottomLineY();
             if (transform.position.y <= checkY)
                 OnReachBottom();
         }
+    }
+
+    private static float GetMinionBottomLineY()
+    {
+        var cfg = GameManager.Instance != null ? GameManager.Instance.config : null;
+        return cfg != null ? cfg.minionBottomLineY : FallbackBottomLineY;
     }
 
     protected virtual void FixedUpdate()
@@ -70,16 +78,49 @@ public abstract class EnemyBase : MonoBehaviour
         if (BlockShield.Instance != null && BlockShield.Instance.IsActive)
         {
             BlockShield.Instance.TriggerAbsorb();
-            WaveManager.Instance?.UnregisterMinion(this);
-            Destroy(gameObject);
+            FinishBottomExit(NeonColors.Active.GetBase(NeonRole.SkillShield), 0.85f);
             return;
         }
 
-        GameManager.Instance?.TakeDamage(damageToPlayer);
+        bool tookDamage = true;
+        if (BuffManager.Instance != null &&
+            BuffManager.Instance.TryConsumeHeartGuard(out bool showShieldVfx))
+        {
+            if (showShieldVfx)
+                HUDController.Instance?.PlayHeartGuardShieldVfx();
+            tookDamage = false;
+        }
+        else
+            GameManager.Instance?.TakeDamage(damageToPlayer);
+
         if (isBomber)
             WaveManager.Instance?.TriggerBomberEffect(bomberDisableDuration);
+
+        FinishBottomExit(GetDissolveColor(), tookDamage ? 1f : 0.65f);
+    }
+
+    protected virtual Color GetDissolveColor()
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        return sr != null ? sr.color : NeonColors.Active.GetBase(NeonRole.Danger);
+    }
+
+    private void FinishBottomExit(Color dissolveColor, float intensity)
+    {
+        HideVisualForDissolve();
+        ImpactFX.Instance?.SpawnBottomDissolve(transform.position, dissolveColor, intensity);
         WaveManager.Instance?.UnregisterMinion(this);
         Destroy(gameObject);
+    }
+
+    private void HideVisualForDissolve()
+    {
+        foreach (var col in GetComponentsInChildren<Collider2D>())
+            col.enabled = false;
+        foreach (var sr in GetComponentsInChildren<SpriteRenderer>())
+            sr.enabled = false;
+        foreach (var canvas in GetComponentsInChildren<Canvas>(true))
+            canvas.gameObject.SetActive(false);
     }
 
     // ── 护盾清场：强制击杀（给分，触发死亡流程）───────────────────────────
@@ -96,19 +137,24 @@ public abstract class EnemyBase : MonoBehaviour
         if (col.gameObject.CompareTag("Ball"))
         {
             BallController ball = col.gameObject.GetComponent<BallController>();
-            if (ball != null && ball.IsInvincible) return;
-            TakeHit(1, true); // 标记来自球的碰撞
+            // 斩杀链由 BallController 统一结算，避免双次 TakeHit
+            if (ball != null && ball.IsExecuteChainActive) return;
+            Vector2? hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2?)null;
+            TakeHit(1, true, hitPos);
         }
     }
 
-    public virtual void TakeHit(int damage = 1, bool isFromBall = false)
+    public virtual void TakeHit(int damage = 1, bool isFromBall = false, Vector2? hitPos = null)
     {
         if (IsDead) return;
+        if (isFromBall && BuffManager.Instance != null)
+            damage += BuffManager.Instance.BallDamageBonus;
         CurrentHits += damage;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit * damage);
         OnHit();
-        
+        EnemyJuice.OnHit(this, isFromBall, hitPos);
+
         if (CurrentHits >= maxHits)
         {
             // Boss 击杀触发完整特效
@@ -128,6 +174,7 @@ public abstract class EnemyBase : MonoBehaviour
         if (_rb != null) _rb.velocity = Vector2.zero;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnKill);
+        EnemyJuice.OnKill(this, transform.position);
         onDeath.Invoke(this);
         OnDie();
         Destroy(gameObject);

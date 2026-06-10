@@ -23,6 +23,11 @@ public class FlipperFX : MonoBehaviour
 
     private static readonly int HitFlashID = Shader.PropertyToID("_HitFlash");
 
+    public void TriggerCatchFlash()
+    {
+        _flashValue = Mathf.Max(_flashValue, flashPeak);
+    }
+
     private void Awake()
     {
         _flipper = GetComponent<FlipperController>();

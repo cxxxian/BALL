@@ -11,15 +11,38 @@ public class BallController : MonoBehaviour
     public BallDefinition ballDefinition;
 
     public bool IsInvincible       { get; private set; } = false;
+    public bool IsExecuteChainActive => _executeChainActive;
     public bool IsWaitingForLaunch { get; private set; } = false;
+
+    /// <summary>
+    /// 底线掉球判定：发球等待 / 重生无敌 忽略；Slash 斩杀链期间仍算掉球。
+    /// </summary>
+    public bool CanLoseLifeFromBottom()
+    {
+        if (IsWaitingForLaunch) return false;
+        if (IsInvincible && !_executeChainActive) return false;
+        return _launched;
+    }
     public float SpeedMultiplier   { get; set; } = 1f;  // 动态速度倍率限制（加速齿轮等机制使用）
     public Rigidbody2D Rb => _rb;
 
     // ── 斩杀连锁技能状态 ──────────────────────────────────────────────
+    private static readonly Color DefaultTrailStart = Color.white;
+    private static readonly Color DefaultTrailEnd   = new Color(1f, 1f, 1f, 0f);
+
+    // ── 默认拖尾动态（M2 过载轨视觉预埋）──────────────────────────────
+    private const int   ComboTrailTintStart = 10;
+    private const int   ComboTrailTintFull  = 15;
+    private const float ComboTrailTintMax   = 0.38f;
+    private static readonly Color ComboTrailMagentaHdr = new Color(1.75f, 0.3f, 1.65f, 1f);
+    private const float TrailWidthSpeedMin = 0.55f;
+    private const float TrailWidthSpeedMax = 1.45f;
+    private const float DefaultTrailEndRatio = 0.1f;
+
     private bool  _executeChainActive = false;
     private int   _chainsRemaining    = 0;
-    private Color _originalTrailColor;
     private float _originalTrailWidth;
+    private bool  _trailColorOverridden;
 
     // ── 水平死区检测（引力过载） ───────────────────────────────────────
     private float _horizontalDeadZoneTimer = 0f;
@@ -50,9 +73,64 @@ public class BallController : MonoBehaviour
 
         if (_trail != null)
         {
-            _originalTrailColor = _trail.startColor;
             _originalTrailWidth = _trail.startWidth;
+            ApplyDefaultTrail();
         }
+    }
+
+    /// <summary>统一默认拖尾：纯白 → 透明；高 Combo 略带品红 HDR。避免场景 colorGradient 与代码 startColor 不同步。</summary>
+    private void ApplyDefaultTrail()
+    {
+        if (_trail == null) return;
+        ApplyComboTrailTint();
+    }
+
+    private void ApplyComboTrailTint()
+    {
+        if (_trail == null) return;
+
+        int combo = ComboSystem.Instance != null ? ComboSystem.Instance.CurrentCombo : 0;
+        float tint = combo <= ComboTrailTintStart
+            ? 0f
+            : Mathf.SmoothStep(0f, 1f, (combo - ComboTrailTintStart) / (float)(ComboTrailTintFull - ComboTrailTintStart));
+        float blend = tint * ComboTrailTintMax;
+
+        _trail.startColor = Color.Lerp(DefaultTrailStart, ComboTrailMagentaHdr, blend);
+        _trail.endColor   = Color.Lerp(DefaultTrailEnd,
+            new Color(ComboTrailMagentaHdr.r, ComboTrailMagentaHdr.g, ComboTrailMagentaHdr.b, 0f), blend);
+    }
+
+    private void UpdateTrailFromSpeed(float speed)
+    {
+        if (_trail == null || !_trail.enabled) return;
+
+        float minS = config.ballMinSpeed * SpeedMultiplier;
+        float maxS = config.ballMaxSpeed * SpeedMultiplier;
+        float t    = Mathf.InverseLerp(minS, maxS, speed);
+        float widthMul = Mathf.Lerp(TrailWidthSpeedMin, TrailWidthSpeedMax, t);
+
+        float baseStart = _originalTrailWidth;
+        float baseEnd   = _originalTrailWidth * DefaultTrailEndRatio;
+
+        _trail.startWidth = baseStart * widthMul;
+        _trail.endWidth   = baseEnd   * widthMul;
+
+        if (!_trailColorOverridden && !_executeChainActive && !_gravityOverloadActive)
+            ApplyComboTrailTint();
+    }
+
+    private void ApplyExecuteTrailColors()
+    {
+        if (_trail == null) return;
+        var executeColor = NeonColors.Active.GetBase(NeonRole.SkillExecute);
+        _trail.startColor = executeColor;
+        _trail.endColor   = new Color(executeColor.r, executeColor.g, executeColor.b, 0.05f);
+    }
+
+    private void TruncateTrailOnImpact()
+    {
+        if (_trail != null && _trail.enabled)
+            _trail.Clear();
     }
 
     // ── 激活斩杀连锁状态 ──────────────────────────────────────────────────
@@ -63,13 +141,9 @@ public class BallController : MonoBehaviour
         IsInvincible        = true;
         _launched           = true;
 
-        if (_trail != null)
-        {
-            _trail.startWidth = _originalTrailWidth * 2.2f;
-            _trail.endWidth   = _originalTrailWidth * 0.4f;
-            _trail.startColor = new Color(1f, 0f, 0.47f, 1f);
-            _trail.endColor   = new Color(1f, 0f, 0.47f, 0.05f);
-        }
+        ResetBallSize();
+        ApplyExecuteTrailColors();
+        if (_trail != null) _trail.Clear();
 
         // 所有 Bumper 进入穿透模式（碰撞体关闭 + 视觉暗化），弹珠自由穿场锁敌
         foreach (var b in FindObjectsOfType<Bumper>())
@@ -84,13 +158,9 @@ public class BallController : MonoBehaviour
         _chainsRemaining    = 0;
         IsInvincible        = false;
 
+        ResetBallSize();
         if (_trail != null)
-        {
-            _trail.startWidth = _originalTrailWidth;
-            _trail.endWidth   = _originalTrailWidth * 0.1f;
-            _trail.startColor = _originalTrailColor;
-            _trail.endColor   = new Color(_originalTrailColor.r, _originalTrailColor.g, _originalTrailColor.b, 0f);
-        }
+            ApplyDefaultTrail();
 
         // 恢复全体 Bumper
         foreach (var b in FindObjectsOfType<Bumper>())
@@ -133,8 +203,8 @@ public class BallController : MonoBehaviour
         if (_sr.sprite == null)
             _sr.sprite = GruntEnemy.CreateCircleSprite(64, Color.white);
 
-        transform.localScale = Vector3.one;
-        _sr.color = new Color(3.5f, 3.5f, 3.8f, 1f);
+        ResetBallSize();
+        _sr.color = NeonColors.Active.GetBase(NeonRole.Ball);
 
         if (_defaultBallMaterial == null)
         {
@@ -144,6 +214,13 @@ public class BallController : MonoBehaviour
         }
         if (_defaultBallMaterial != null)
             _sr.sharedMaterial = _defaultBallMaterial;
+    }
+
+    private void ResetBallSize()
+    {
+        transform.localScale = Vector3.one;
+        if (_col != null && config != null)
+            _col.radius = config.ballRadius;
     }
 
     private void Update()
@@ -169,7 +246,11 @@ public class BallController : MonoBehaviour
     private void OnGameStart()
     {
         StopAllCoroutines();
+        _respawnCoroutine = null;
+        StopSlashAndSlowMo();
         RestoreBallVisual();
+        _trailColorOverridden = false;
+        ApplyDefaultTrail();
         RestoreComponents();
         transform.position = _spawnPosition;
         BeginWaitForLaunch();
@@ -177,8 +258,14 @@ public class BallController : MonoBehaviour
 
     private void OnGameOver()
     {
+        if (_respawnCoroutine != null)
+        {
+            StopCoroutine(_respawnCoroutine);
+            _respawnCoroutine = null;
+        }
         StopAllCoroutines();
-        if (_executeChainActive) StopExecuteChain(); // 清除斩杀状态、恢复 trail 和 Bumper
+        StopSlashAndSlowMo();
+        if (_executeChainActive) StopExecuteChain();
         IsWaitingForLaunch = false;
         LaunchGuide.Instance?.Hide();
         _rb.velocity = Vector2.zero;
@@ -188,23 +275,40 @@ public class BallController : MonoBehaviour
         CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
     }
 
+    private Coroutine _respawnCoroutine;
+
     private void OnBallLost()
     {
-        if (_executeChainActive) StopExecuteChain(); // 死亡中断斩杀链，trail 立即恢复正常
+        if (_respawnCoroutine != null)
+        {
+            StopCoroutine(_respawnCoroutine);
+            _respawnCoroutine = null;
+        }
 
+        StopSlashAndSlowMo();
+        StopAllCoroutines();
+
+        if (_executeChainActive) StopExecuteChain();
+
+        RestoreBallVisual();
         // 重置加速齿轮残留状态，防止黄色 trail 持续到下一条命
         SpeedMultiplier = 1f;
-        if (_trail != null)
-        {
-            _trail.startColor = _originalTrailColor;
-            _trail.endColor   = new Color(_originalTrailColor.r, _originalTrailColor.g, _originalTrailColor.b, 0f);
-        }
+        _trailColorOverridden = false;
+        ApplyDefaultTrail();
 
         _rb.velocity = Vector2.zero;
         _rb.angularVelocity = 0f;
         _launched = false;
         CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
-        StartCoroutine(RespawnRoutine());
+        _respawnCoroutine = StartCoroutine(RespawnRoutine());
+    }
+
+    /// <summary>掉球/中断时强制退出 Slash 瞄准与慢动作，避免 timeScale 卡住重生流程。</summary>
+    private static void StopSlashAndSlowMo()
+    {
+        SkillManager.Instance?.CancelAiming();
+        SlowMoFX.Instance?.ForceRestore();
+        LaunchGuide.Instance?.Hide();
     }
 
     private IEnumerator RespawnRoutine()
@@ -213,18 +317,25 @@ public class BallController : MonoBehaviour
         yield return new WaitForSecondsRealtime(config.respawnDelay);
 
         if (GameManager.Instance != null && GameManager.Instance.State == GameState.GameOver)
+        {
+            _respawnCoroutine = null;
             yield break;
+        }
 
         RestoreComponents();
+        RestoreBallVisual();
         transform.position = _spawnPosition;
         IsInvincible = true;
         BeginWaitForLaunch();
 
-        yield return new WaitUntil(() => !IsWaitingForLaunch);
+        while (IsWaitingForLaunch)
+            yield return new WaitForSecondsRealtime(0.02f);
+
         yield return new WaitForSecondsRealtime(config.respawnInvincibleDuration);
         IsInvincible = false;
         if (GameManager.Instance != null)
             GameManager.Instance.OnBallRespawned();
+        _respawnCoroutine = null;
     }
 
     private void BeginWaitForLaunch()
@@ -263,6 +374,8 @@ public class BallController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        CheckBottomFall();
+
         if (!_launched) return;
 
         // ── 速度限制 ──────────────────────────────────────────────────────
@@ -273,6 +386,8 @@ public class BallController : MonoBehaviour
             _rb.velocity = _rb.velocity.normalized * minS;
         else if (speed > maxS)
             _rb.velocity = _rb.velocity.normalized * maxS;
+
+        UpdateTrailFromSpeed(speed);
 
         // ── 水平死区检测（引力过载） ───────────────────────────────────────
         if (_executeChainActive || _gravityOverloadActive) return;
@@ -300,11 +415,13 @@ public class BallController : MonoBehaviour
     {
         multiplier = Mathf.Clamp(multiplier, 0.5f, 3f);
         transform.localScale = Vector3.one * multiplier;
-        if (_col != null) _col.radius = 0.275f * multiplier;
+        if (_col != null && config != null)
+            _col.radius = config.ballRadius * multiplier;
     }
 
     public void SetOverrideTrailColor(Color startColor, Color endColor)
     {
+        _trailColorOverridden = true;
         if (_trail != null)
         {
             _trail.startColor = startColor;
@@ -314,16 +431,17 @@ public class BallController : MonoBehaviour
 
     public void ResetTrailColor()
     {
-        if (_trail != null)
-        {
-            _trail.startColor = _originalTrailColor;
-            _trail.endColor = new Color(_originalTrailColor.r, _originalTrailColor.g, _originalTrailColor.b, 0f);
-        }
+        _trailColorOverridden = false;
+        ApplyDefaultTrail();
     }
 
     private void OnCollisionEnter2D(Collision2D col)
     {
-        if (!_launched || ImpactFX.Instance == null) return;
+        if (!_launched) return;
+
+        TruncateTrailOnImpact();
+
+        if (ImpactFX.Instance == null) return;
 
         // ── 斩杀连锁逻辑 ──────────────────────────────────────────────────
         if (_executeChainActive)
@@ -371,18 +489,24 @@ public class BallController : MonoBehaviour
         if (col.gameObject.GetComponent<Bumper>()    != null) return;
         if (col.gameObject.GetComponent<Slingshot>() != null) return;
 
+        // 敌人受击 Juice 由 EnemyBase.TakeHit → EnemyJuice 统一处理，避免双发粒子/Combo/音效
+        if (col.gameObject.GetComponentInParent<EnemyBase>() != null) return;
+
         AudioManager.Instance?.PlayBounce();
 
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
-
-        // 取碰撞物体的颜色（墙壁=蓝，挡板=橙，默认=青）
         var sr = col.gameObject.GetComponentInChildren<SpriteRenderer>();
-        Color hitColor = sr != null ? sr.color : new Color(0f, 0.85f, 1.0f);
+        Color hitColor = sr != null ? sr.color : NeonColors.Active.GetBase(NeonRole.SkillShield);
 
-        // 强度根据碰撞速度调整（慢速碰撞产生更少粒子）
-        float velMag    = col.relativeVelocity.magnitude;
+        if (JuiceRouter.IsWallCollider(col.collider))
+        {
+            Vector2 normal = col.contacts.Length > 0 ? col.contacts[0].normal : Vector2.up;
+            JuiceRouter.WallHit(hitPos, normal, col.relativeVelocity.magnitude, hitColor);
+            return;
+        }
+
+        float velMag = col.relativeVelocity.magnitude;
         float intensity = Mathf.Clamp01(velMag / 12f) * 0.85f + 0.15f;
-
         ImpactFX.Instance.SpawnHit(hitPos, hitColor, intensity);
     }
 
@@ -424,7 +548,7 @@ public class BallController : MonoBehaviour
         CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
         if (ImpactFX.Instance != null)
         {
-            ImpactFX.Instance.SpawnHit(transform.position, new Color(1f, 0f, 0.47f, 1f), 1.2f);
+            ImpactFX.Instance.SpawnHit(transform.position, NeonColors.Active.GetBase(NeonRole.SkillExecute), 1.2f);
         }
     }
 
@@ -469,5 +593,16 @@ public class BallController : MonoBehaviour
         }
 
         _gravityOverloadActive = false;
+    }
+
+    private void CheckBottomFall()
+    {
+        if (!CanLoseLifeFromBottom()) return;
+        if (GameManager.Instance == null || GameManager.Instance.State != GameState.Playing) return;
+
+        float limitY = config != null ? config.minionBottomLineY - 0.35f : -8.85f;
+        if (transform.position.y > limitY) return;
+
+        GameManager.Instance.BallFellDown();
     }
 }

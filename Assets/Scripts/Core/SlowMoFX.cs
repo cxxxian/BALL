@@ -23,6 +23,7 @@ public class SlowMoFX : MonoBehaviour
     private Vignette            _vignette;
     private ColorAdjustments    _colorAdj;
     private Coroutine           _coroutine;
+    private Coroutine           _flashCoroutine;
 
     private void Awake()
     {
@@ -58,7 +59,11 @@ public class SlowMoFX : MonoBehaviour
     // ── 立即强制恢复（游戏重置时使用） ───────────────────────────────────
     public void ForceRestore()
     {
-        if (_coroutine != null) StopCoroutine(_coroutine);
+        if (_coroutine != null)
+        {
+            StopCoroutine(_coroutine);
+            _coroutine = null;
+        }
         Time.timeScale      = 1f;
         Time.fixedDeltaTime = 0.02f;
         SetPostFX(0f);
@@ -131,6 +136,29 @@ public class SlowMoFX : MonoBehaviour
         SetPostFX(0f);
         SetOverlays(0f, Color.clear);
         if (fxVolume != null) fxVolume.enabled = false;
+    }
+
+    /// <summary>短促全屏闪色（Boss 二阶段等警告用，不改动时间缩放）。</summary>
+    public void PulseFlash(Color color, float peakAlpha = 0.55f, float duration = 0.14f)
+    {
+        if (flashOverlay == null) return;
+        if (_flashCoroutine != null) StopCoroutine(_flashCoroutine);
+        _flashCoroutine = StartCoroutine(PulseFlashRoutine(color, peakAlpha, duration));
+    }
+
+    private IEnumerator PulseFlashRoutine(Color color, float peakAlpha, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(elapsed / duration);
+            float a = peakAlpha * (1f - p * p);
+            flashOverlay.color = new Color(color.r, color.g, color.b, a);
+            yield return null;
+        }
+        flashOverlay.color = Color.clear;
+        _flashCoroutine = null;
     }
 
     /// <summary>

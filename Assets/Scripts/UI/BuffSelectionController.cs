@@ -16,12 +16,21 @@ public class BuffSelectionController : MonoBehaviour
     private Label[]  _nameLabels   = new Label[3];
     private Label[]  _descLabels   = new Label[3];
     private Button[] _buttons      = new Button[3];
+    private VisualElement[] _cards = new VisualElement[3];
+    private int[]    _cardRarities = { -1, -1, -1 };
 
     private BuffDefinition[] _currentSelection;
     private BuffDefinition _pendingTowerBuff;
 
-    private static readonly string[] RarityText  = { "COMMON", "RARE", "EPIC" };
-    private static readonly string[] RarityClass = { "rarity-common", "rarity-rare", "rarity-epic" };
+    private float _borderPulseT;
+
+    private static readonly string[] RarityText      = { "COMMON", "RARE", "EPIC" };
+    private static readonly string[] RarityClass     = { "rarity-common", "rarity-rare", "rarity-epic" };
+    private static readonly string[] CardRarityClass = { "card-rarity-common", "card-rarity-rare", "card-rarity-epic" };
+    private static readonly Color EpicBorderDim   = new Color(0.55f, 0f, 0.28f, 0.55f);
+    private static readonly Color EpicBorderBright = new Color(1f, 0.35f, 0.82f, 1f);
+
+    private bool _overlayVisible;
 
     private void Awake()
     {
@@ -40,6 +49,7 @@ public class BuffSelectionController : MonoBehaviour
 
         for (int i = 0; i < 3; i++)
         {
+            _cards[i]        = GetCardElement(i);
             _rarityLabels[i] = root.Q<Label>($"rarity-{i}");
             _nameLabels[i]   = root.Q<Label>($"name-{i}");
             _descLabels[i]   = root.Q<Label>($"desc-{i}");
@@ -73,6 +83,37 @@ public class BuffSelectionController : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (!_overlayVisible) return;
+
+        _borderPulseT += Time.unscaledDeltaTime;
+        float wave = Mathf.Sin(_borderPulseT * 3.2f) * 0.5f + 0.5f;
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (_cards[i] == null || _cardRarities[i] != (int)BuffRarity.Epic) continue;
+
+            float t = wave * wave;
+            float scale = Mathf.Lerp(1f, 1.03f, t);
+            SetCardBorderPulse(_cards[i], Color.Lerp(EpicBorderDim, EpicBorderBright, t), Mathf.Lerp(2f, 4.5f, t), scale);
+        }
+    }
+
+    private static void SetCardBorderPulse(VisualElement card, Color color, float width, float scale)
+    {
+        var c = new StyleColor(color);
+        card.style.borderTopColor    = c;
+        card.style.borderRightColor  = c;
+        card.style.borderBottomColor = c;
+        card.style.borderLeftColor   = c;
+        card.style.borderTopWidth    = width;
+        card.style.borderRightWidth  = width;
+        card.style.borderBottomWidth = width;
+        card.style.borderLeftWidth   = width;
+        card.style.scale             = new StyleScale(new Scale(new Vector3(scale, scale, 1f)));
+    }
+
     public void Show()
     {
         if (BuffManager.Instance == null) return;
@@ -80,26 +121,45 @@ public class BuffSelectionController : MonoBehaviour
         HideTowerChoice();
         _pendingTowerBuff = null;
         _currentSelection = BuffManager.Instance.GetRandomSelection(3);
+        _borderPulseT = 0f;
 
         for (int i = 0; i < 3; i++)
         {
-            bool hasCard = i < _currentSelection.Length && _currentSelection[i] != null;
-            var card = _overlay.Q<VisualElement>($"card-{i}");
+            var card = _cards[i] ?? GetCardElement(i);
+            var def  = i < _currentSelection.Length ? _currentSelection[i] : null;
+            bool isEmpty = def == null;
+            _cardRarities[i] = isEmpty ? -1 : (int)def.rarity;
 
-            if (!hasCard)
+            if (card != null)
             {
-                if (card != null) card.style.visibility = Visibility.Hidden;
+                card.style.display = DisplayStyle.Flex;
+                card.style.visibility = Visibility.Visible;
+                card.EnableInClassList("card-empty", isEmpty);
+                ApplyCardRarityClass(card, isEmpty ? -1 : (int)def.rarity);
+            }
+
+            if (_buttons[i] != null)
+            {
+                _buttons[i].SetEnabled(!isEmpty);
+                _buttons[i].text = isEmpty ? "—" : "SELECT";
+            }
+
+            if (_rarityLabels[i] == null || _nameLabels[i] == null || _descLabels[i] == null)
+                continue;
+
+            if (isEmpty)
+            {
+                SetEmptySlotLabels(i);
                 continue;
             }
-            if (card != null) card.style.visibility = Visibility.Visible;
 
-            var def = _currentSelection[i];
-
-            _rarityLabels[i].text = RarityText[(int)def.rarity];
+            int rarityIdx = Mathf.Clamp((int)def.rarity, 0, RarityText.Length - 1);
+            _rarityLabels[i].text = RarityText[rarityIdx];
             _rarityLabels[i].RemoveFromClassList("rarity-common");
             _rarityLabels[i].RemoveFromClassList("rarity-rare");
             _rarityLabels[i].RemoveFromClassList("rarity-epic");
-            _rarityLabels[i].AddToClassList(RarityClass[(int)def.rarity]);
+            _rarityLabels[i].AddToClassList(RarityClass[rarityIdx]);
+            _rarityLabels[i].style.display = DisplayStyle.Flex;
 
             _nameLabels[i].text = def.buffName;
             _descLabels[i].text = def.description;
@@ -107,12 +167,38 @@ public class BuffSelectionController : MonoBehaviour
 
         _cardsContainer.style.display = DisplayStyle.Flex;
         _overlay.style.display = DisplayStyle.Flex;
+        _overlayVisible = true;
         Time.timeScale = 0f;
     }
 
+    private void ApplyCardRarityClass(VisualElement card, int rarityIdx)
+    {
+        for (int r = 0; r < CardRarityClass.Length; r++)
+            card.RemoveFromClassList(CardRarityClass[r]);
+
+        if (rarityIdx >= 0 && rarityIdx < CardRarityClass.Length)
+            card.AddToClassList(CardRarityClass[rarityIdx]);
+    }
+
+    private void SetEmptySlotLabels(int i)
+    {
+        _cardRarities[i] = -1;
+        _rarityLabels[i].text = string.Empty;
+        _rarityLabels[i].RemoveFromClassList("rarity-common");
+        _rarityLabels[i].RemoveFromClassList("rarity-rare");
+        _rarityLabels[i].RemoveFromClassList("rarity-epic");
+        _rarityLabels[i].style.display = DisplayStyle.None;
+
+        _nameLabels[i].text = "—";
+        _descLabels[i].text = string.Empty;
+    }
+
+    private VisualElement GetCardElement(int index) =>
+        _cardsContainer?.Q<VisualElement>($"card-{index}") ?? _overlay?.Q<VisualElement>($"card-{index}");
+
     private void OnCardSelected(int index)
     {
-        if (_currentSelection == null || index >= _currentSelection.Length) return;
+        if (_currentSelection == null || index < 0 || index >= _currentSelection.Length) return;
         var def = _currentSelection[index];
         if (def == null) return;
 
@@ -218,6 +304,9 @@ public class BuffSelectionController : MonoBehaviour
     {
         HideTowerChoice();
         _pendingTowerBuff = null;
+        for (int i = 0; i < 3; i++)
+            _cardRarities[i] = -1;
+        _overlayVisible = false;
         _overlay.style.display = DisplayStyle.None;
         Time.timeScale = 1f;
         GameManager.Instance?.OnBuffSelectionDone();

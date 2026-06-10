@@ -11,13 +11,11 @@ public class BuffManager : MonoBehaviour
     private readonly Dictionary<BuffEffectType, int> _stacks = new Dictionary<BuffEffectType, int>();
 
     // ── 对外暴露的数值属性 ─────────────────────────────────────
-    public int   BallDamageBonus         { get; private set; } = 0;
-    public int   MaxHPBonus              { get; private set; } = 0;
-    public int   ComboThresholdReduction { get; private set; } = 0;
-    public int   KillsPerHeal            { get; private set; } = 0;
-    public int   ElectricShellLevel      { get; private set; } = 0;
-
-    private int _killCounter = 0;
+    public int BallDamageBonus         { get; private set; } = 0;
+    public int MaxHPBonus              { get; private set; } = 0;
+    public int ComboThresholdReduction { get; private set; } = 0;
+    public int HeartGuardCharges       { get; private set; } = 0;
+    public int MaxHeartGuardCharges    { get; private set; } = 0;
 
     private void Awake()
     {
@@ -37,22 +35,31 @@ public class BuffManager : MonoBehaviour
             GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
     }
 
+    /// <summary>返回固定 3 槽：未满层 Buff 随机填入，不足部分为 null（空槽占位，后续可接新 Buff）。</summary>
     public BuffDefinition[] GetRandomSelection(int count = 3)
     {
-        if (buffPool == null || buffPool.Count == 0) return new BuffDefinition[0];
+        var result = new BuffDefinition[count];
 
-        var pool = new List<BuffDefinition>(buffPool);
-        pool.RemoveAll(b => b != null && GetStacks(b.effectType) >= b.maxStacks);
+        if (buffPool == null || buffPool.Count == 0)
+            return result;
 
-        var result = new List<BuffDefinition>();
-        int safeCount = Mathf.Min(count, pool.Count);
-        for (int i = 0; i < safeCount; i++)
+        var eligible = new List<BuffDefinition>();
+        foreach (var b in buffPool)
         {
-            int idx = Random.Range(0, pool.Count);
-            result.Add(pool[idx]);
-            pool.RemoveAt(idx);
+            if (b != null && GetStacks(b.effectType) < b.maxStacks)
+                eligible.Add(b);
         }
-        return result.ToArray();
+
+        var bag = new List<BuffDefinition>(eligible);
+        int pickCount = Mathf.Min(count, bag.Count);
+        for (int i = 0; i < pickCount; i++)
+        {
+            int idx = Random.Range(0, bag.Count);
+            result[i] = bag[idx];
+            bag.RemoveAt(idx);
+        }
+
+        return result;
     }
 
     public void ApplyBuff(BuffDefinition def)
@@ -62,6 +69,10 @@ public class BuffManager : MonoBehaviour
         if (current >= def.maxStacks) return;
         _stacks[def.effectType] = current + 1;
         RecalculateStats();
+
+        if (def.effectType == BuffEffectType.HeartGuard)
+            HeartGuardCharges = Mathf.Min(MaxHeartGuardCharges, HeartGuardCharges + 1);
+
         Debug.Log($"[BuffManager] Applied: {def.buffName}  stacks={_stacks[def.effectType]}/{def.maxStacks}");
     }
 
@@ -70,8 +81,7 @@ public class BuffManager : MonoBehaviour
         BallDamageBonus         = 0;
         MaxHPBonus              = 0;
         ComboThresholdReduction = 0;
-        KillsPerHeal            = 0;
-        ElectricShellLevel      = 0;
+        MaxHeartGuardCharges    = 0;
 
         foreach (var def in buffPool)
         {
@@ -89,18 +99,16 @@ public class BuffManager : MonoBehaviour
                 case BuffEffectType.ComboThresholdDown:
                     ComboThresholdReduction += Mathf.RoundToInt(def.effectValue * stacks);
                     break;
-                case BuffEffectType.HealOnKill:
-                    KillsPerHeal = Mathf.RoundToInt(def.effectValue);
+                case BuffEffectType.HeartGuard:
+                    MaxHeartGuardCharges = stacks;
                     break;
                 case BuffEffectType.DeployTeslaCoil:
                 case BuffEffectType.DeployFrostTower:
                     break;
-                case BuffEffectType.ElectricShell:
-                    ElectricShellLevel += stacks;
-                    break;
             }
         }
 
+        HeartGuardCharges = Mathf.Min(HeartGuardCharges, MaxHeartGuardCharges);
         ApplyMaxHPChange();
         EnsureTowerManagerExists();
     }
@@ -118,21 +126,30 @@ public class BuffManager : MonoBehaviour
         go.AddComponent<TowerManager>();
     }
 
-    public void OnEnemyKilled()
+    /// <summary>
+    /// 小兵触底、BlockShield 未吸收时尝试消耗护心。返回 true 表示本次伤害被抵消。
+    /// </summary>
+    public bool TryConsumeHeartGuard(out bool showShieldVfx)
     {
-        if (KillsPerHeal <= 0) return;
-        _killCounter++;
-        if (_killCounter >= KillsPerHeal)
-        {
-            _killCounter = 0;
-            GameManager.Instance?.Heal(1);
-        }
+        showShieldVfx = false;
+        if (HeartGuardCharges <= 0) return false;
+
+        HeartGuardCharges--;
+        var gm = GameManager.Instance;
+        if (gm == null) return true;
+
+        if (gm.Lives < gm.MaxLives)
+            gm.Heal(1);
+        else
+            showShieldVfx = true;
+
+        return true;
     }
 
     private void ResetForNewGame()
     {
         _stacks.Clear();
-        _killCounter = 0;
+        HeartGuardCharges = 0;
         RecalculateStats();
     }
 

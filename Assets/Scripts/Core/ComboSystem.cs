@@ -8,9 +8,14 @@ public class ComboSystem : MonoBehaviour
 {
     public static ComboSystem Instance { get; private set; }
 
+    public const int MinComboThreshold       = 3;
+    public const int BaseShakeThreshold      = 5;
+    public const int BaseHeavyShakeThreshold = 10;
+
     public int CurrentCombo { get; private set; }
 
     public UnityEvent<int> onComboChanged = new UnityEvent<int>();
+    public UnityEvent<int> onComboMilestone = new UnityEvent<int>();
 
     private float _lastHitTime = -99f;
 
@@ -56,8 +61,33 @@ public class ComboSystem : MonoBehaviour
         _lastHitTime = Time.time;
         onComboChanged.Invoke(CurrentCombo);
 
-        if      (CurrentCombo == 5)                          CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
-        else if (CurrentCombo >= 10 && CurrentCombo % 5 == 0) CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
+        int shakeThreshold = GetEffectiveThreshold(BaseShakeThreshold);
+        int heavyThreshold = GetEffectiveThreshold(BaseHeavyShakeThreshold);
+
+        if (CurrentCombo == shakeThreshold)
+        {
+            CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+            onComboMilestone.Invoke(CurrentCombo);
+        }
+        else if (CurrentCombo == heavyThreshold)
+        {
+            CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
+            onComboMilestone.Invoke(CurrentCombo);
+        }
+        else if (CurrentCombo > heavyThreshold && (CurrentCombo - heavyThreshold) % 5 == 0)
+        {
+            CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
+            onComboMilestone.Invoke(CurrentCombo);
+        }
+
+        // M1 方案 A：无阈值资源奖励；Combo→技能仅通过 SkillManager 监听 onComboChanged 减 CD
+    }
+
+    /// <summary>连击大师：每层 -2，下限 3。用于 5/10/20 等资源轨奖励阈值。</summary>
+    public static int GetEffectiveThreshold(int baseThreshold)
+    {
+        int reduction = BuffManager.Instance != null ? BuffManager.Instance.ComboThresholdReduction : 0;
+        return Mathf.Max(MinComboThreshold, baseThreshold - reduction);
     }
 
     /// <summary>挡板严格断连：任意挡板接触即清零。</summary>

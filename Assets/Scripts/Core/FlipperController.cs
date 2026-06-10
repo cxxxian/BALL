@@ -97,7 +97,10 @@ public class FlipperController : MonoBehaviour
         if (isActivating)
         {
             ContactPoint2D contact = col.GetContact(0);
-            Vector2 r       = (Vector2)contact.point - (Vector2)transform.position;
+            Vector2 hitPos = contact.point;
+            JuiceRouter.FlipperPerfectCatch(hitPos, GetComponent<FlipperFX>());
+
+            Vector2 r       = hitPos - (Vector2)transform.position;
             float omegaRad  = _angularVelocity * Mathf.Deg2Rad;
             Vector2 surfVel = new Vector2(-r.y, r.x) * omegaRad;
 

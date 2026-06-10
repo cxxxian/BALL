@@ -24,13 +24,20 @@ public class GameManager : MonoBehaviour
     public UnityEvent      onBuffSelection = new UnityEvent();   // Wave 结束时通知 Buff UI
 
     private int _maxHPBonus = 0;
-    public  int MaxLives => config.initialLives + _maxHPBonus;
+    public int MaxLives => Mathf.Min(config.maxLives, config.initialLives + _maxHPBonus);
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         ApplyCyberVisuals();
+    }
+
+    private void Start()
+    {
+        // 进场景即开局，避免未点 Start 时波次/派兵/技能 CD 全部停摆
+        if (State == GameState.Idle)
+            StartGame();
     }
 
     private void ApplyCyberVisuals()
@@ -41,8 +48,11 @@ public class GameManager : MonoBehaviour
             var sr = b.GetComponent<SpriteRenderer>();
             if (sr != null)
             {
-                sr.sprite = CyberVisualFactory.CreateBumperSprite(new Color(0f, 1.8f, 2.5f, 1f)); // 赛博亮蓝
+                var bumperColor = NeonColors.Active.GetBase(NeonRole.Bumper);
+                sr.sprite = CyberVisualFactory.CreateBumperSprite(bumperColor);
+                sr.color = bumperColor;
                 sr.material = CyberVisualFactory.UnlitMaterial;
+                b.RefreshFromPalette();
             }
         }
 
@@ -133,8 +143,12 @@ public class GameManager : MonoBehaviour
 
     public void SetMaxHPBonus(int bonus)
     {
-        _maxHPBonus = bonus;
+        int cap = config.maxLives - config.initialLives;
+        int prevMax = MaxLives;
+        _maxHPBonus = Mathf.Clamp(bonus, 0, cap);
         Lives = Mathf.Min(MaxLives, Lives);
+        if (MaxLives > prevMax)
+            Lives = Mathf.Min(MaxLives, Lives + (MaxLives - prevMax));
         onLivesChanged.Invoke(Lives);
     }
 
@@ -145,4 +159,8 @@ public class GameManager : MonoBehaviour
     }
 
     public bool IsPlaying() => State == GameState.Playing;
+
+    /// <summary>局内模拟是否运行：含待发球、球重生；不含 Idle / Buff 选卡 / GameOver。</summary>
+    public bool IsWaveSimActive() =>
+        State == GameState.Playing || State == GameState.BallRespawning;
 }

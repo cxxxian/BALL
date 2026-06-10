@@ -20,7 +20,22 @@ public class BulletTimeAim : MonoBehaviour
             SkillManager.Instance.onFired.AddListener(OnFired);
         }
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.onGameStart.AddListener(OnGameStart);
+            GameManager.Instance.onBallLost.AddListener(OnBallLostInterrupt);
+            GameManager.Instance.onGameOver.AddListener(OnInterrupt);
+        }
+    }
+
+    private void OnBallLostInterrupt() => CancelAimingState();
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.onBallLost.RemoveListener(OnBallLostInterrupt);
+            GameManager.Instance.onGameOver.RemoveListener(OnInterrupt);
+        }
     }
 
     private void Update()
@@ -69,12 +84,19 @@ public class BulletTimeAim : MonoBehaviour
             : _ballRb.velocity.normalized * _savedSpeed;
     }
 
-    private void OnGameStart()
+    private void OnGameStart() => CancelAimingState();
+
+    private void OnInterrupt() => CancelAimingState();
+
+    private void CancelAimingState()
     {
-        if (!_isAiming) return;
+        bool wasAiming = _isAiming || (SkillManager.Instance != null && SkillManager.Instance.IsAiming);
         _isAiming = false;
+        SkillManager.Instance?.CancelAiming();
         LaunchGuide.Instance?.Hide();
-        SlowMoFX.Instance?.ForceRestore();
+
+        if (wasAiming || Time.timeScale < 0.99f)
+            SlowMoFX.Instance?.ForceRestore();
     }
 
     // ── 每帧根据鼠标/触摸位置更新瞄准方向（无需按下） ───────────────────

@@ -5,8 +5,8 @@ using UnityEngine.UI;
 public class ComboDisplay : MonoBehaviour
 {
     [Header("References")]
-    public Text comboText;   // 大数字：x3 x12
-    public Text labelText;   // 小标签：COMBO
+    public Text comboText;
+    public Text labelText;
 
     [Header("Colors")]
     public Color normalColor = new Color(1f, 0.88f, 0.18f);
@@ -14,25 +14,35 @@ public class ComboDisplay : MonoBehaviour
     public Color labelColor  = new Color(0.85f, 0.65f, 1f);
 
     private RectTransform _rt;
-    private Coroutine     _punchCoroutine;
-    private int           _threshold = 3;
-    private bool          _subscribed = false;
-    private bool          _visible = false;
+    private Coroutine _punchCoroutine;
+    private int _threshold = 3;
+    private bool _subscribed;
+    private bool _visible;
 
     private void Awake()
     {
         _rt = GetComponent<RectTransform>();
         _rt.localScale = Vector3.one;
+        RemoveLegacyBorder();
         SetVisible(false);
+    }
+
+    private void RemoveLegacyBorder()
+    {
+        var legacy = transform.Find("MilestoneBorder");
+        if (legacy != null)
+            Destroy(legacy.gameObject);
     }
 
     private void Update()
     {
         if (_subscribed) return;
         if (ComboSystem.Instance == null || GameManager.Instance == null) return;
-        _threshold = GameManager.Instance.config != null
+        int baseThreshold = GameManager.Instance.config != null
             ? GameManager.Instance.config.comboDisplayThreshold : 3;
+        _threshold = ComboSystem.GetEffectiveThreshold(baseThreshold);
         ComboSystem.Instance.onComboChanged.AddListener(OnComboChanged);
+        ComboSystem.Instance.onComboMilestone.AddListener(OnComboMilestone);
         GameManager.Instance.onGameStart.AddListener(OnGameStart);
         _subscribed = true;
     }
@@ -51,8 +61,25 @@ public class ComboDisplay : MonoBehaviour
         SetVisible(false);
     }
 
+    private void OnComboMilestone(int combo)
+    {
+        if (combo < _threshold) return;
+        if (comboText != null) comboText.text = "x" + combo;
+        SetVisible(true);
+
+        if (_punchCoroutine != null) StopCoroutine(_punchCoroutine);
+        _punchCoroutine = StartCoroutine(Punch(0.55f, 0.42f));
+    }
+
     private void OnComboChanged(int combo)
     {
+        if (GameManager.Instance != null)
+        {
+            int baseThreshold = GameManager.Instance.config != null
+                ? GameManager.Instance.config.comboDisplayThreshold : 3;
+            _threshold = ComboSystem.GetEffectiveThreshold(baseThreshold);
+        }
+
         if (combo < _threshold)
         {
             if (_punchCoroutine != null) StopCoroutine(_punchCoroutine);
@@ -60,32 +87,39 @@ public class ComboDisplay : MonoBehaviour
             return;
         }
 
+        if (IsMilestoneCombo(combo)) return;
+
         if (comboText != null) comboText.text = "x" + combo;
         SetVisible(true);
 
         if (_punchCoroutine != null) StopCoroutine(_punchCoroutine);
-        _punchCoroutine = StartCoroutine(Punch());
+        _punchCoroutine = StartCoroutine(Punch(0.22f, 0.28f));
     }
 
-    private IEnumerator Punch()
+    private static bool IsMilestoneCombo(int combo)
     {
-        // 瞬间闪白
+        int shake = ComboSystem.GetEffectiveThreshold(ComboSystem.BaseShakeThreshold);
+        int heavy = ComboSystem.GetEffectiveThreshold(ComboSystem.BaseHeavyShakeThreshold);
+        if (combo == shake || combo == heavy) return true;
+        return combo > heavy && (combo - heavy) % 5 == 0;
+    }
+
+    private IEnumerator Punch(float scaleAmp, float dur)
+    {
         if (comboText != null) comboText.color = flashColor;
         if (labelText != null) labelText.color = flashColor;
 
-        // Scale punch：sin(p*π)*(1-p²)，永不 NaN
-        float dur = 0.30f;
-        float t   = 0f;
+        float t = 0f;
         while (t < dur)
         {
             t += Time.deltaTime;
-            float p      = Mathf.Clamp01(t / dur);
+            float p = Mathf.Clamp01(t / dur);
             float spring = Mathf.Sin(p * Mathf.PI) * (1f - p * p);
-            _rt.localScale = Vector3.one * (1f + spring * 0.38f);
+            _rt.localScale = Vector3.one * (1f + spring * scaleAmp);
 
             float colorT = Mathf.Clamp01(p / 0.3f);
             if (comboText != null) comboText.color = Color.Lerp(flashColor, normalColor, colorT);
-            if (labelText != null) labelText.color = Color.Lerp(flashColor, labelColor,  colorT);
+            if (labelText != null) labelText.color = Color.Lerp(flashColor, labelColor, colorT);
 
             yield return null;
         }
@@ -96,11 +130,11 @@ public class ComboDisplay : MonoBehaviour
 
     private IEnumerator FadeOut()
     {
-        float dur        = 0.25f;
-        float t          = 0f;
-        Color numStart   = comboText != null ? comboText.color : normalColor;
-        Color lblStart   = labelText != null ? labelText.color : labelColor;
-        Vector3 scStart  = _rt.localScale;
+        float dur = 0.25f;
+        float t = 0f;
+        Color numStart = comboText != null ? comboText.color : normalColor;
+        Color lblStart = labelText != null ? labelText.color : labelColor;
+        Vector3 scStart = _rt.localScale;
 
         while (t < dur)
         {

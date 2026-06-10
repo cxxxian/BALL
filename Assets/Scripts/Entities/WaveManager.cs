@@ -91,11 +91,11 @@ public class WaveManager : MonoBehaviour
     // ── 主循环 ────────────────────────────────────────────────────────────
     private IEnumerator WaveLoop()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.5f);
         while (true)
         {
             if (GameManager.Instance == null) yield break;
-            if (!GameManager.Instance.IsPlaying()) { yield return null; continue; }
+            if (!GameManager.Instance.IsWaveSimActive()) { yield return null; continue; }
 
             yield return StartCoroutine(RunWave(_currentWave));
 
@@ -177,7 +177,7 @@ public class WaveManager : MonoBehaviour
         col.size            = new Vector2(1.5f, 1.5f);
 
         var boss = go.AddComponent<Boss>();
-        boss.Initialize(def, minX, maxX);
+        boss.Initialize(def, minX, maxX, waveIndex);
         boss.onDeath.AddListener(_ => _currentBoss = null);
 
         // Boss 与现有小兵忽略物理碰撞，防止互相卡住
@@ -198,7 +198,7 @@ public class WaveManager : MonoBehaviour
     }
 
     // ── 小兵生成（由 Boss 调用）──────────────────────────────────────────
-    public void SpawnMinion(MinionDefinition def, Vector3 position)
+    public void SpawnMinion(MinionDefinition def, Vector3 position, int waveIndex = 0)
     {
         if (def == null) return;
         if (GameManager.Instance == null || GameManager.Instance.State == GameState.GameOver) return;
@@ -218,7 +218,7 @@ public class WaveManager : MonoBehaviour
         col.radius          = 0.42f;
 
         var minion = go.AddComponent<Minion>();
-        minion.Initialize(def);
+        minion.Initialize(def, waveIndex);
         RegisterMinion(minion);
         minion.onDeath.AddListener(_ => UnregisterMinion(minion));
 
@@ -239,6 +239,21 @@ public class WaveManager : MonoBehaviour
     public void UnregisterMinion(EnemyBase e)
     {
         _activeMinions.Remove(e);
+    }
+
+    /// <summary>出生点选址：返回 (x,y) 到最近小兵的间距，无兵时返回较大值。</summary>
+    public float GetMinionClearanceAt(float x, float y)
+    {
+        _activeMinions.RemoveAll(e => e == null);
+        float minDist = float.MaxValue;
+        var probe = new Vector2(x, y);
+        foreach (var m in _activeMinions)
+        {
+            if (m == null || m.IsDead) continue;
+            float d = Vector2.Distance(probe, m.transform.position);
+            if (d < minDist) minDist = d;
+        }
+        return minDist == float.MaxValue ? 12f : minDist;
     }
 
     // ── 爆弹兵效果：禁用所有 Bumper ──────────────────────────────────────

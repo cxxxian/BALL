@@ -28,3 +28,4 @@ MonoBehaviour:
   spawnTypes:
   - {fileID: 11400000, guid: 33dd324ebbf0c644bab6f5d131e9a490, type: 2}
   - {fileID: 11400000, guid: 463ac14172e129d4eaa1d02ab3dd303a, type: 2}
+  - {fileID: 11400000, guid: 7cba5b3f6ecc91d48b0260a069d6cfae, type: 2}
