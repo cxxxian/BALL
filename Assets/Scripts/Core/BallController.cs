@@ -26,6 +26,17 @@ public class BallController : MonoBehaviour
     public float SpeedMultiplier   { get; set; } = 1f;  // 动态速度倍率限制（加速齿轮等机制使用）
     public Rigidbody2D Rb => _rb;
 
+    private float EffectiveMaxSpeed
+    {
+        get
+        {
+            float mult = SpeedMultiplier;
+            if (DebuffManager.Instance != null)
+                mult *= DebuffManager.Instance.BallMaxSpeedMultiplier;
+            return config.ballMaxSpeed * mult;
+        }
+    }
+
     // ── 斩杀连锁技能状态 ──────────────────────────────────────────────
     private static readonly Color DefaultTrailStart = Color.white;
     private static readonly Color DefaultTrailEnd   = new Color(1f, 1f, 1f, 0f);
@@ -44,11 +55,14 @@ public class BallController : MonoBehaviour
     private float _originalTrailWidth;
     private bool  _trailColorOverridden;
 
-    // ── 水平死区检测（引力过载） ───────────────────────────────────────
+    // ── 运动死区检测（引力过载） ─────────────────────────────────────────
     private float _horizontalDeadZoneTimer = 0f;
+    private float _verticalDeadZoneTimer   = 0f;
     private bool  _gravityOverloadActive   = false;
-    private const float HORIZONTAL_THRESHOLD = 0.15f;  // 水平速度阈值
+    private const float AXIS_DEAD_THRESHOLD = 0.15f; // 副轴速度低于此视为死区
     private const float DEADZONE_DURATION    = 1.5f;   // 触发引力过载的时长
+
+    private enum MotionDeadZone { None, Horizontal, Vertical }
 
     private Rigidbody2D      _rb;
     private CircleCollider2D _col;
@@ -78,6 +92,17 @@ public class BallController : MonoBehaviour
         }
     }
 
+    /// <summary>战前配置注入弹珠类型（RunBootstrap 调用）。</summary>
+    public void ApplyBallDefinition(BallDefinition def)
+    {
+        if (def == null) return;
+        ballDefinition = def;
+        if (_sr != null)
+            _sr.color = def.glowColor;
+        _trailColorOverridden = false;
+        ApplyDefaultTrail();
+    }
+
     /// <summary>统一默认拖尾：纯白 → 透明；高 Combo 略带品红 HDR。避免场景 colorGradient 与代码 startColor 不同步。</summary>
     private void ApplyDefaultTrail()
     {
@@ -105,7 +130,7 @@ public class BallController : MonoBehaviour
         if (_trail == null || !_trail.enabled) return;
 
         float minS = config.ballMinSpeed * SpeedMultiplier;
-        float maxS = config.ballMaxSpeed * SpeedMultiplier;
+        float maxS = EffectiveMaxSpeed;
         float t    = Mathf.InverseLerp(minS, maxS, speed);
         float widthMul = Mathf.Lerp(TrailWidthSpeedMin, TrailWidthSpeedMax, t);
 
@@ -378,10 +403,10 @@ public class BallController : MonoBehaviour
 
         if (!_launched) return;
 
-        // ── 速度限制 ──────────────────────────────────────────────────────
         float speed = _rb.velocity.magnitude;
         float minS  = config.ballMinSpeed * SpeedMultiplier;
-        float maxS  = config.ballMaxSpeed * SpeedMultiplier;
+        float maxS  = EffectiveMaxSpeed;
+
         if (speed < minS && speed > 0.1f)
             _rb.velocity = _rb.velocity.normalized * minS;
         else if (speed > maxS)
@@ -389,25 +414,37 @@ public class BallController : MonoBehaviour
 
         UpdateTrailFromSpeed(speed);
 
-        // ── 水平死区检测（引力过载） ───────────────────────────────────────
+        // ── 运动死区检测（引力过载） ───────────────────────────────────────
         if (_executeChainActive || _gravityOverloadActive) return;
 
         Vector2 vel = _rb.velocity;
         float absVx = Mathf.Abs(vel.x);
         float absVy = Mathf.Abs(vel.y);
 
-        // 检测是否处于水平死区：横向速度占主导，纵向速度很小
-        if (absVx > absVy && absVy < HORIZONTAL_THRESHOLD)
+        MotionDeadZone deadZone = MotionDeadZone.None;
+        if (absVx > absVy && absVy < AXIS_DEAD_THRESHOLD)
+            deadZone = MotionDeadZone.Horizontal;
+        else if (absVy > absVx && absVx < AXIS_DEAD_THRESHOLD)
+            deadZone = MotionDeadZone.Vertical;
+
+        if (deadZone == MotionDeadZone.Horizontal)
         {
+            _verticalDeadZoneTimer = 0f;
             _horizontalDeadZoneTimer += Time.fixedDeltaTime;
             if (_horizontalDeadZoneTimer >= DEADZONE_DURATION)
-            {
-                StartCoroutine(GravityOverloadRoutine());
-            }
+                StartCoroutine(GravityOverloadRoutine(deadZone));
+        }
+        else if (deadZone == MotionDeadZone.Vertical)
+        {
+            _horizontalDeadZoneTimer = 0f;
+            _verticalDeadZoneTimer += Time.fixedDeltaTime;
+            if (_verticalDeadZoneTimer >= DEADZONE_DURATION)
+                StartCoroutine(GravityOverloadRoutine(deadZone));
         }
         else
         {
             _horizontalDeadZoneTimer = 0f;
+            _verticalDeadZoneTimer   = 0f;
         }
     }
 
@@ -441,8 +478,6 @@ public class BallController : MonoBehaviour
 
         TruncateTrailOnImpact();
 
-        if (ImpactFX.Instance == null) return;
-
         // ── 斩杀连锁逻辑 ──────────────────────────────────────────────────
         if (_executeChainActive)
         {
@@ -450,7 +485,10 @@ public class BallController : MonoBehaviour
 
             if (enemy != null && !enemy.IsDead)
             {
-                ComboSystem.Instance?.RegisterAirtimeHit();
+                Vector2 chainHitPos = col.contacts.Length > 0
+                    ? col.contacts[0].point
+                    : (Vector2)enemy.transform.position;
+                ComboSystem.Instance?.RegisterAirtimeHit(chainHitPos);
 
                 bool isBoss = enemy is Boss;
                 if (!isBoss)
@@ -493,6 +531,8 @@ public class BallController : MonoBehaviour
         if (col.gameObject.GetComponentInParent<EnemyBase>() != null) return;
 
         AudioManager.Instance?.PlayBounce();
+
+        if (ImpactFX.Instance == null) return;
 
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
         var sr = col.gameObject.GetComponentInChildren<SpriteRenderer>();
@@ -552,11 +592,12 @@ public class BallController : MonoBehaviour
         }
     }
 
-    // ── 引力过载：强制将弹珠拉向底部，打破水平死区 ─────────────────────────
-    private IEnumerator GravityOverloadRoutine()
+    // ── 引力过载：打破水平/垂直死区 ─────────────────────────────────────
+    private IEnumerator GravityOverloadRoutine(MotionDeadZone deadZone)
     {
         _gravityOverloadActive = true;
         _horizontalDeadZoneTimer = 0f;
+        _verticalDeadZoneTimer   = 0f;
 
         // 视觉特效：蓝色电光拖尾
         Color originalStart = _trail.startColor;
@@ -569,9 +610,18 @@ public class BallController : MonoBehaviour
             _trail.endColor = new Color(electricBlue.r, electricBlue.g, electricBlue.b, 0.05f);
         }
 
-        // 施加强力向下推力
         float forceMagnitude = config.ballMaxSpeed * 1.5f;
-        _rb.velocity = new Vector2(_rb.velocity.x * 0.3f, -forceMagnitude);
+        if (deadZone == MotionDeadZone.Horizontal)
+        {
+            // 水平往复 → 强向下推力
+            _rb.velocity = new Vector2(_rb.velocity.x * 0.3f, -forceMagnitude);
+        }
+        else
+        {
+            // 垂直往复 → 强横向推力（偏向场地中心）
+            float hx = GetHorizontalBreakSign();
+            _rb.velocity = new Vector2(hx * forceMagnitude, _rb.velocity.y * 0.3f);
+        }
 
         // 音效和震屏
         AudioManager.Instance?.PlayBounce();
@@ -595,12 +645,19 @@ public class BallController : MonoBehaviour
         _gravityOverloadActive = false;
     }
 
+    private float GetHorizontalBreakSign()
+    {
+        float x = transform.position.x;
+        if (Mathf.Abs(x) > 0.05f) return x > 0f ? -1f : 1f;
+        return Random.value > 0.5f ? 1f : -1f;
+    }
+
     private void CheckBottomFall()
     {
         if (!CanLoseLifeFromBottom()) return;
         if (GameManager.Instance == null || GameManager.Instance.State != GameState.Playing) return;
 
-        float limitY = config != null ? config.minionBottomLineY - 0.35f : -8.85f;
+        float limitY = config != null ? MinionLineRules.GetBallFallLineY() : -8.85f;
         if (transform.position.y > limitY) return;
 
         GameManager.Instance.BallFellDown();

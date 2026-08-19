@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buffName: "\u751F\u547D\u4E0A\u9650"
   description: "\u6700\u5927\u751F\u547D\u503C +1\uFF08\u4E0A\u9650 5\uFF09"
-  rarity: 1
+  rarity: 0
   effectType: 1
   effectValue: 1
   maxStacks: 2
+  minWave: 1

@@ -26,7 +26,10 @@ public class FrostTower : MonoBehaviour
         _timer -= Time.deltaTime;
         if (_timer <= 0f)
         {
-            _timer = Mathf.Max(3.0f, baseAttackInterval - (level * 0.5f));
+            float interval = Mathf.Max(3.0f, baseAttackInterval - (level * 0.5f));
+            if (DebuffManager.Instance != null)
+                interval *= DebuffManager.Instance.TowerAttackIntervalMultiplier;
+            _timer = interval;
             AttackFrostNova();
         }
     }

@@ -41,10 +41,8 @@ public class Slingshot : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit);
 
-        ComboSystem.Instance?.RegisterAirtimeHit();
-        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
-
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
+        ComboSystem.Instance?.RegisterAirtimeHit(hitPos);
         ImpactFX.Instance?.SpawnHit(hitPos, _baseColor, 1.2f);
 
         StartCoroutine(Flash());

@@ -1,40 +1,92 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
     <ui:Style src="BuffSelection.uss" />
 
-    <!-- 全屏半透明遮罩 -->
     <ui:VisualElement name="overlay" class="overlay">
 
-        <!-- 标题 -->
-        <ui:Label name="title-label" text="— CHOOSE YOUR POWER —" class="title" />
-        <ui:Label name="wave-label"  text="WAVE CLEAR"             class="wave-tag" />
+        <ui:VisualElement name="slot-panel" class="slot-panel">
 
-        <!-- 三张卡片容器 -->
-        <ui:VisualElement name="cards-container" class="cards-container">
-
-            <ui:VisualElement name="card-0" class="card">
-                <ui:Label name="rarity-0" text="COMMON"       class="rarity-label rarity-common" />
-                <ui:Label name="name-0"   text="Buff Name"    class="buff-name" />
-                <ui:Label name="desc-0"   text="Description." class="buff-desc" />
-                <ui:Button name="btn-0"   text="SELECT"       class="select-btn" />
+            <ui:VisualElement name="panel-header" class="panel-header">
+                <ui:Label name="title-label" text="— POWER SLOT —" class="title" />
+                <ui:Label name="wave-label" text="WAVE CLEAR" class="wave-tag" />
             </ui:VisualElement>
 
-            <ui:VisualElement name="card-1" class="card">
-                <ui:Label name="rarity-1" text="RARE"         class="rarity-label rarity-rare" />
-                <ui:Label name="name-1"   text="Buff Name"    class="buff-name" />
-                <ui:Label name="desc-1"   text="Description." class="buff-desc" />
-                <ui:Button name="btn-1"   text="SELECT"       class="select-btn" />
+            <ui:VisualElement name="combo-header" class="combo-header">
+                <ui:Label name="combo-label" text="" class="combo-label" />
+                <ui:Label name="combo-rule-label" text="" class="combo-rule" />
             </ui:VisualElement>
 
-            <ui:VisualElement name="card-2" class="card">
-                <ui:Label name="rarity-2" text="EPIC"         class="rarity-label rarity-epic" />
-                <ui:Label name="name-2"   text="Buff Name"    class="buff-name" />
-                <ui:Label name="desc-2"   text="Description." class="buff-desc" />
-                <ui:Button name="btn-2"   text="SELECT"       class="select-btn" />
+            <ui:VisualElement name="machine-row" class="machine-row">
+                <ui:VisualElement name="machine-center" class="machine-center">
+                    <ui:VisualElement class="lever-spacer" />
+                    <ui:VisualElement name="reels-row" class="reels-row">
+
+                    <ui:VisualElement name="reel-0" class="reel">
+                        <ui:Label name="outcome-badge-0" text="" class="outcome-badge" />
+                        <ui:Label name="reel-tag-0" text="左" class="reel-tag" />
+                        <ui:VisualElement name="reel-viewport-0" class="reel-viewport">
+                            <ui:VisualElement name="reel-strip-0" class="reel-strip" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="reel-result-0" class="reel-result">
+                            <ui:Label name="rarity-0" text="—" class="rarity-label rarity-common" />
+                            <ui:Label name="name-0" text="等待" class="buff-name" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="reel-1" class="reel">
+                        <ui:Label name="outcome-badge-1" text="" class="outcome-badge" />
+                        <ui:Label name="reel-tag-1" text="中" class="reel-tag" />
+                        <ui:VisualElement name="reel-viewport-1" class="reel-viewport">
+                            <ui:VisualElement name="reel-strip-1" class="reel-strip" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="reel-result-1" class="reel-result">
+                            <ui:Label name="rarity-1" text="—" class="rarity-label rarity-rare" />
+                            <ui:Label name="name-1" text="等待" class="buff-name" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="reel-2" class="reel">
+                        <ui:Label name="outcome-badge-2" text="" class="outcome-badge" />
+                        <ui:Label name="reel-tag-2" text="右" class="reel-tag" />
+                        <ui:VisualElement name="reel-viewport-2" class="reel-viewport">
+                            <ui:VisualElement name="reel-strip-2" class="reel-strip" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="reel-result-2" class="reel-result">
+                            <ui:Label name="rarity-2" text="—" class="rarity-label rarity-epic" />
+                            <ui:Label name="name-2" text="等待" class="buff-name" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+
+                <ui:VisualElement name="lever-assembly" class="lever-assembly">
+                    <ui:VisualElement name="lever-base" class="lever-base" />
+                    <ui:VisualElement name="lever-arm" class="lever-arm">
+                        <ui:VisualElement name="lever-knob" class="lever-knob" />
+                    </ui:VisualElement>
+                    <ui:Label name="lever-hint" text="拉杆" class="lever-hint" />
+                </ui:VisualElement>
+                </ui:VisualElement>
             </ui:VisualElement>
+
+            <ui:Label name="reroll-hint-label" text="拉动右侧拉杆开始" class="reroll-hint" />
+
+            <ui:VisualElement name="outcome-panel" class="outcome-panel">
+                <ui:Label name="outcome-title" text="效果说明" class="outcome-title" />
+                <ui:VisualElement name="outcome-list" class="outcome-list" />
+            </ui:VisualElement>
+
+            <ui:Button name="confirm-btn" text="领取" class="confirm-btn" />
 
         </ui:VisualElement>
 
-        <!-- 塔类 Buff 二次选择 -->
+        <ui:VisualElement name="debuff-modal" class="debuff-modal">
+            <ui:VisualElement name="debuff-card" class="debuff-card">
+                <ui:Label name="debuff-title" text="轮位税" class="debuff-modal-title" />
+                <ui:VisualElement name="debuff-list" class="debuff-list" />
+                <ui:Button name="debuff-continue-btn" text="继续" class="debuff-continue-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <ui:VisualElement name="tower-choice" class="tower-choice">
             <ui:Label name="tower-choice-title" text="— 塔类 Buff —" class="title" />
             <ui:Label name="tower-choice-hint" text="选择如何使用本次塔卡。" class="wave-tag" />

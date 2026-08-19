@@ -21,7 +21,7 @@ public class WaveManager : MonoBehaviour
     [Tooltip("每波结束到下一波开始的等待时间")]
     public float postWaveDelay    = 3f;
     [Tooltip("自动跳过 Buff 选择的超时时间（无 Buff UI 时生效）")]
-    public float buffSkipTimeout  = 1.5f;
+    public float buffSkipTimeout  = 120f;
 
     [Header("Ball Drop Penalty")]
     [Tooltip("掉球后小兵加速倍率")]
@@ -95,6 +95,11 @@ public class WaveManager : MonoBehaviour
         while (true)
         {
             if (GameManager.Instance == null) yield break;
+
+            // 拉霸未关时不推进波次、不生成 Boss
+            while (GameManager.Instance.State == GameState.BuffSelection)
+                yield return null;
+
             if (!GameManager.Instance.IsWaveSimActive()) { yield return null; continue; }
 
             yield return StartCoroutine(RunWave(_currentWave));
@@ -105,17 +110,11 @@ public class WaveManager : MonoBehaviour
             // 波次完成 → 触发 Buff 选择
             GameManager.Instance.CompleteWave();
 
-            // 等待 Buff UI 处理，超时则自动跳过
-            float elapsed = 0f;
+            // 等待 Buff UI 关闭；不自动跳过（避免玩家仍在拉霸时开下一波）
             while (GameManager.Instance.State == GameState.BuffSelection)
-            {
-                elapsed += Time.deltaTime;
-                if (elapsed >= buffSkipTimeout)
-                    GameManager.Instance.OnBuffSelectionDone();
                 yield return null;
-            }
 
-            yield return new WaitForSeconds(postWaveDelay);
+            yield return new WaitForSecondsRealtime(postWaveDelay);
             _currentWave++;
         }
     }

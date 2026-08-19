@@ -30,5 +30,27 @@ MonoBehaviour:
   scorePerGruntKill: 50
   worldWidth: 9
   worldHeight: 16
-  minionBottomLineY: -8.5
+  minionAttackLineY: -4
+  ballFallLineY: -8.85
+  comboRewardThreshold25: 25
+  comboPulseInterval: 10
+  bumperPulseMilestoneDamage: 1
+  bumperPulseRadius: 3.2
+  bumperPulseRingDuration: 1
+  timestopDuration: 4
+  timestopMinionSpeedScale: 0.35
+  timestopBossSpeedScale: 0.6
+  gravityWellDuration: 2.5
+  gravityWellRadius: 3.2
+  gravityWellPullStrength: 9
+  gravityWellDownSpeedScale: 0.3
+  gravityWellRampTime: 0.9
+  gravityWellDwellRampTime: 0.55
+  gravityWellCoreRadiusRatio: 0.22
+  gravityWellRingRatio: 0.6
+  gravityWellSeparationMult: 2
+  gravityWellMaxFullPull: 8
+  gravityWellOverflowPullMult: 0.3
+  gravityWellMinPlaceOffset: 0.8
+  gravityWellPlaceMarginX: 0.5
   neonPalette: {fileID: 11400000, guid: 1a2de9d420a62ab41868e26fab8a0e51, type: 2}

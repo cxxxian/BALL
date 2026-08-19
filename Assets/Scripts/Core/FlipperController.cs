@@ -117,9 +117,10 @@ public class FlipperController : MonoBehaviour
         }
 
         // 强力限速锁：防止物理累加导致球速无限膨胀
-        if (rb.velocity.magnitude > config.ballMaxSpeed)
-        {
-            rb.velocity = rb.velocity.normalized * config.ballMaxSpeed;
-        }
+        float maxSpeed = config.ballMaxSpeed;
+        if (DebuffManager.Instance != null)
+            maxSpeed *= DebuffManager.Instance.BallMaxSpeedMultiplier;
+        if (rb.velocity.magnitude > maxSpeed)
+            rb.velocity = rb.velocity.normalized * maxSpeed;
     }
 }

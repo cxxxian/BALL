@@ -91,17 +91,42 @@ public class Minion : EnemyBase
         if (_rb == null) return;
 
         float speed = moveSpeed * WaveManager.MinionSpeedMultiplier;
+        if (TimestopAura.Instance != null)
+            speed *= TimestopAura.Instance.GetMinionSpeedScale();
 
-        Vector2 desired = Vector2.down * speed;
-        desired += ComputeAvoidance(speed) * AvoidWeight;
-        desired += ComputeSeparationVelocity(speed) * SepInDesiredWeight;
+        Vector2 pullVel = Vector2.zero;
+        bool inCoreZone = false;
+        bool inGravityWell = GravityWell.Instance != null
+            && GravityWell.Instance.TryGetPull(this, out pullVel, out inCoreZone);
 
-        desired = Vector2.ClampMagnitude(desired, speed * 3.5f);
+        float downScale = 1f;
+        float avoidW    = AvoidWeight;
+        float sepW      = SepInDesiredWeight;
+        if (inGravityWell)
+        {
+            downScale = GravityWell.Instance.GetDownSpeedScale(_rb.position);
+            avoidW *= 1.5f;
+            sepW   *= 1.4f;
+        }
 
-        Vector2 vel = Vector2.Lerp(_rb.velocity, desired, SteerLerp * Time.fixedDeltaTime);
+        Vector2 desired = Vector2.down * speed * downScale;
+        desired += ComputeAvoidance(speed) * avoidW;
+        desired += ComputeSeparationVelocity(speed) * sepW;
+        if (inGravityWell && !inCoreZone)
+            desired += pullVel;
+
+        float maxMag = inGravityWell ? speed * 5.5f : speed * 3.5f;
+        desired = Vector2.ClampMagnitude(desired, maxMag);
+
+        float steer = inGravityWell ? SteerLerp * 1.15f : SteerLerp;
+        Vector2 vel = Vector2.Lerp(_rb.velocity, desired, steer * Time.fixedDeltaTime);
+
+        if (inCoreZone && GravityWell.Instance != null)
+            GravityWell.Instance.StabilizeCoreVelocity(this, ref vel);
+
         _rb.velocity = vel;
 
-        ApplySeparationForce();
+        ApplySeparationForce(inGravityWell);
         HandleStuck(vel, speed);
     }
 
@@ -233,6 +258,7 @@ public class Minion : EnemyBase
         Vector2 pos  = _rb.position;
         int     n    = Physics2D.OverlapCircleNonAlloc(pos, SepRadius, _sepBuf);
         Vector2 push = Vector2.zero;
+        float sepMult = GetGravityWellSeparationMult(pos);
 
         for (int i = 0; i < n; i++)
         {
@@ -249,14 +275,17 @@ public class Minion : EnemyBase
         }
 
         if (push.sqrMagnitude < 0.001f) return Vector2.zero;
-        return Vector2.ClampMagnitude(push.normalized * speed, speed * 2.2f);
+        return Vector2.ClampMagnitude(push.normalized * speed * sepMult, speed * 2.2f);
     }
 
-    private void ApplySeparationForce()
+    private void ApplySeparationForce(bool inGravityWell)
     {
         Vector2 pos  = _rb.position;
         int     n    = Physics2D.OverlapCircleNonAlloc(pos, SepRadius, _sepBuf);
         Vector2 push = Vector2.zero;
+        float sepMult = inGravityWell
+            ? GetGravityWellSeparationMult(pos)
+            : 1f;
 
         for (int i = 0; i < n; i++)
         {
@@ -273,7 +302,14 @@ public class Minion : EnemyBase
         }
 
         if (push.sqrMagnitude > 0.001f)
-            _rb.AddForce(Vector2.ClampMagnitude(push, 2.8f) * SepForce, ForceMode2D.Impulse);
+            _rb.AddForce(Vector2.ClampMagnitude(push, 2.8f) * SepForce * sepMult, ForceMode2D.Impulse);
+    }
+
+    private static float GetGravityWellSeparationMult(Vector2 pos)
+    {
+        if (GravityWell.Instance == null || !GravityWell.Instance.IsInside(pos)) return 1f;
+        var cfg = GameManager.Instance?.config;
+        return cfg != null ? cfg.gravityWellSeparationMult : 2f;
     }
 
     private int CountNearbyEnemies(float radius)

@@ -28,8 +28,6 @@ public class BlockShield : MonoBehaviour
     private Color ColActive => NeonColors.Active.GetBase(NeonRole.SkillShield);
     private Color ColDim    => NeonPalette.Dim(ColActive, 0.55f);
     private Color ColAbsorb => Color.Lerp(ColActive, Color.white, 0.45f);
-    private Color ColParticle => NeonPalette.Dim(ColActive, 0.6f);
-
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -122,8 +120,7 @@ public class BlockShield : MonoBehaviour
 
         JuiceRouter.ShieldAbsorb(shieldY, shieldHalfWidth);
 
-        // 击杀下半屏所有小兵
-        KillLowerHalfMinions();
+        StartCoroutine(ClearMinionsRoutine());
 
         // 护盾线膨胀然后快速消散
         float t = 0f, dur = 0.35f;
@@ -180,8 +177,26 @@ public class BlockShield : MonoBehaviour
         _line.endColor   = c;
     }
 
-    // ── 击杀下半屏小兵 ────────────────────────────────────────────────────
-    private void KillLowerHalfMinions()
+    // ── 护盾清场：统一青闪 → 解体 ─────────────────────────────────────────
+    private IEnumerator ClearMinionsRoutine()
+    {
+        var toLower = CollectLowerMinions();
+        if (toLower.Count == 0) yield break;
+
+        foreach (var e in toLower)
+            EnemyJuice.ShieldAbsorbFlash(e);
+
+        yield return new WaitForSecondsRealtime(0.04f);
+
+        foreach (var e in toLower)
+        {
+            if (e != null && !e.IsDead)
+                EnemyJuice.ShieldAbsorbDissolve(e);
+            yield return new WaitForSecondsRealtime(Random.Range(0f, 0.03f));
+        }
+    }
+
+    private List<EnemyBase> CollectLowerMinions()
     {
         var allEnemies = FindObjectsOfType<EnemyBase>();
         var toLower = new List<EnemyBase>();
@@ -193,13 +208,7 @@ public class BlockShield : MonoBehaviour
                 toLower.Add(e);
         }
 
-        foreach (var e in toLower)
-        {
-            if (e == null || e.IsDead) continue;
-            if (ImpactFX.Instance != null)
-                ImpactFX.Instance.SpawnHit(e.transform.position, ColParticle, 1.0f);
-            e.ForceKill();
-        }
+        return toLower;
     }
 
     private void Deactivate()

@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class SkillUI : MonoBehaviour
 {
-    [Header("槽位索引（0=斩击, 1=护盾）")]
+    [Header("槽位索引（0/1=装备技能）")]
     public int slotIndex = 0;
 
     [Header("References")]
@@ -37,7 +37,7 @@ public class SkillUI : MonoBehaviour
         {
             SkillManager.Instance.onSlotCooldownChanged.AddListener(OnSlotCooldownChanged);
             SkillManager.Instance.onSlotActivated.AddListener(OnSlotActivated);
-            SkillManager.Instance.onFired.AddListener(OnFired);
+            SkillManager.Instance.onAimingEnded.AddListener(OnAimingEnded);
             _subscribed = true;
 
             if (slotIndex < SkillManager.Instance.slots.Length)
@@ -53,16 +53,27 @@ public class SkillUI : MonoBehaviour
 
         if (SkillManager.Instance == null) return;
 
-        if (slotIndex == 1)
+        if (slotIndex >= 0 && SkillManager.Instance.slots != null
+            && slotIndex < SkillManager.Instance.slots.Length)
         {
-            bool shieldNow = BlockShield.Instance != null && BlockShield.Instance.IsActive;
-            if (shieldNow != _isEffectActive)
+            var def = SkillManager.Instance.slots[slotIndex].definition;
+            if (def != null && def.implementationType == ActiveSkillType.BlockShield)
             {
-                _isEffectActive = shieldNow;
-                if (!_isEffectActive)
+                bool shieldNow = BlockShield.Instance != null && BlockShield.Instance.IsActive;
+                if (shieldNow != _isEffectActive)
                 {
-                    _pulse = 0f;
-                    if (slotIndex < SkillManager.Instance.slots.Length)
+                    _isEffectActive = shieldNow;
+                    if (!_isEffectActive)
+                        OnSlotCooldownChanged(slotIndex, SkillManager.Instance.slots[slotIndex].CooldownRatio);
+                }
+            }
+            else if (def != null && def.implementationType == ActiveSkillType.TimestopAura)
+            {
+                bool timestopNow = TimestopAura.Instance != null && TimestopAura.Instance.IsActive;
+                if (timestopNow != _isEffectActive)
+                {
+                    _isEffectActive = timestopNow;
+                    if (!_isEffectActive)
                         OnSlotCooldownChanged(slotIndex, SkillManager.Instance.slots[slotIndex].CooldownRatio);
                 }
             }
@@ -87,14 +98,21 @@ public class SkillUI : MonoBehaviour
     private bool IsSlotReady()
     {
         if (SkillManager.Instance == null) return false;
-        if (slotIndex >= SkillManager.Instance.slots.Length) return false;
+        if (SkillManager.Instance.slots == null) return false;
+        if (slotIndex < 0 || slotIndex >= SkillManager.Instance.slots.Length) return false;
         return SkillManager.Instance.slots[slotIndex].IsReady;
     }
 
     private void OnSlotCooldownChanged(int idx, float ratio)
     {
         if (idx != slotIndex) return;
+        if (_isEffectActive) return;
         _pulse = 0f;
+        ApplyCooldownVisual(ratio);
+    }
+
+    private void ApplyCooldownVisual(float ratio)
+    {
         if (cdRing != null)
         {
             cdRing.fillAmount = 1f - ratio;
@@ -107,30 +125,38 @@ public class SkillUI : MonoBehaviour
     private void OnSlotActivated(int idx)
     {
         if (idx != slotIndex) return;
-        _pulse          = 0f;
-        _isEffectActive = true;
-        if (cdRing   != null) { cdRing.fillAmount = 1f; cdRing.color = ringActiveColor; }
-        if (iconDisc != null) iconDisc.color = discActiveColor;
+        if (SkillManager.Instance?.slots == null || slotIndex < 0 || slotIndex >= SkillManager.Instance.slots.Length)
+            return;
+
+        var def = SkillManager.Instance.slots[slotIndex].definition;
+        if (def == null) return;
+
+        if (def.implementationType == ActiveSkillType.ExecuteChain
+            || def.implementationType == ActiveSkillType.TimestopAura
+            || def.implementationType == ActiveSkillType.GravitySpike)
+        {
+            _pulse          = 0f;
+            _isEffectActive = true;
+            if (cdRing   != null) { cdRing.fillAmount = 1f; cdRing.color = ringActiveColor; }
+            if (iconDisc != null) iconDisc.color = discActiveColor;
+        }
     }
 
-    private void OnFired(Vector2 _)
+    private void OnAimingEnded(int idx)
     {
-        if (slotIndex != 0) return;
-        ResetSlashVisual();
+        if (idx != slotIndex) return;
+        ResetAimVisual();
     }
 
-    private void OnBallLost()
-    {
-        if (slotIndex != 0) return;
-        ResetSlashVisual();
-    }
+    private void OnBallLost() => ResetAimVisual();
 
-    private void ResetSlashVisual()
+    private void ResetAimVisual()
     {
         _isEffectActive = false;
         _pulse          = 0f;
-        if (SkillManager.Instance == null || slotIndex >= SkillManager.Instance.slots.Length) return;
-        OnSlotCooldownChanged(slotIndex, SkillManager.Instance.slots[slotIndex].CooldownRatio);
+        if (SkillManager.Instance?.slots == null || slotIndex < 0 || slotIndex >= SkillManager.Instance.slots.Length)
+            return;
+        ApplyCooldownVisual(SkillManager.Instance.slots[slotIndex].CooldownRatio);
     }
 
     public void OnButtonClicked()

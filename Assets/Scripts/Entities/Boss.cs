@@ -102,7 +102,8 @@ public class Boss : EnemyBase
     protected override void ApplyMovement()
     {
         if (_rb == null) return;
-        _rb.velocity = Vector2.right * _curMoveSpeed * _moveDir;
+        float bossScale = TimestopAura.Instance != null ? TimestopAura.Instance.GetBossSpeedScale() : 1f;
+        _rb.velocity = Vector2.right * _curMoveSpeed * _moveDir * bossScale;
 
         float x = transform.position.x;
         if (x >= _maxX) { _moveDir = -1f; transform.position = new Vector3(_maxX, transform.position.y, 0f); }
@@ -361,7 +362,7 @@ public class Boss : EnemyBase
                     if (!IsDead) SpawnBatch();
                 }
 
-                yield return new WaitForSeconds(GetScaledSpawnInterval());
+                yield return new WaitForSeconds(GetEffectiveSpawnInterval());
                 if (!IsDead) SpawnBatch();
             }
             else
@@ -375,6 +376,14 @@ public class Boss : EnemyBase
     {
         float baseInterval = _inPhase2 ? definition.spawnIntervalP2 : definition.spawnInterval;
         return EndlessWaveScaling.GetSpawnInterval(baseInterval, _waveIndex);
+    }
+
+    private float GetEffectiveSpawnInterval()
+    {
+        float interval = GetScaledSpawnInterval();
+        if (TimestopAura.Instance != null)
+            interval *= TimestopAura.Instance.GetSpawnIntervalMultiplier();
+        return interval;
     }
 
     private int GetScaledSpawnCount()

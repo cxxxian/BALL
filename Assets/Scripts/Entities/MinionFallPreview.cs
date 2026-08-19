@@ -5,7 +5,6 @@ using UnityEngine;
 public class MinionFallPreview : MonoBehaviour
 {
     private const float ShowDistance = 1.5f;
-    private const float FallbackBottomLineY = -8.5f;
 
     private EnemyBase _enemy;
     private LineRenderer _line;
@@ -65,14 +64,7 @@ public class MinionFallPreview : MonoBehaviour
         _line.enabled    = true;
     }
 
-    private float GetCheckY()
-    {
-        if (BlockShield.Instance != null && BlockShield.Instance.IsActive)
-            return BlockShield.Instance.shieldY;
-
-        var cfg = GameManager.Instance != null ? GameManager.Instance.config : null;
-        return cfg != null ? cfg.minionBottomLineY : FallbackBottomLineY;
-    }
+    private float GetCheckY() => MinionLineRules.GetAttackLineY();
 
     private float GetFootY()
     {

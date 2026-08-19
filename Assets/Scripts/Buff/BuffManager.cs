@@ -9,6 +9,10 @@ public class BuffManager : MonoBehaviour
     public List<BuffDefinition> buffPool = new List<BuffDefinition>();
 
     private readonly Dictionary<BuffEffectType, int> _stacks = new Dictionary<BuffEffectType, int>();
+    private readonly Dictionary<BuffEffectType, float> _halfStackBonuses = new Dictionary<BuffEffectType, float>();
+
+    private float _epicWeightPadding;
+    private float _rareWeightPadding;
 
     // ── 对外暴露的数值属性 ─────────────────────────────────────
     public int BallDamageBonus         { get; private set; } = 0;
@@ -16,6 +20,10 @@ public class BuffManager : MonoBehaviour
     public int ComboThresholdReduction { get; private set; } = 0;
     public int HeartGuardCharges       { get; private set; } = 0;
     public int MaxHeartGuardCharges    { get; private set; } = 0;
+    /// <summary>击杀得分额外倍率增量（0.15 = +15%）。最终分 = base × (1 + ScoreOnKillBonus)。</summary>
+    public float ScoreOnKillBonus      { get; private set; } = 0f;
+
+    public float EpicWeightPadding => _epicWeightPadding;
 
     private void Awake()
     {
@@ -35,46 +43,119 @@ public class BuffManager : MonoBehaviour
             GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
     }
 
-    /// <summary>返回固定 3 槽：未满层 Buff 随机填入，不足部分为 null（空槽占位，后续可接新 Buff）。</summary>
-    public BuffDefinition[] GetRandomSelection(int count = 3)
-    {
-        var result = new BuffDefinition[count];
+    public int GetStacks(BuffEffectType type) =>
+        _stacks.TryGetValue(type, out int v) ? v : 0;
 
-        if (buffPool == null || buffPool.Count == 0)
-            return result;
+    public BuffDefinition DrawRandomFromPool(BuffRarity rarity, int waveIndex)
+    {
+        if (buffPool == null || buffPool.Count == 0) return null;
 
         var eligible = new List<BuffDefinition>();
         foreach (var b in buffPool)
         {
-            if (b != null && GetStacks(b.effectType) < b.maxStacks)
-                eligible.Add(b);
+            if (b == null) continue;
+            if (b.rarity != rarity) continue;
+            if (GetStacks(b.effectType) >= b.maxStacks) continue;
+            if (waveIndex < b.minWave) continue;
+            if (!IsTowerModEligible(b)) continue;
+            eligible.Add(b);
         }
 
-        var bag = new List<BuffDefinition>(eligible);
-        int pickCount = Mathf.Min(count, bag.Count);
-        for (int i = 0; i < pickCount; i++)
-        {
-            int idx = Random.Range(0, bag.Count);
-            result[i] = bag[idx];
-            bag.RemoveAt(idx);
-        }
-
-        return result;
+        if (eligible.Count == 0) return null;
+        return eligible[Random.Range(0, eligible.Count)];
     }
 
-    public void ApplyBuff(BuffDefinition def)
+    public void ApplyBuff(BuffDefinition def, int extraStacks = 0)
     {
         if (def == null) return;
         int current = GetStacks(def.effectType);
-        if (current >= def.maxStacks) return;
-        _stacks[def.effectType] = current + 1;
+        int toAdd = 1 + extraStacks;
+        int room = def.maxStacks - current;
+        if (room <= 0) return;
+
+        toAdd = Mathf.Min(toAdd, room);
+        _stacks[def.effectType] = current + toAdd;
         RecalculateStats();
 
         if (def.effectType == BuffEffectType.HeartGuard)
-            HeartGuardCharges = Mathf.Min(MaxHeartGuardCharges, HeartGuardCharges + 1);
+            HeartGuardCharges = Mathf.Min(MaxHeartGuardCharges, HeartGuardCharges + toAdd);
 
         Debug.Log($"[BuffManager] Applied: {def.buffName}  stacks={_stacks[def.effectType]}/{def.maxStacks}");
     }
+
+    public void ApplyPurpleScrap(BuffDefinition def)
+    {
+        if (def == null) return;
+
+        int current = GetStacks(def.effectType);
+        if (current > 0 && current < def.maxStacks)
+        {
+            ApplyBuff(def);
+            return;
+        }
+
+        if (current >= def.maxStacks)
+        {
+            AddRareWeightPadding(0.03f);
+            return;
+        }
+
+        if (IsStatEffect(def.effectType))
+        {
+            ApplyHalfStack(def);
+            return;
+        }
+
+        AddRareWeightPadding(0.03f);
+    }
+
+    public void ApplyHalfStack(BuffDefinition def)
+    {
+        if (def == null || !IsStatEffect(def.effectType)) return;
+
+        float half = def.effectValue * 0.5f;
+        if (!_halfStackBonuses.ContainsKey(def.effectType))
+            _halfStackBonuses[def.effectType] = 0f;
+        _halfStackBonuses[def.effectType] += half;
+        RecalculateStats();
+        Debug.Log($"[BuffManager] Half-stack: {def.buffName} (+{half})");
+    }
+
+    public void AddEpicWeightPadding(float amount, float cap)
+    {
+        _epicWeightPadding = Mathf.Min(cap, _epicWeightPadding + amount);
+    }
+
+    public void AddRareWeightPadding(float amount)
+    {
+        _rareWeightPadding += amount;
+    }
+
+    public float ConsumeRareWeightPadding()
+    {
+        float v = _rareWeightPadding;
+        _rareWeightPadding = 0f;
+        return v;
+    }
+
+    public static bool IsStatEffect(BuffEffectType type) =>
+        type == BuffEffectType.BallDamageUp ||
+        type == BuffEffectType.MaxHPUp ||
+        type == BuffEffectType.ComboThresholdDown ||
+        type == BuffEffectType.ScoreOnKillUp;
+
+    /// <summary>应用赏金猎人等击杀分倍率；命中分不受影响。</summary>
+    public int ApplyKillScoreBonus(int baseKillScore)
+    {
+        if (baseKillScore <= 0 || ScoreOnKillBonus <= 0f) return baseKillScore;
+        return Mathf.Max(0, Mathf.RoundToInt(baseKillScore * (1f + ScoreOnKillBonus)));
+    }
+
+    public static bool IsTowerBuildEffect(BuffEffectType type) =>
+        type == BuffEffectType.DeployTeslaCoil ||
+        type == BuffEffectType.DeployFrostTower;
+
+    private static bool IsTowerModEligible(BuffDefinition def) => true;
 
     private void RecalculateStats()
     {
@@ -82,6 +163,7 @@ public class BuffManager : MonoBehaviour
         MaxHPBonus              = 0;
         ComboThresholdReduction = 0;
         MaxHeartGuardCharges    = 0;
+        ScoreOnKillBonus        = 0f;
 
         foreach (var def in buffPool)
         {
@@ -99,11 +181,33 @@ public class BuffManager : MonoBehaviour
                 case BuffEffectType.ComboThresholdDown:
                     ComboThresholdReduction += Mathf.RoundToInt(def.effectValue * stacks);
                     break;
+                case BuffEffectType.ScoreOnKillUp:
+                    ScoreOnKillBonus += def.effectValue * stacks;
+                    break;
                 case BuffEffectType.HeartGuard:
                     MaxHeartGuardCharges = stacks;
                     break;
                 case BuffEffectType.DeployTeslaCoil:
                 case BuffEffectType.DeployFrostTower:
+                    break;
+            }
+        }
+
+        foreach (var kv in _halfStackBonuses)
+        {
+            switch (kv.Key)
+            {
+                case BuffEffectType.BallDamageUp:
+                    BallDamageBonus += Mathf.RoundToInt(kv.Value);
+                    break;
+                case BuffEffectType.MaxHPUp:
+                    MaxHPBonus += Mathf.RoundToInt(kv.Value);
+                    break;
+                case BuffEffectType.ComboThresholdDown:
+                    ComboThresholdReduction += Mathf.RoundToInt(kv.Value);
+                    break;
+                case BuffEffectType.ScoreOnKillUp:
+                    ScoreOnKillBonus += kv.Value;
                     break;
             }
         }
@@ -149,10 +253,10 @@ public class BuffManager : MonoBehaviour
     private void ResetForNewGame()
     {
         _stacks.Clear();
+        _halfStackBonuses.Clear();
+        _epicWeightPadding = 0f;
+        _rareWeightPadding = 0f;
         HeartGuardCharges = 0;
         RecalculateStats();
     }
-
-    private int GetStacks(BuffEffectType type) =>
-        _stacks.TryGetValue(type, out int v) ? v : 0;
 }

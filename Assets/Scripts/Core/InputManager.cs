@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DefaultExecutionOrder(-50)]
 public class InputManager : MonoBehaviour
 {
     public static InputManager Instance { get; private set; }
@@ -39,7 +40,6 @@ public class InputManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && waiting)
             LaunchPressed = true;
 
-        // 右键激活斩杀连锁（slot 0）
         if (Input.GetMouseButtonDown(1) && !waiting)
         {
             SkillPressed = true;
@@ -60,10 +60,9 @@ public class InputManager : MonoBehaviour
                 continue;
             }
 
-            // 技能瞄准中：BulletTimeAim 自行消费触摸
-            if (SkillManager.Instance != null && SkillManager.Instance.IsAiming) continue;
+            if (SkillManager.Instance != null
+                && (SkillManager.Instance.IsAiming || SkillManager.Instance.IsGroundAiming)) continue;
 
-            // 底部区域：左半=左挡板，右半=右挡板
             float yRatio = touch.position.y / Screen.height;
             if (yRatio < botZone &&
                 touch.phase != TouchPhase.Ended &&
@@ -93,7 +92,12 @@ public class InputManager : MonoBehaviour
                 LaunchPressed = true;
         }
 
-        // 键盘备用：E 键激活护盾格挡（slot 1）
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            SkillPressed = true;
+            SkillManager.Instance?.TryActivate(0);
+        }
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             SkillPressed = true;

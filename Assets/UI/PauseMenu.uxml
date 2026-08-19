@@ -1,0 +1,91 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Style src="PauseMenu.uss" />
+
+    <ui:VisualElement name="overlay" class="pause-overlay">
+
+        <ui:VisualElement name="pause-panel" class="pause-panel">
+
+            <ui:VisualElement name="panel-header" class="panel-header">
+                <ui:Label text="系统菜单" class="header-title" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="tab-bar" class="tab-bar">
+                <ui:Button name="tab-run-status" text="本局状态" class="tab-btn tab-active" />
+                <ui:Button name="tab-skills" text="技能" class="tab-btn" />
+                <ui:Button name="tab-slot-rules" text="老虎机规则" class="tab-btn" />
+                <ui:Button name="tab-settings" text="设置" class="tab-btn" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="tab-content" class="tab-content">
+
+                <ui:ScrollView name="run-status-view" class="tab-view tab-view-active tab-scroll">
+                    <ui:Label text="被动 Buff" class="section-title" />
+                    <ui:VisualElement name="buff-list" class="entry-list" />
+                    <ui:Label text="轮位税 Debuff" class="section-title" />
+                    <ui:VisualElement name="debuff-list" class="entry-list" />
+                    <ui:Label text="汇总数值" class="section-title" />
+                    <ui:VisualElement name="stats-summary" class="stats-block" />
+                </ui:ScrollView>
+
+                <ui:ScrollView name="skills-view" class="tab-view tab-scroll">
+                    <ui:VisualElement name="skill-cards" class="skill-cards" />
+                </ui:ScrollView>
+
+                <ui:ScrollView name="slot-rules-view" class="tab-view tab-scroll">
+                    <ui:Label name="slot-flow-text" class="flow-text" />
+                    <ui:VisualElement name="combo-cards" class="combo-cards" />
+                    <ui:Label name="slot-doc-hint" class="doc-hint" />
+                </ui:ScrollView>
+
+                <ui:ScrollView name="settings-view" class="tab-view tab-scroll">
+                    <ui:Label text="音频" class="section-title" />
+                    <ui:VisualElement class="settings-row">
+                        <ui:Label text="主音量" class="settings-label" />
+                        <ui:Slider name="slider-master" low-value="0" high-value="1" value="0.8" class="settings-slider" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="settings-row">
+                        <ui:Label text="音效" class="settings-label" />
+                        <ui:Slider name="slider-sfx" low-value="0" high-value="1" value="0.8" class="settings-slider" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="settings-row">
+                        <ui:Label text="音乐" class="settings-label" />
+                        <ui:Slider name="slider-music" low-value="0" high-value="1" value="0.8" class="settings-slider" />
+                    </ui:VisualElement>
+                    <ui:Label text="操作" class="section-title" />
+                    <ui:VisualElement class="settings-row">
+                        <ui:Label text="屏幕震动" class="settings-label" />
+                        <ui:Label text="开启" class="settings-status-chip" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="settings-row">
+                        <ui:Label text="触觉反馈" class="settings-label" />
+                        <ui:Label text="开启" class="settings-status-chip" />
+                    </ui:VisualElement>
+                    <ui:Label text="画面" class="section-title" />
+                    <ui:VisualElement class="settings-row">
+                        <ui:Label text="后处理特效" class="settings-label" />
+                        <ui:Label text="开启" class="settings-status-chip" />
+                    </ui:VisualElement>
+                    <ui:Label text="操作说明" class="section-title" />
+                    <ui:Label name="hint-pc" class="control-hint" />
+                    <ui:Label name="hint-mobile" class="control-hint" />
+                    <ui:Label text="以上选项即将推出" class="settings-stub" />
+                </ui:ScrollView>
+
+            </ui:VisualElement>
+
+            <ui:VisualElement name="confirm-bar" class="confirm-bar">
+                <ui:Label name="confirm-text" text="" class="confirm-text" />
+                <ui:Button name="btn-confirm-yes" text="确认" class="confirm-btn confirm-yes" />
+                <ui:Button name="btn-confirm-no" text="取消" class="confirm-btn confirm-no" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="footer-actions" class="footer-actions">
+                <ui:Button name="btn-resume" text="继续游戏" class="footer-btn footer-primary" />
+                <ui:Button name="btn-main-menu" text="返回主菜单" class="footer-btn" />
+                <ui:Button name="btn-quit" text="退出游戏" class="footer-btn footer-danger" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

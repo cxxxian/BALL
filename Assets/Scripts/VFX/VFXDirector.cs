@@ -115,10 +115,11 @@ public class VFXDirector : MonoBehaviour
             yield return null;
         }
 
-        // T=0.10s: 恢复时间 + 清除暗角
+        // T=0.10s: 恢复时间 + 清除暗角（拉霸界面已开时不抢 timeScale）
         yield return new WaitForSecondsRealtime(hitStopDuration * 0.5f);
 
-        Time.timeScale = 1.0f;
+        if (GameManager.Instance == null || GameManager.Instance.State != GameState.BuffSelection)
+            Time.timeScale = 1.0f;
         SetVignetteIntensity(0f);
 
         // 扭曲球快速炸开消失
@@ -144,6 +145,7 @@ public class VFXDirector : MonoBehaviour
         if (postEffectHoldDuration > 0f)
             yield return new WaitForSecondsRealtime(postEffectHoldDuration);
 
+        SlowMoFX.Instance?.ClearVisualOverlays();
         _effectActive = false;
     }
 

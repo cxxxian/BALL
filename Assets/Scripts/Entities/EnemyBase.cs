@@ -16,8 +16,6 @@ public abstract class EnemyBase : MonoBehaviour
     [Tooltip("禁用底线检测（Boss 设为 false）")]
     public bool checkBottomLine = true;
 
-    private const float FallbackBottomLineY = -8.5f;
-
     public int  CurrentHits { get; protected set; } = 0;
     public bool IsDead      { get; protected set; } = false;
 
@@ -38,17 +36,17 @@ public abstract class EnemyBase : MonoBehaviour
         if (IsDead) return;
         if (checkBottomLine)
         {
-            bool shieldUp = BlockShield.Instance != null && BlockShield.Instance.IsActive;
-            float checkY  = shieldUp ? BlockShield.Instance.shieldY : GetMinionBottomLineY();
-            if (transform.position.y <= checkY)
+            float checkY = MinionLineRules.GetAttackLineY();
+            if (GetFootY() <= checkY)
                 OnReachBottom();
         }
     }
 
-    private static float GetMinionBottomLineY()
+    private float GetFootY()
     {
-        var cfg = GameManager.Instance != null ? GameManager.Instance.config : null;
-        return cfg != null ? cfg.minionBottomLineY : FallbackBottomLineY;
+        if (MainSR != null && MainSR.sprite != null)
+            return MainSR.bounds.min.y;
+        return transform.position.y;
     }
 
     protected virtual void FixedUpdate()
@@ -113,7 +111,23 @@ public abstract class EnemyBase : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void HideVisualForDissolve()
+    /// <summary>护盾吸收清场：青闪后解体，不触发普通击杀粒子。</summary>
+    public void DissolveFromShieldAbsorb()
+    {
+        if (IsDead) return;
+        IsDead = true;
+        if (_rb != null) _rb.velocity = Vector2.zero;
+        if (GameManager.Instance != null)
+            GameManager.Instance.AddScore(ResolveKillScore(scoreOnKill));
+        GetHealthBar()?.OnEnemyDeath();
+        WaveManager.Instance?.UnregisterMinion(this);
+        HideVisualForDissolve();
+        Color cyan = NeonColors.Active.GetBase(NeonRole.SkillShield);
+        ImpactFX.Instance?.SpawnBottomDissolve(transform.position, cyan, 0.85f);
+        Destroy(gameObject);
+    }
+
+    protected void HideVisualForDissolve()
     {
         foreach (var col in GetComponentsInChildren<Collider2D>())
             col.enabled = false;
@@ -137,7 +151,6 @@ public abstract class EnemyBase : MonoBehaviour
         if (col.gameObject.CompareTag("Ball"))
         {
             BallController ball = col.gameObject.GetComponent<BallController>();
-            // 斩杀链由 BallController 统一结算，避免双次 TakeHit
             if (ball != null && ball.IsExecuteChainActive) return;
             Vector2? hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2?)null;
             TakeHit(1, true, hitPos);
@@ -157,10 +170,14 @@ public abstract class EnemyBase : MonoBehaviour
 
         if (CurrentHits >= maxHits)
         {
-            // Boss 击杀触发完整特效
-            if (isFromBall && this is Boss)
+            bool bossBallKill = isFromBall && this is Boss;
+            if (bossBallKill)
             {
                 VFXDirector.Instance?.TriggerBossKillEffect(transform.position);
+                HideVisualForDissolve();
+                ImpactFX.Instance?.SpawnBossDissolve(transform.position, BaseColor, 1.5f);
+                Die(skipKillJuice: true);
+                return;
             }
             Die();
         }
@@ -168,16 +185,32 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void OnHit() { }
 
-    protected virtual void Die()
+    private static int ResolveKillScore(int baseKillScore)
+    {
+        if (BuffManager.Instance == null) return baseKillScore;
+        return BuffManager.Instance.ApplyKillScoreBonus(baseKillScore);
+    }
+
+    protected virtual void Die(bool skipKillJuice = false)
     {
         IsDead = true;
         if (_rb != null) _rb.velocity = Vector2.zero;
         if (GameManager.Instance != null)
-            GameManager.Instance.AddScore(scoreOnKill);
-        EnemyJuice.OnKill(this, transform.position);
+            GameManager.Instance.AddScore(ResolveKillScore(scoreOnKill));
+        if (!skipKillJuice)
+            EnemyJuice.OnKill(this, transform.position);
+        else
+            GetHealthBar()?.OnEnemyDeath();
         onDeath.Invoke(this);
         OnDie();
         Destroy(gameObject);
+    }
+
+    private IEnemyHealthBar GetHealthBar()
+    {
+        var minionBar = GetComponent<MinionHealthBar>();
+        if (minionBar != null) return minionBar;
+        return GetComponent<BossHealthBar>();
     }
 
     protected virtual void OnDie() { }

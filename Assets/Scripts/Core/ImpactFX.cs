@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ImpactFX : MonoBehaviour
@@ -30,7 +31,6 @@ public class ImpactFX : MonoBehaviour
 
         EmitAt(_burstPS, worldPos, hdr,          burstCount);
         EmitAt(_dustPS,  worldPos, hdr * 0.6f,   dustCount);
-        StartCoroutine(RingRoutine(worldPos, neonColor, intensity));
     }
 
     /// <summary>墙边短 HDR 闪条（沿墙切线方向）。</summary>
@@ -50,10 +50,24 @@ public class ImpactFX : MonoBehaviour
     /// </summary>
     public void SpawnBottomDissolve(Vector2 worldPos, Color neonColor, float intensity = 1f)
     {
+        EmitBottomDissolve(worldPos, neonColor, intensity, 1f, false);
+    }
+
+    /// <summary>Boss 击杀：金色像素解体，数量 ×2，轻微上飘。</summary>
+    public void SpawnBossDissolve(Vector2 worldPos, Color bossBaseColor, float intensity = 1.5f)
+    {
+        Color gold = Color.Lerp(bossBaseColor, new Color(1f, 0.82f, 0.15f), 0.65f);
+        EmitBottomDissolve(worldPos, gold, intensity, 2f, true);
+        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+    }
+
+    private void EmitBottomDissolve(Vector2 worldPos, Color neonColor, float intensity, float countMult, bool upwardBias)
+    {
         Color hdr = NeonColors.Active.ForParticle(neonColor, intensity);
 
-        int count = Mathf.RoundToInt(Mathf.Lerp(32f, 52f, intensity));
+        int count = Mathf.RoundToInt(Mathf.Lerp(32f, 52f, intensity) * countMult);
         float spread = 0.32f + intensity * 0.12f;
+        float sizeMul = upwardBias ? 1.15f : 1f;
 
         for (int i = 0; i < count; i++)
         {
@@ -61,16 +75,18 @@ public class ImpactFX : MonoBehaviour
             Vector2 offset = Random.insideUnitCircle * spread;
             ep.position = new Vector3(worldPos.x + offset.x, worldPos.y + offset.y, -0.18f);
             ep.startColor = hdr * Random.Range(0.8f, 1f);
-            ep.startSize = Random.Range(0.07f, 0.14f) * intensity;
+            ep.startSize = Random.Range(0.07f, 0.14f) * intensity * sizeMul;
             ep.startLifetime = Random.Range(0.26f, 0.38f);
             float vx = Random.Range(-2.8f, 2.8f);
-            float vy = Random.Range(-6f, -1.2f);
+            float vy = upwardBias
+                ? Random.Range(-2.5f, 4.5f)
+                : Random.Range(-6f, -1.2f);
             ep.velocity = new Vector3(vx, vy, 0f);
             _dissolvePS.Emit(ep, 1);
         }
 
-        CameraShake.Instance?.Shake(CameraShake.Preset.Light);
-        StartCoroutine(BottomLineFlashRoutine(worldPos.y, neonColor, intensity));
+        if (!upwardBias)
+            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
     }
 
     // ── 内部工具 ──────────────────────────────────────────────────────────
@@ -82,46 +98,155 @@ public class ImpactFX : MonoBehaviour
         ps.Emit(ep, count);
     }
 
-    // ── 扩散光环（LineRenderer 圆） ───────────────────────────────────────
-    private IEnumerator RingRoutine(Vector2 pos, Color neonColor, float intensity)
+    // ── Bumper 里程碑脉冲波（见 SpawnBumperPulseWave）────────────────────
+
+    /// <summary>Bumper 里程碑脉冲：金色八角冲击波 + 径向射线；伤害随波前半径同步。</summary>
+    public void SpawnBumperPulseWave(Vector2 worldPos, float worldRadius, Color neonColor, float duration = 1f, int pulseDamage = 0)
     {
-        var go = new GameObject("HitRing");
-        go.transform.position = new Vector3(pos.x, pos.y, -0.15f);
+        StartCoroutine(BumperPulseWaveRoutine(worldPos, worldRadius, neonColor, duration, pulseDamage));
+    }
 
-        var lr = go.AddComponent<LineRenderer>();
-        lr.useWorldSpace  = false;
-        lr.loop           = false;
-        lr.positionCount  = 33;
-        lr.sortingOrder   = 9;
+    private static readonly Collider2D[] PulseOverlapBuf = new Collider2D[48];
 
-        float w = 0.055f * intensity;
-        lr.startWidth = w; lr.endWidth = w;
+    private IEnumerator BumperPulseWaveRoutine(Vector2 pos, float worldRadius, Color neonColor, float duration, int pulseDamage)
+    {
+        var root = new GameObject("BumperPulseWave");
+        root.transform.position = new Vector3(pos.x, pos.y, -0.11f);
 
-        // 画圆
-        for (int i = 0; i <= 32; i++)
+        Color hdr = NeonColors.Active.ForParticle(neonColor, 1.5f);
+        Color core = new Color(hdr.r * 1.2f, hdr.g * 1.1f, hdr.b, 1f);
+
+        // 半透明核心闪光（与普通 Hit 粒子区分）
+        var coreGo = new GameObject("Core");
+        coreGo.transform.SetParent(root.transform, false);
+        var coreSr = coreGo.AddComponent<SpriteRenderer>();
+        coreSr.sprite = MakeDiscSprite(32);
+        coreSr.material = new Material(Shader.Find("Sprites/Default"));
+        coreSr.color = new Color(core.r, core.g, core.b, 0.55f);
+        coreSr.sortingOrder = 17;
+
+        // 八角冲击环
+        var ringGo = new GameObject("OctRing");
+        ringGo.transform.SetParent(root.transform, false);
+        var ringLr = BuildLoopLine(ringGo, 8, 0.16f, 18);
+        ringLr.material = new Material(Shader.Find("Sprites/Default"));
+
+        // 6 条径向射线
+        const int spokeCount = 6;
+        var spokes = new LineRenderer[spokeCount];
+        for (int s = 0; s < spokeCount; s++)
         {
-            float a = (float)i / 32 * Mathf.PI * 2f;
-            lr.SetPosition(i, new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f));
+            var spokeGo = new GameObject("Spoke" + s);
+            spokeGo.transform.SetParent(root.transform, false);
+            spokeGo.transform.localRotation = Quaternion.Euler(0f, 0f, s * (360f / spokeCount));
+            spokes[s] = spokeGo.AddComponent<LineRenderer>();
+            spokes[s].useWorldSpace = false;
+            spokes[s].positionCount = 2;
+            spokes[s].sortingOrder = 19;
+            spokes[s].material = new Material(Shader.Find("Sprites/Default"));
+            spokes[s].SetPosition(0, Vector3.zero);
+            spokes[s].SetPosition(1, Vector3.right);
         }
 
-        var ringMat = new Material(Shader.Find("Sprites/Default"));
-        lr.material = ringMat;
+        float startScale = 0.12f;
+        float endScale = Mathf.Max(worldRadius, 0.8f);
+        var hitEnemies = pulseDamage > 0 ? new HashSet<EnemyBase>() : null;
+        bool shook = false;
 
-        Color hdrRing = NeonColors.Active.ForParticle(neonColor, 1f + intensity * 0.15f);
-
-        float dur = 0.20f;
-        float endScale = 1.6f + intensity * 0.8f;
-
-        for (float t = 0f; t < dur; t += Time.deltaTime)
+        for (float t = 0f; t < duration; t += Time.deltaTime)
         {
-            float p = t / dur;
-            go.transform.localScale = Vector3.one * Mathf.Lerp(0.15f, endScale, p);
-            float alpha = 1f - p;
-            lr.startColor = new Color(hdrRing.r, hdrRing.g, hdrRing.b, alpha);
-            lr.endColor   = lr.startColor;
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
+            float ringScale = Mathf.Lerp(startScale, endScale, p);
+            ringGo.transform.localScale = Vector3.one * ringScale;
+
+            if (hitEnemies != null)
+            {
+                int count = Physics2D.OverlapCircleNonAlloc(pos, ringScale, PulseOverlapBuf);
+                for (int i = 0; i < count; i++)
+                {
+                    var col = PulseOverlapBuf[i];
+                    if (col == null) continue;
+
+                    var enemy = col.GetComponentInParent<EnemyBase>();
+                    if (enemy == null || hitEnemies.Contains(enemy)) continue;
+                    if (!ComboMilestoneRewards.IsGruntPulseTarget(enemy)) continue;
+
+                    float dist = Vector2.Distance((Vector2)enemy.transform.position, pos);
+                    if (dist > ringScale + 0.1f) continue;
+
+                    enemy.TakeHit(pulseDamage, isFromBall: false, pos);
+                    hitEnemies.Add(enemy);
+                    if (!shook)
+                    {
+                        shook = true;
+                        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+                    }
+                }
+            }
+
+            float coreScale = Mathf.Lerp(0.25f, endScale * 0.45f, Mathf.Min(1f, p * 1.4f));
+            coreGo.transform.localScale = Vector3.one * coreScale;
+
+            float alpha = (1f - p) * (1f - p);
+            coreSr.color = new Color(core.r, core.g, core.b, 0.55f * alpha);
+
+            float ringW = Mathf.Lerp(0.22f, 0.05f, p);
+            ringLr.startWidth = ringW;
+            ringLr.endWidth = ringW;
+            var ringC = new Color(hdr.r, hdr.g, hdr.b, alpha * 0.95f);
+            ringLr.startColor = ringC;
+            ringLr.endColor = ringC;
+
+            float spokeLen = ringScale * (0.55f + p * 0.5f);
+            float spokeW = Mathf.Lerp(0.12f, 0.03f, p);
+            var spokeC = new Color(core.r, core.g, core.b, alpha * 0.75f);
+            for (int s = 0; s < spokeCount; s++)
+            {
+                spokes[s].startWidth = spokeW;
+                spokes[s].endWidth = spokeW * 0.4f;
+                spokes[s].startColor = spokeC;
+                spokes[s].endColor = new Color(spokeC.r, spokeC.g, spokeC.b, 0f);
+                spokes[s].SetPosition(1, new Vector3(spokeLen, 0f, 0f));
+            }
+
             yield return null;
         }
-        Destroy(go);
+
+        Destroy(root);
+    }
+
+    private static LineRenderer BuildLoopLine(GameObject go, int sides, float width, int sortOrder)
+    {
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = false;
+        lr.loop = true;
+        lr.positionCount = sides + 1;
+        lr.sortingOrder = sortOrder;
+        lr.startWidth = width;
+        lr.endWidth = width;
+        for (int i = 0; i <= sides; i++)
+        {
+            float a = (float)i / sides * Mathf.PI * 2f;
+            lr.SetPosition(i, new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f));
+        }
+        return lr;
+    }
+
+    private static Sprite MakeDiscSprite(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        float r = size * 0.5f;
+        for (int x = 0; x < size; x++)
+        for (int y = 0; y < size; y++)
+        {
+            float d = Vector2.Distance(new Vector2(x, y), new Vector2(r, r)) / r;
+            float a = Mathf.Clamp01(1f - d);
+            a = a * a;
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
     private IEnumerator WallFlashRoutine(Vector2 worldPos, Vector2 normal, Color neonColor, float intensity)

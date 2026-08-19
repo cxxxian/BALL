@@ -19,6 +19,9 @@ public class HUDController : MonoBehaviour
 
     private Coroutine _shieldFlashCoroutine;
 
+    public bool IsGameOverVisible =>
+        gameOverPanel != null && gameOverPanel.activeSelf;
+
     private void Awake()
     {
         Instance = this;

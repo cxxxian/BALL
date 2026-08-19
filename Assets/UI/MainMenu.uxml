@@ -3,11 +3,12 @@
     <ui:VisualElement name="MainContainer" class="main-container">
         <!-- 主菜单 -->
         <ui:VisualElement name="MainMenuPanel" class="panel">
-            <ui:Label text="弹 珠 神 罚" class="title" />
-            <ui:Label text="- PINBALL DOOM -" class="subtitle" />
+            <ui:Label text="回 弹 协 议" class="title" />
+            <ui:Label text="- REBOUND PROTOCOL -" class="subtitle" />
             <ui:VisualElement class="button-group">
                 <ui:Button name="BtnEndless" text="无尽挑战" class="menu-btn endless-btn" />
                 <ui:Button name="BtnCampaign" text="战役模式" class="menu-btn campaign-btn" />
+                <ui:Button name="BtnLoadout" text="战前配置" class="menu-btn loadout-btn" />
                 <ui:Button name="BtnSettings" text="设  置" class="menu-btn" />
                 <ui:Button name="BtnQuit" text="退  出" class="menu-btn" />
             </ui:VisualElement>
@@ -15,7 +16,6 @@
 
         <!-- 战役选关 -->
         <ui:VisualElement name="CampaignPanel" class="panel" style="display: none; flex-direction: row;">
-            <!-- 左侧滑动区 -->
             <ui:VisualElement class="campaign-left">
                 <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
                     <ui:Label text="星 区 选 择" class="header-title" />
@@ -23,22 +23,86 @@
                 </ui:VisualElement>
                 <ui:ScrollView name="LevelScrollView" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="level-scroll" />
             </ui:VisualElement>
-            
-            <!-- 右侧详情板 -->
+
             <ui:VisualElement class="campaign-right">
                 <ui:Label name="DetailStage" text="STAGE 01" class="detail-stage" />
                 <ui:Label name="DetailTitle" text="石巨像之怒" class="detail-title" />
                 <ui:VisualElement class="divider" />
                 <ui:Label name="DetailDesc" text="石巨像苏醒！它在场地上方徘徊，不断派遣装甲兵压迫底线。利用两侧的反射棱镜，可以形成在 BOSS 身后的高频反弹狂暴连穿！" class="detail-desc" />
-                
+
                 <ui:VisualElement style="margin-top: 40px;">
                     <ui:Label name="DetailBoss" text="核心目标: 石巨像" class="detail-info highlight-info" />
                     <ui:Label name="DetailPower" text="推荐战力: 100" class="detail-info" />
                     <ui:Label name="DetailScore" text="最高得分: 0" class="detail-info" style="color: rgb(255, 245, 0);" />
                 </ui:VisualElement>
-                
-                <ui:Button name="BtnLaunch" text="神 罚 启 动" class="launch-btn" />
+
+                <ui:VisualElement name="RunConfigSummary" class="run-config-summary">
+                    <ui:Label text="当前配置" class="summary-header" />
+                    <ui:Label name="SummaryBallLabel" text="标准弹珠" class="summary-line" />
+                    <ui:Label name="SummarySkillsLabel" text="斩杀连锁 · 护盾格挡" class="summary-line" />
+                    <ui:Button name="BtnEditLoadout" text="修改配置" class="summary-edit-btn" />
+                </ui:VisualElement>
+
+                <ui:Button name="BtnLaunch" text="协 议 启 动" class="launch-btn" />
             </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 战前配置 -->
+        <ui:VisualElement name="LoadoutPanel" class="panel loadout-panel" style="display: none; position: relative;">
+            <ui:VisualElement class="loadout-header">
+                <ui:Button name="BtnLoadoutBack" text="◀ 返回" class="back-btn" />
+                <ui:Label text="战 前 配 置" class="loadout-title" />
+                <ui:VisualElement name="LoadoutStatusHost" class="loadout-status-host">
+                    <ui:VisualElement name="LoadoutStatusSpinner" class="loadout-status-spinner" picking-mode="Ignore" />
+                    <ui:Label name="LoadoutStatusLabel" text="" class="loadout-status" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="loadout-body">
+                <ui:VisualElement name="BallColumn" class="loadout-column ball-column">
+                    <ui:Label text="弹珠选择" class="column-title" />
+                    <ui:VisualElement name="BallPreviewHost" class="ball-preview-host">
+                        <ui:VisualElement name="BallPreviewOrb" class="ball-preview-orb" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="BallPagerDots" class="ball-pager-dots" />
+                    <ui:Label name="BallNameLabel" text="标准弹珠" class="ball-name-label" />
+                    <ui:Label name="BallDescLabel" text="基础均衡弹珠，适合各种局面。" class="ball-desc-label" />
+                    <ui:VisualElement class="ball-stat-rows">
+                        <ui:Label text="伤害  ●●●○○" class="ball-stat-line" />
+                        <ui:Label text="体积  ●●○○○" class="ball-stat-line" />
+                        <ui:Label text="元素  无" class="ball-stat-line" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="SkillColumn" class="loadout-column skill-column">
+                    <ui:Label text="主动技能 · 装备槽（2/2）" class="column-title" />
+                    <ui:VisualElement name="SkillSlotRow" class="skill-slot-row">
+                        <ui:VisualElement name="SkillSlot0" class="skill-slot">
+                            <ui:VisualElement name="SlotIcon" class="skill-slot-icon" />
+                            <ui:Label name="SlotSkillName" text="斩杀连锁" class="skill-slot-name" />
+                            <ui:Label name="SlotKeyHint" text="Q" class="skill-slot-key" />
+                            <ui:Label name="SlotCooldown" text="CD 12s" class="skill-slot-cd" />
+                            <ui:Label name="SlotMode" text="瞄准" class="skill-slot-mode" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="SkillSlot1" class="skill-slot">
+                            <ui:VisualElement name="SlotIcon" class="skill-slot-icon" />
+                            <ui:Label name="SlotSkillName" text="护盾格挡" class="skill-slot-name" />
+                            <ui:Label name="SlotKeyHint" text="E / 按钮 B" class="skill-slot-key" />
+                            <ui:Label name="SlotCooldown" text="CD 15s" class="skill-slot-cd" />
+                            <ui:Label name="SlotMode" text="即时" class="skill-slot-mode" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label text="技能库 · 拖到上方装备" class="column-subtitle" />
+                    <ui:ScrollView name="SkillLibraryScroll" horizontal-scroller-visibility="Hidden" class="skill-library-scroll">
+                        <ui:VisualElement name="SkillLibrary" class="skill-library" />
+                    </ui:ScrollView>
+                    <ui:VisualElement name="SkillDetailCard" class="skill-detail-card" style="display: none;">
+                        <ui:Label name="SkillDetailTitle" class="skill-detail-title" />
+                        <ui:Label name="SkillDetailBody" class="skill-detail-body" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="LoadoutDragOverlay" class="loadout-drag-overlay" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

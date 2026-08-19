@@ -12,6 +12,13 @@ public enum BallType
 [CreateAssetMenu(fileName = "BallDefinition", menuName = "PinballGame/BallDefinition")]
 public class BallDefinition : ScriptableObject
 {
+    [Header("Loadout")]
+    public string ballId = "standard";
+    public string displayName = "标准弹珠";
+    [TextArea(1, 3)]
+    public string loadoutDescription = "基础均衡弹珠，适合各种局面。";
+    public bool isAvailableInLoadout = true;
+
     public BallType ballType = BallType.Thunder;
     public GameObject activeSkillPrefab;
     public Color trailColor = new Color(0.5f, 0.2f, 1f);

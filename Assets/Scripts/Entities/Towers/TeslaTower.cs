@@ -1,26 +1,25 @@
 using UnityEngine;
-using System.Collections;
 
 public class TeslaTower : MonoBehaviour
 {
     public int level = 1;
-    public float attackRadius = 4.0f;
-    public float baseAttackInterval = 5.0f;
-    public int baseDamage = 3;
+    public float attackRadius = 5.0f;
+    public float baseAttackInterval = 4.0f;
+    public int baseDamage = 2;
 
     private float _timer = 0f;
-    private Material _novaMat;
+    private int _arcSeed;
 
     private void Awake()
     {
+        TeslaArcFX.EnsureInstance();
+
         var sr = gameObject.AddComponent<SpriteRenderer>();
         sr.sprite = CreateTeslaSprite();
         sr.color = new Color(0f, 0.95f, 1f, 1f);
         var cyberShader = Shader.Find("Custom/CyberPulseSprite");
         sr.material = cyberShader != null ? new Material(cyberShader) : new Material(Shader.Find("Sprites/Default"));
         sr.sortingOrder = 3;
-
-        _novaMat = new Material(Shader.Find("Sprites/Default"));
     }
 
     private void Update()
@@ -30,68 +29,68 @@ public class TeslaTower : MonoBehaviour
         _timer -= Time.deltaTime;
         if (_timer <= 0f)
         {
-            _timer = Mathf.Max(2.0f, baseAttackInterval - (level * 0.4f));
-            AttackElectricNova();
+            float interval = Mathf.Max(2.0f, baseAttackInterval - level * 0.5f);
+            if (DebuffManager.Instance != null)
+                interval *= DebuffManager.Instance.TowerAttackIntervalMultiplier;
+            _timer = interval;
+            AttackSingleTarget();
         }
     }
 
-    private void AttackElectricNova()
+    private void AttackSingleTarget()
     {
         int damage = baseDamage + level * 2;
-        float actualRadius = attackRadius + level * 0.3f;
+        float radius = attackRadius + (level - 1) * 0.25f;
+        Vector2 towerPos = transform.position;
 
-        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, actualRadius);
-        bool hitAny = false;
+        EnemyBase target = FindBottomThreatTarget(towerPos, radius);
+        bool hit = target != null;
+        if (hit)
+        {
+            target.TakeHit(damage);
+            int seed = _arcSeed++;
+            TeslaArcFX.Instance?.SpawnArc(towerPos, target.transform.position, seed);
+            ImpactFX.Instance?.SpawnHit(
+                target.transform.position,
+                NeonColors.Active.GetBase(NeonRole.TowerTesla),
+                0.55f);
+        }
+
+        JuiceRouter.TowerFire(towerPos, NeonRole.TowerTesla, hit);
+    }
+
+    /// <summary>
+    /// 攻击范围内、非 Boss：优先 Y 最低（最接近触底），其次距塔心更近。
+    /// </summary>
+    private static EnemyBase FindBottomThreatTarget(Vector2 towerPos, float radius)
+    {
+        float radiusSq = radius * radius;
+        Collider2D[] cols = Physics2D.OverlapCircleAll(towerPos, radius);
+
+        EnemyBase best = null;
+        float bestY = float.MaxValue;
+        float bestDistSq = float.MaxValue;
+
         foreach (var c in cols)
         {
-            if (c.CompareTag("Enemy"))
+            if (!c.CompareTag("Enemy")) continue;
+            var enemy = c.GetComponent<EnemyBase>();
+            if (enemy == null || enemy.IsDead || enemy is Boss) continue;
+
+            Vector2 pos = enemy.transform.position;
+            float distSq = (pos - towerPos).sqrMagnitude;
+            if (distSq > radiusSq) continue;
+
+            float y = pos.y;
+            if (y < bestY - 0.001f || (Mathf.Abs(y - bestY) <= 0.001f && distSq < bestDistSq))
             {
-                var enemy = c.GetComponent<EnemyBase>();
-                if (enemy != null && !enemy.IsDead)
-                {
-                    enemy.TakeHit(damage);
-                    hitAny = true;
-                }
+                best = enemy;
+                bestY = y;
+                bestDistSq = distSq;
             }
         }
 
-        JuiceRouter.TowerFire(transform.position, NeonRole.TowerTesla, hitAny);
-
-        StartCoroutine(SpawnNovaEffect(actualRadius));
-    }
-
-    private IEnumerator SpawnNovaEffect(float radius)
-    {
-        GameObject novaObj = new GameObject("TeslaNova");
-        novaObj.transform.position = transform.position;
-        var sr = novaObj.AddComponent<SpriteRenderer>();
-        sr.sprite = CreateNovaSprite();
-        sr.color = new Color(0f, 0.95f, 1f, 1f);
-        sr.material = _novaMat;
-        sr.sortingOrder = 4;
-
-        float duration = 0.35f;
-        float elapsed = 0f;
-
-        Vector3 startScale = Vector3.zero;
-        Vector3 endScale = Vector3.one * (radius * 2f);
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            float scaleT = 1f - Mathf.Pow(1f - t, 3f);
-            novaObj.transform.localScale = Vector3.Lerp(startScale, endScale, scaleT);
-
-            Color c = sr.color;
-            c.a = Mathf.Lerp(1f, 0f, t);
-            sr.color = c;
-
-            yield return null;
-        }
-
-        Destroy(novaObj);
+        return best;
     }
 
     private static Sprite CreateTeslaSprite()
@@ -131,35 +130,5 @@ public class TeslaTower : MonoBehaviour
         }
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 64f);
-    }
-
-    private static Sprite CreateNovaSprite()
-    {
-        int size = 128;
-        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        tex.filterMode = FilterMode.Bilinear;
-        float half = size * 0.5f;
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dx = x - half;
-                float dy = y - half;
-                float dist = Mathf.Sqrt(dx * dx + dy * dy);
-
-                float ringDist = Mathf.Abs(dist - (half - 4f));
-                if (dist <= half && ringDist < 8f)
-                {
-                    float alpha = 1f - (ringDist / 8f);
-                    float noise = Mathf.PerlinNoise(x * 0.2f, y * 0.2f);
-                    alpha *= (0.5f + noise * 0.5f);
-
-                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
-                }
-                else tex.SetPixel(x, y, Color.clear);
-            }
-        }
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 128f);
     }
 }

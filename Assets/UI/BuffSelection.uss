@@ -1,159 +1,486 @@
-/* ── 全屏暗色遮罩 ─────────────────────────────────────── */
+/* ── 全屏遮罩 ─────────────────────────────────────────── */
 .overlay {
     position: absolute;
     left: 0; top: 0; right: 0; bottom: 0;
-    background-color: rgba(1, 3, 10, 0.95);
+    background-color: rgba(1, 3, 10, 0.94);
     align-items: center;
     justify-content: center;
     flex-direction: column;
+    padding: 16px;
+    overflow: hidden;
 }
 
-/* ── 标题：纯粹的霓虹高亮黄与青 ───────────────────────── */
+/* ── 单一主面板（无滚动条）────────────────────────────── */
+.slot-panel {
+    align-self: center;
+    width: 100%;
+    max-width: 580px;
+    background-color: rgba(6, 10, 24, 0.98);
+    border-width: 2px;
+    border-color: rgb(255, 240, 0);
+    border-radius: 8px;
+    padding: 8px 12px 10px;
+    align-items: stretch;
+    flex-shrink: 0;
+    transform-origin: center center;
+}
+
+.panel-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
 .title {
     color: rgb(255, 246, 0);
-    font-size: 26px;
+    font-size: 14px;
     -unity-font-style: bold;
-    margin-bottom: 6px;
-    letter-spacing: 5px;
-    text-shadow: 0 0 10px rgba(255, 246, 0, 0.6);
+    letter-spacing: 3px;
 }
 
 .wave-tag {
     color: rgb(0, 242, 255);
-    font-size: 14px;
-    margin-bottom: 40px;
-    letter-spacing: 10px;
+    font-size: 10px;
+    letter-spacing: 4px;
     -unity-font-style: bold;
-    text-shadow: 0 0 8px rgba(0, 242, 255, 0.6);
 }
 
-/* ── 卡片容器 ─────────────────────────────────────────── */
-.cards-container {
+.combo-header {
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.combo-label {
+    color: rgb(255, 200, 50);
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    margin-bottom: 1px;
+    min-height: 20px;
+}
+
+.combo-rule {
+    color: rgb(170, 190, 210);
+    font-size: 9px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    min-height: 12px;
+}
+
+/* ── 转轮 + 拉杆 ─────────────────────────────────────── */
+.machine-row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.machine-center {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.lever-spacer {
+    width: 48px;
+    height: 1px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.reels-row {
     flex-direction: row;
     justify-content: center;
     align-items: stretch;
+    flex-shrink: 0;
 }
 
-/* ── 单张赛博霓虹卡片 ─────────────────────────────────── */
-.card {
-    width: 220px;
-    min-height: 310px;
-    margin: 0 16px;
-    padding: 24px 20px;
-    background-color: rgba(3, 7, 20, 0.96);
-    border-width: 2px;
-    border-color: rgb(255, 255, 255); /* 默认白色 */
-    border-radius: 4px;
-    flex-direction: column;
+.reel {
+    width: 88px;
+    min-width: 88px;
+    flex-shrink: 0;
+    margin: 0 4px;
     align-items: center;
-    justify-content: space-between;
-    transition-duration: 0.15s;
-    transition-timing-function: ease-out;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 4px 4px 6px;
+    background-color: rgba(2, 5, 14, 0.95);
+    transition-duration: 0.12s;
+    position: relative;
 }
 
-/* 鼠标悬停：强烈的缩放和发光反馈 */
-.card:hover {
-    scale: 1.05 1.04;
-    background-color: rgba(6, 12, 32, 0.99);
+.reel-border-common {
+    border-color: rgba(220, 230, 240, 0.82);
 }
 
-/* ── 稀有度标签及卡片特化颜色 ────────────────────────── */
-.rarity-label {
-    font-size: 11px;
-    -unity-font-style: bold;
-    letter-spacing: 4px;
-    margin-bottom: 15px;
-    padding: 4px 14px;
+.reel-border-rare {
+    border-color: rgba(180, 100, 255, 0.9);
+}
+
+.reel-border-epic {
+    border-color: rgba(255, 200, 50, 0.92);
+}
+
+.reel-border-mystery {
+    border-color: rgba(255, 90, 90, 0.88);
+}
+
+.reel-border-neutral {
+    border-color: rgba(140, 160, 185, 0.45);
+}
+
+.reel-tag {
+    color: rgb(140, 150, 170);
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+}
+
+.reel-viewport {
+    width: 100%;
+    height: 96px;
+    overflow: hidden;
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.45);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.15);
     border-radius: 2px;
 }
 
-/* 1. Common (普通白) — 边框静止 */
-.rarity-common {
+.reel-strip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    flex-direction: column;
+}
+
+.reel-slot {
+    height: 96px;
+    justify-content: center;
+    align-items: center;
+    padding: 2px 2px;
+    border-width: 2px;
+    border-radius: 2px;
+    border-color: rgba(140, 160, 185, 0.35);
+    margin-bottom: 1px;
+}
+
+.reel-slot.reel-border-common { border-color: rgba(220, 230, 240, 0.75); }
+.reel-slot.reel-border-rare   { border-color: rgba(180, 100, 255, 0.82); }
+.reel-slot.reel-border-epic   { border-color: rgba(255, 200, 50, 0.85); }
+.reel-slot.reel-border-mystery { border-color: rgba(255, 90, 90, 0.82); }
+.reel-slot.reel-border-neutral { border-color: rgba(140, 160, 185, 0.35); }
+
+.reel-slot-rarity,
+.rarity-label {
+    display: none;
+}
+
+.reel-slot-name {
+    font-size: 11px;
+    -unity-font-style: bold;
     color: rgb(255, 255, 255);
-    background-color: rgba(255, 255, 255, 0.12);
-    border-color: rgb(255, 255, 255);
-    border-width: 1px;
-}
-.card-rarity-common {
-    border-color: rgba(255, 255, 255, 0.35);
-}
-.card-rarity-common:hover {
-    border-color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    max-width: 88px;
 }
 
-/* 2. Rare (赛博青) — 边框静止 */
-.rarity-rare {
-    color: rgb(0, 242, 255);
-    background-color: rgba(0, 242, 255, 0.12);
+.reel-slot-final .reel-slot-name {
+    color: rgb(255, 240, 0);
+}
+
+.reel-spinning .reel-viewport {
+    border-color: rgba(255, 240, 0, 0.45);
+}
+
+.reel-result {
+    width: 100%;
+    min-height: 96px;
+    justify-content: center;
+    align-items: center;
+    display: none;
+}
+
+.reel-selected {
     border-color: rgb(0, 242, 255);
-    border-width: 1px;
-}
-.card-rarity-rare {
-    border-color: rgba(0, 242, 255, 0.4);
-}
-.card-rarity-rare:hover {
-    border-color: rgb(0, 242, 255);
+    border-width: 3px;
+    scale: 1.02 1.02;
 }
 
-/* 3. Epic (爆裂粉) — 边框呼吸由 C# 驱动（禁 transition 避免抹平脉冲） */
-.rarity-epic {
-    color: rgb(255, 0, 119);
-    background-color: rgba(255, 0, 119, 0.12);
-    border-color: rgb(255, 0, 119);
-    border-width: 1px;
-}
-.card-rarity-epic {
-    transition-duration: 0s;
-}
-.card-rarity-epic:hover {
-    transition-duration: 0s;
+.reel-selectable-hint {
+    border-color: rgba(0, 242, 255, 0.55);
 }
 
-/* ── 空槽占位（满层后预留，后续可接新 Buff）──────────────── */
-.card-empty {
+.reel-stop-flash {
+    border-color: rgb(255, 240, 0);
+}
+
+.reel-outcome-apply {
+    border-color: rgb(120, 255, 120);
+    background-color: rgba(40, 120, 60, 0.25);
+}
+
+.reel-outcome-scrap {
+    border-color: rgb(180, 100, 255);
+    background-color: rgba(100, 40, 160, 0.2);
+}
+
+.reel-outcome-ignored {
+    opacity: 0.4;
     border-color: rgba(255, 255, 255, 0.12);
-    background-color: rgba(3, 7, 20, 0.55);
-    opacity: 0.45;
 }
 
-.card-empty:hover {
-    scale: 1 1;
-    background-color: rgba(3, 7, 20, 0.55);
+.reel-outcome-inactive {
+    opacity: 0.72;
+    border-color: rgba(0, 242, 255, 0.35);
 }
 
-.card-empty .select-btn {
-    border-color: rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.25);
-    background-color: transparent;
+.outcome-badge {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    font-size: 8px;
+    letter-spacing: 0;
+    padding: 1px 4px;
+    border-radius: 2px;
+    color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0.55);
+    display: none;
+}
+
+.reel-outcome-apply .outcome-badge {
+    background-color: rgba(40, 120, 60, 0.85);
+    color: rgb(180, 255, 200);
+}
+
+.reel-outcome-inactive .outcome-badge {
+    background-color: rgba(0, 80, 120, 0.85);
+    color: rgb(160, 240, 255);
+}
+
+/* ── 拉杆 ─────────────────────────────────────────────── */
+.lever-assembly {
+    width: 48px;
+    height: 132px;
+    align-items: center;
+    justify-content: flex-end;
+    cursor: link;
+    padding-bottom: 4px;
+    margin-left: 10px;
+    position: relative;
+    overflow: visible;
+    flex-shrink: 0;
+}
+
+.lever-base {
+    width: 32px;
+    height: 12px;
+    background-color: rgb(80, 85, 100);
+    border-radius: 3px;
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    translate: -50% 0;
+}
+
+.lever-arm {
+    width: 7px;
+    height: 72px;
+    background-color: rgb(200, 50, 70);
+    border-radius: 4px;
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    translate: -50% 0;
+    transform-origin: 50% 100%;
+    transition-duration: 0.16s;
+    transition-timing-function: ease-out;
+    overflow: visible;
+}
+
+.lever-arm-pulled {
+    rotate: -42deg;
+}
+
+.lever-arm-pulled .lever-knob {
+    scale: 1.12 1.12;
+}
+
+.lever-knob {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: rgb(255, 220, 40);
+    border-width: 2px;
+    border-color: rgb(200, 160, 0);
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    translate: -50% 0;
+}
+
+.lever-hint {
+    color: rgb(255, 240, 0);
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    -unity-text-align: middle-center;
+}
+
+.lever-disabled {
+    opacity: 0.35;
     cursor: arrow;
 }
 
-.card-empty .buff-name {
-    color: rgba(255, 255, 255, 0.35);
-}
-
-
-/* ── Buff 标题与文字 ──────────────────────────────── */
 .buff-name {
     color: rgb(255, 255, 255);
-    font-size: 18px;
+    font-size: 11px;
     -unity-font-style: bold;
-    -unity-text-align: upper-center;
-    white-space: normal;
-    margin-bottom: 12px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    max-width: 88px;
 }
 
-.buff-desc {
-    color: rgb(180, 190, 210);
-    font-size: 13px;
-    -unity-text-align: upper-center;
+.reroll-hint {
+    color: rgb(0, 242, 255);
+    font-size: 9px;
+    margin-bottom: 4px;
+    letter-spacing: 0;
+    min-height: 12px;
+    width: 100%;
+    -unity-text-align: middle-center;
     white-space: normal;
-    flex-grow: 1;
-    margin-bottom: 22px;
-    line-height: 16px;
 }
 
-/* ── 赛博按钮：亮黄色霓虹 ──────────────────────────── */
+/* ── 本波奖励（面板内，无滚动）──────────────────────── */
+.outcome-panel {
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    background-color: rgba(4, 12, 28, 0.85);
+    border-width: 1px;
+    border-color: rgba(0, 242, 255, 0.3);
+    border-radius: 4px;
+    display: none;
+}
+
+.outcome-title {
+    color: rgb(0, 242, 255);
+    font-size: 9px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.outcome-list {
+    flex-direction: column;
+}
+
+.outcome-entry {
+    margin-bottom: 3px;
+}
+
+.outcome-line {
+    font-size: 9px;
+    color: rgb(210, 220, 235);
+    white-space: normal;
+    -unity-font-style: bold;
+}
+
+.outcome-detail {
+    font-size: 8px;
+    color: rgba(170, 185, 205, 0.9);
+    margin-top: 1px;
+    padding-left: 8px;
+    white-space: normal;
+    -unity-font-style: normal;
+}
+
+.outcome-line-apply { color: rgb(140, 255, 170); }
+.outcome-line-scrap { color: rgb(200, 150, 255); }
+.outcome-line-ignored { color: rgba(180, 190, 210, 0.75); }
+.outcome-line-debuff { color: rgb(255, 130, 130); }
+
+.outcome-detail-apply { color: rgba(120, 200, 150, 0.85); }
+.outcome-detail-scrap { color: rgba(180, 140, 220, 0.85); }
+.outcome-detail-ignored { color: rgba(150, 160, 180, 0.7); }
+.outcome-detail-debuff { color: rgba(255, 140, 140, 0.85); }
+
+.confirm-btn {
+    background-color: rgba(0, 242, 255, 0.12);
+    border-color: rgb(0, 242, 255);
+    border-width: 2px;
+    color: rgb(0, 242, 255);
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 5px;
+    padding: 8px 0;
+    width: 100%;
+    display: none;
+    cursor: link;
+}
+
+.confirm-btn:hover {
+    background-color: rgb(255, 240, 0);
+    color: rgb(1, 3, 10);
+}
+
+/* ── 轮位税弹窗（无滚动）────────────────────────────── */
+.debuff-modal {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background-color: rgba(1, 3, 10, 0.9);
+    align-items: center;
+    justify-content: center;
+    display: none;
+}
+
+.debuff-card {
+    width: 90%;
+    max-width: 440px;
+    padding: 16px 18px 14px;
+    background-color: rgba(36, 8, 12, 0.98);
+    border-width: 2px;
+    border-color: rgba(255, 90, 100, 0.75);
+    border-radius: 6px;
+    align-items: stretch;
+}
+
+.debuff-modal-title {
+    color: rgb(255, 90, 100);
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+}
+
+.debuff-list {
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.debuff-line {
+    font-size: 11px;
+    color: rgb(255, 160, 160);
+    margin-bottom: 4px;
+    white-space: normal;
+}
+
+.debuff-continue-btn {
+    align-self: center;
+    background-color: rgba(255, 80, 90, 0.15);
+    border-color: rgb(255, 90, 100);
+    border-width: 1px;
+    color: rgb(255, 180, 180);
+    padding: 8px 32px;
+    display: none;
+}
+
 .select-btn {
     background-color: rgba(255, 240, 0, 0.08);
     border-color: rgb(255, 240, 0);
@@ -166,22 +493,13 @@
     padding: 9px 0;
     width: 100%;
     cursor: link;
-    transition-duration: 0.12s;
 }
 
-/* 悬停与激活：极其耀眼的发光反馈 */
 .select-btn:hover {
     background-color: rgb(255, 240, 0);
     color: rgb(1, 3, 10);
 }
 
-.select-btn:active {
-    background-color: rgb(255, 255, 255);
-    border-color: rgb(255, 255, 255);
-    color: rgb(1, 3, 10);
-}
-
-/* ── 塔类 Buff 二次选择 ─────────────────────────────── */
 .tower-choice {
     position: absolute;
     left: 0; top: 0; right: 0; bottom: 0;

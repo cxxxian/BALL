@@ -13,6 +13,7 @@ public class ComboSystem : MonoBehaviour
     public const int BaseHeavyShakeThreshold = 10;
 
     public int CurrentCombo { get; private set; }
+    public Vector2 LastHitWorldPosition { get; private set; }
 
     public UnityEvent<int> onComboChanged = new UnityEvent<int>();
     public UnityEvent<int> onComboMilestone = new UnityEvent<int>();
@@ -23,7 +24,7 @@ public class ComboSystem : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
     }
 
@@ -36,10 +37,22 @@ public class ComboSystem : MonoBehaviour
         }
     }
 
+    private float EffectiveComboTimeout
+    {
+        get
+        {
+            if (Config == null) return 3f;
+            float timeout = Config.comboTimeout;
+            if (DebuffManager.Instance != null)
+                timeout += DebuffManager.Instance.ComboTimeoutModifier;
+            return Mathf.Max(0.5f, timeout);
+        }
+    }
+
     private void Update()
     {
         if (Config == null || CurrentCombo == 0) return;
-        if (Time.time - _lastHitTime > Config.comboTimeout)
+        if (Time.time - _lastHitTime > EffectiveComboTimeout)
             ResetCombo();
     }
 
@@ -47,14 +60,16 @@ public class ComboSystem : MonoBehaviour
     public void RegisterHit() => RegisterAirtimeHit();
 
     /// <summary>滞空段有效命中（敌人 / Bumper / 弹弓 / 加速齿轮等）。</summary>
-    public void RegisterAirtimeHit()
+    public void RegisterAirtimeHit(Vector2? worldPos = null)
     {
         if (Config == null) return;
 
         var ball = BallController.Instance;
         if (ball == null || ball.IsWaitingForLaunch) return;
 
-        if (Time.time - _lastHitTime > Config.comboTimeout)
+        LastHitWorldPosition = worldPos ?? (Vector2)ball.transform.position;
+
+        if (Time.time - _lastHitTime > EffectiveComboTimeout)
             CurrentCombo = 0;
 
         CurrentCombo++;
@@ -80,7 +95,6 @@ public class ComboSystem : MonoBehaviour
             onComboMilestone.Invoke(CurrentCombo);
         }
 
-        // M1 方案 A：无阈值资源奖励；Combo→技能仅通过 SkillManager 监听 onComboChanged 减 CD
     }
 
     /// <summary>连击大师：每层 -2，下限 3。用于 5/10/20 等资源轨奖励阈值。</summary>
@@ -90,8 +104,11 @@ public class ComboSystem : MonoBehaviour
         return Mathf.Max(MinComboThreshold, baseThreshold - reduction);
     }
 
-    /// <summary>挡板严格断连：任意挡板接触即清零。</summary>
-    public void BreakOnFlipper() => ResetCombo();
+    /// <summary>挡板严格断连：任意挡板接触即清零；未用 CD 券作废。</summary>
+    public void BreakOnFlipper()
+    {
+        ResetCombo();
+    }
 
     public void ResetCombo()
     {

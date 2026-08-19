@@ -16,7 +16,7 @@ public class Bumper : MonoBehaviour
     private Color _baseColor;
     private bool _flashing   = false;
     private bool _disabled   = false;
-    private bool _passthrough = false; // 斩杀连锁期间：碰撞体关闭，球穿透飞过
+    private bool _passthrough = false;
 
     // ── 碰撞冷却（防穿模抖动） ─────────────────────────────────────────
     private float _lastHitTime = -1f;
@@ -85,6 +85,8 @@ public class Bumper : MonoBehaviour
         if (currentTime - _lastHitTime < COLLISION_COOLDOWN) return;
         _lastHitTime = currentTime;
 
+        AudioManager.Instance?.PlayBounce();
+
         var rb = col.rigidbody;
         if (rb != null)
         {
@@ -94,12 +96,9 @@ public class Bumper : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit);
 
-        ComboSystem.Instance?.RegisterAirtimeHit();
-
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
+        ComboSystem.Instance?.RegisterAirtimeHit(hitPos);
         JuiceRouter.Play(JuiceRouter.Tier.Hit, hitPos, _baseColor);
-
-        AudioManager.Instance?.PlayBounce();
 
         if (!_flashing) StartCoroutine(Flash());
     }

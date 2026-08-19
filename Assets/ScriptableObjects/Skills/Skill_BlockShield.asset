@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a51f64afb962016409546b32c9c3792f, type: 3}
+  m_Name: Skill_BlockShield
+  m_EditorClassIdentifier: 
+  skillId: block_shield
+  displayName: "\u62A4\u76FE\u683C\u6321"
+  description: "\u6FC0\u6D3B\u62A4\u76FE\u7EBF\uFF0C\u4E0B\u4E00\u53EA\u8E22\u5E95\u5C0F\u5175\u4E0D\u6263\u8840\u5E76\u6D88\u5931\u3002Combo \u53EF\u7F29\u77ED\u51B7\u5374\u3002"
+  category: 1
+  activationMode: 0
+  implementationType: 1
+  baseCooldown: 15
+  isAvailable: 1

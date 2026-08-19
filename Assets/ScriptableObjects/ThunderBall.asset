@@ -12,6 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 818b23b45bec2c844aa1f761c1a77d6a, type: 3}
   m_Name: ThunderBall
   m_EditorClassIdentifier: 
+  ballId: standard
+  displayName: "\u6807\u51C6\u5F39\u73E0"
+  loadoutDescription: "\u57FA\u7840\u5747\u8861\u5F39\u73E0\uFF0C\u9002\u5408\u5404\u79CD\u5C40\u9762\u3002"
+  isAvailableInLoadout: 1
   ballType: 0
   activeSkillPrefab: {fileID: 0}
   trailColor: {r: 0.5, g: 0.2, b: 1, a: 1}

@@ -24,6 +24,9 @@ public class SlowMoFX : MonoBehaviour
     private ColorAdjustments    _colorAdj;
     private Coroutine           _coroutine;
     private Coroutine           _flashCoroutine;
+    private Coroutine           _enemyTimestopCoroutine;
+    private bool                _slowMoHeld;
+    private bool                _enemyTimestopHeld;
 
     private void Awake()
     {
@@ -37,9 +40,19 @@ public class SlowMoFX : MonoBehaviour
             fxVolume.profile.TryGet(out _colorAdj);
         }
 
-        SetOverlays(0f, Color.clear);
-        SetPostFX(0f);
-        if (fxVolume != null) fxVolume.enabled = false;
+        ClearVisualOverlays();
+    }
+
+    private void OnEnable()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.onGameStart.AddListener(ForceRestore);
+    }
+
+    private void OnDisable()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.onGameStart.RemoveListener(ForceRestore);
     }
 
     // ── 技能激活时调用 ─────────────────────────────────────────────────
@@ -56,19 +69,128 @@ public class SlowMoFX : MonoBehaviour
         _coroutine = StartCoroutine(ExitRoutine());
     }
 
-    // ── 立即强制恢复（游戏重置时使用） ───────────────────────────────────
-    public void ForceRestore()
+    /// <summary>清除全屏闪/tint/后处理，不改动 timeScale（拉霸界面用）。</summary>
+    public void ClearVisualOverlays()
     {
         if (_coroutine != null)
         {
             StopCoroutine(_coroutine);
             _coroutine = null;
         }
-        Time.timeScale      = 1f;
-        Time.fixedDeltaTime = 0.02f;
+
+        if (_flashCoroutine != null)
+        {
+            StopCoroutine(_flashCoroutine);
+            _flashCoroutine = null;
+        }
+
+        if (_enemyTimestopCoroutine != null)
+        {
+            StopCoroutine(_enemyTimestopCoroutine);
+            _enemyTimestopCoroutine = null;
+        }
+
+        _slowMoHeld = false;
+        _enemyTimestopHeld = false;
+
+        if (flashOverlay != null) flashOverlay.color = Color.clear;
         SetPostFX(0f);
         SetOverlays(0f, Color.clear);
+
+        if (_vignette != null)
+        {
+            _vignette.intensity.Override(0f);
+            _vignette.color.Override(Color.black);
+        }
+
         if (fxVolume != null) fxVolume.enabled = false;
+    }
+
+    /// <summary>取消斩击瞄准时即时恢复，跳过 Deactivate 退出动画（避免闪屏）。</summary>
+    public void CancelSkillAim()
+    {
+        ClearVisualOverlays();
+        Time.timeScale      = 1f;
+        Time.fixedDeltaTime = 0.02f;
+    }
+
+    /// <summary>敌人时间减速：仅视觉 tint/vignette，不改 timeScale（与斩杀瞄准区分）。</summary>
+    public void ActivateEnemyTimestopVisual()
+    {
+        if (_slowMoHeld) return;
+        if (_enemyTimestopCoroutine != null) StopCoroutine(_enemyTimestopCoroutine);
+        _enemyTimestopCoroutine = StartCoroutine(EnemyTimestopEnterRoutine());
+    }
+
+    public void DeactivateEnemyTimestopVisual()
+    {
+        if (!_enemyTimestopHeld && _enemyTimestopCoroutine == null) return;
+        if (_enemyTimestopCoroutine != null) StopCoroutine(_enemyTimestopCoroutine);
+        _enemyTimestopCoroutine = StartCoroutine(EnemyTimestopExitRoutine());
+    }
+
+    private IEnumerator EnemyTimestopEnterRoutine()
+    {
+        if (fxVolume != null) fxVolume.enabled = true;
+
+        var tint = new Color(0.03f, 0.14f, 0.22f, 0.38f);
+        float elapsed = 0f;
+        const float dur = 0.12f;
+        while (elapsed < dur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / dur);
+            SetOverlays(t, tint);
+            if (_vignette != null)
+            {
+                _vignette.intensity.Override(Mathf.Lerp(0f, 0.22f, t));
+                _vignette.color.Override(new Color(0.45f, 0.78f, 1f, 1f));
+            }
+            yield return null;
+        }
+
+        _enemyTimestopHeld = true;
+        _enemyTimestopCoroutine = null;
+    }
+
+    private IEnumerator EnemyTimestopExitRoutine()
+    {
+        var tint = new Color(0.03f, 0.14f, 0.22f, 0.38f);
+        float elapsed = 0f;
+        const float dur = 0.25f;
+        while (elapsed < dur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = 1f - Mathf.Clamp01(elapsed / dur);
+            SetOverlays(t, new Color(tint.r, tint.g, tint.b, tint.a * t));
+            if (_vignette != null) _vignette.intensity.Override(0.22f * t);
+            yield return null;
+        }
+
+        _enemyTimestopHeld = false;
+        ClearEnemyTimestopVisualOnly();
+        _enemyTimestopCoroutine = null;
+    }
+
+    private void ClearEnemyTimestopVisualOnly()
+    {
+        if (_slowMoHeld) return;
+        SetOverlays(0f, Color.clear);
+        if (_vignette != null)
+        {
+            _vignette.intensity.Override(0f);
+            _vignette.color.Override(Color.black);
+        }
+        if (fxVolume != null && !_slowMoHeld && _coroutine == null)
+            fxVolume.enabled = false;
+    }
+
+    // ── 立即强制恢复（游戏重置时使用） ───────────────────────────────────
+    public void ForceRestore()
+    {
+        ClearVisualOverlays();
+        Time.timeScale      = 1f;
+        Time.fixedDeltaTime = 0.02f;
     }
 
     // ── 进入时缓动画 ──────────────────────────────────────────────────
@@ -111,6 +233,8 @@ public class SlowMoFX : MonoBehaviour
         Time.fixedDeltaTime = 0.02f * targetScale;
         SetPostFX(1f);
         SetOverlays(1f, new Color(0.02f, 0.04f, 0.18f, 0.52f));
+        _slowMoHeld = true;
+        _coroutine = null;
     }
 
     // ── 退出时缓动画 ──────────────────────────────────────────────────
@@ -131,11 +255,8 @@ public class SlowMoFX : MonoBehaviour
             yield return null;
         }
 
-        Time.timeScale      = 1f;
-        Time.fixedDeltaTime = 0.02f;
-        SetPostFX(0f);
-        SetOverlays(0f, Color.clear);
-        if (fxVolume != null) fxVolume.enabled = false;
+        ForceRestore();
+        _coroutine = null;
     }
 
     /// <summary>短促全屏闪色（Boss 二阶段等警告用，不改动时间缩放）。</summary>
@@ -174,7 +295,7 @@ public class SlowMoFX : MonoBehaviour
         _vignette.intensity.Override(Mathf.Clamp01(intensity));
         _vignette.color.Override(new Color(color.r, color.g, color.b, 1f));
 
-        if (intensity <= 0f && _coroutine == null && fxVolume != null)
+        if (intensity <= 0f && !_slowMoHeld && _coroutine == null && fxVolume != null)
             fxVolume.enabled = false;
     }
 

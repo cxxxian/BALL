@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a51f64afb962016409546b32c9c3792f, type: 3}
+  m_Name: Skill_Test2
+  m_EditorClassIdentifier: 
+  skillId: test2
+  displayName: test2
+  description: "\u5360\u4F4D\u6D4B\u8BD5\u6280\u80FD 2\uFF0C\u62D6\u62FD\u88C5\u5907\u7528\u3002"
+  category: 2
+  activationMode: 0
+  implementationType: 4
+  baseCooldown: 10
+  isAvailable: 0
