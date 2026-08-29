@@ -18,9 +18,13 @@ Shader "Hidden/ArcadeCRT"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-            float _ScanlineOpacity;
-            float _ScanlineCount;
-            float _ScanlineWidth;
+            #define ARCADE_CRT_TWO_PI 6.28318530718
+
+            float _ScanlineDark;
+            float _ScanlineBright;
+            float _ScanlineSharpness;
+            float4 _PhosphorTint;
+            float _NeonBoost;
             float _VignetteStrength;
             float _VignettePower;
             float _VignetteRoundness;
@@ -39,11 +43,11 @@ Shader "Hidden/ArcadeCRT"
                 return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
             }
 
-            float ComputeCrtMask(float uvY)
+            float ComputePhosphorMask(float screenY)
             {
-                float scan = frac(uvY * _ScanlineCount);
-                float halfDuty = _ScanlineWidth * 0.5;
-                return smoothstep(halfDuty, 0.0, abs(scan - 0.5) - (0.5 - halfDuty));
+                float linePhase = frac(screenY * 0.5);
+                float wave = 0.5 + 0.5 * cos(linePhase * ARCADE_CRT_TWO_PI);
+                return pow(saturate(wave), _ScanlineSharpness);
             }
 
             float DetectNeonContent(half3 rgb)
@@ -54,6 +58,28 @@ Shader "Hidden/ArcadeCRT"
                 return saturate(luma * 1.8 + cyan * 1.2 + gold * 0.8);
             }
 
+            float ComputeContentBoost(half3 rgb)
+            {
+                float neon = DetectNeonContent(rgb);
+                float hdr = saturate(max(rgb.r, max(rgb.g, rgb.b)) - 1.0);
+                return saturate(neon * 0.6 + hdr * 1.2);
+            }
+
+            void ApplyPhosphorScanlines(inout half3 col, float screenY)
+            {
+                float scanMask = ComputePhosphorMask(screenY);
+                float contentBoost = ComputeContentBoost(col);
+
+                float effectiveDark = _ScanlineDark * lerp(0.7, 1.4 * _NeonBoost, contentBoost);
+                float effectiveBright = _ScanlineBright * lerp(0.5, 1.8 * _NeonBoost, contentBoost);
+
+                float darkAmt = effectiveDark * scanMask;
+                float brightAmt = effectiveBright * (1.0 - scanMask);
+
+                col *= (1.0 - darkAmt);
+                col += brightAmt * _PhosphorTint.rgb;
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
@@ -61,10 +87,9 @@ Shader "Hidden/ArcadeCRT"
 
                 half4 col = SampleSource(uv);
                 float master = saturate(_EventMaster);
+                float screenY = uv.y * _ScreenParams.y;
 
-                float crtMask = ComputeCrtMask(uv.y);
-                float crtStrength = lerp(_ScanlineOpacity, _ScanlineOpacity * 0.25, master);
-                col.rgb *= lerp(1.0, 1.0 - crtStrength, crtMask);
+                ApplyPhosphorScanlines(col.rgb, screenY);
 
                 float2 vigD = uv - 0.5;
                 float vig = pow(saturate(1.0 - dot(vigD, vigD) * _VignetteRoundness), _VignettePower);

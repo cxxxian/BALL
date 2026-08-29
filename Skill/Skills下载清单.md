@@ -293,13 +293,54 @@ npx skills find "game balance"
    cd Skill
    .\install-design-skills.ps1    # 策划 + 数值 5 个
    .\install-shader-skills.ps1    # 着色器 3 个
+   .\install-ui-skills.ps1      # UI 设计 + Unity UI 4 个
    ```
 
-### 当前已安装汇总（8 个）
+## 九、UI 设计 / Unity UI Skill（4 个，已精简）
+
+> BALL 的 UI 混用 **uGUI**（HUD、Boss 血条）和 **UI Toolkit**（主菜单、暂停、Buff 选择、老虎机）。
+> 从候选 7 个精简到 **4 个**，避免 skill 过多导致 Agent 选错。
+>
+> 安装：`Skill/install-ui-skills.ps1`
+
+### 9.1 设计向（2 个）
+
+| Skill | 干什么 | 对应 BALL | 页面 |
+|---|---|---|---|
+| **game-ui-design** | 游戏 UI 设计：HUD/菜单信息层级，街机 vs RPG 语境 | HUD、Buff 面板、Boss 血条视觉 | [链接](https://skills.sh/omer-metin/skills-for-antigravity/game-ui-design) |
+| **game-ui-ux** | 引擎无关 UI 架构：分辨率适配、手柄导航、屏幕流转 | Pause/Loadout 流程、多分辨率 | [链接](https://skills.sh/gamedev-skills/awesome-gamedev-agent-skills/game-ui-ux) |
+
+### 9.2 Unity 落地（2 个）
+
+| Skill | 干什么 | 对应 BALL 资产 | 页面 |
+|---|---|---|---|
+| **ui-ugui** | Canvas / uGUI 层级编辑、ScrollView | `HUDController` `BossHealthBar` `SkillUI` | [链接](https://skills.sh/unity-technologies/skills/ui-ugui) |
+| **ui-uitk** | UXML/USS、Manipulator、Runtime Binding | `MainMenuController` `BuffSelectionController` `SlotReelView` | [链接](https://skills.sh/unity-technologies/skills/ui-uitk) |
+
+**四个的分工：**
+- `game-ui-design` → **设计什么**（信息层级、街机 HUD 风格）
+- `game-ui-ux` → **怎么组织**（屏幕栈、适配、输入）
+- `ui-ugui` → **Canvas 怎么写**
+- `ui-uitk` → **UITK 怎么写**
+
+### 9.3 未安装（及原因）
+
+| 未装的 Skill | 原因 |
+|---|---|
+| `design-ui-ux-game` | 与 game-ui-design + game-ui-ux 高度重叠，安装量仅 ~51 |
+| `ui`（Unity 官方路由） | 纯路由 skill，Agent 可直接按 `.uxml` / Canvas 选 ui-uitk 或 ui-ugui |
+| `unity-ui`（nice-wolf-studio） | 概念对比文档，与 ui-ugui + ui-uitk 实现向重叠 |
+| `threejs-game-ui-designer` | Three.js，不是 Unity |
+| `web-design-guidelines` / `ui-ux-pro-max` | 网页 App UI，不是游戏 HUD |
+
+---
+
+### 当前已安装汇总（12 个）
 
 | 分类 | 数量 | 目录 | 核心 Skill |
 |---|---|---|---|
 | 数值 / 平衡 | 2 | `Skill/balance-economy/` | balance-check, game-balance-economy |
 | 游戏策划 | 3 | `Skill/game-design-gdd/` | fundamentals, design-review, level-design |
 | 着色器 | 3 | `Skill/shader-unity/` | urp-hlsl-templates, shader-programming, shader-techniques |
-| **合计** | **8** | | |
+| UI 设计 / Unity UI | 4 | `Skill/ui-design/` `Skill/ui-unity/` | game-ui-design, game-ui-ux, ui-ugui, ui-uitk |
+| **合计** | **12** | | |

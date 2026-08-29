@@ -13327,10 +13327,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a3f5c7e2b8d1046e5a9c3b7d1f4e8a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scanlineOpacity: 0.04
-  vignetteStrength: 0.1
-  scanlineCount: 520
-  scanlineWidth: 0.08
+  scanlineDark: 0.07
+  scanlineBright: 0.025
+  scanlineSharpness: 2
+  phosphorTint: {r: 0.72, g: 0.94, b: 1, a: 1}
+  neonBoost: 1.2
+  vignetteStrength: 0.08
   vignettePower: 2.2
   vignetteRoundness: 3.5
   waveScanDuration: 1.6

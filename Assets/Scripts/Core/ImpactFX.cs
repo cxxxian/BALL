@@ -6,9 +6,11 @@ public class ImpactFX : MonoBehaviour
 {
     public static ImpactFX Instance { get; private set; }
 
-    private ParticleSystem _burstPS;   // 主方块爆发
-    private ParticleSystem _dustPS;    // 细小漂散尘埃
-    private ParticleSystem _dissolvePS; // 触底像素解体（方案 1）
+    private ParticleSystem _burstPS;         // 主方块爆发
+    private ParticleSystem _dustPS;          // 细小漂散尘埃
+    private ParticleSystem _dissolvePS;      // Boss 升解（无地面碰撞）
+    private ParticleSystem _bottomShatterPS; // 触底解构（底线平面反弹）
+    private Transform      _bouncePlane;
     private Material       _particleMat;
     private Texture2D      _squareTex;
 
@@ -45,48 +47,211 @@ public class ImpactFX : MonoBehaviour
         StartCoroutine(ShieldRippleRoutine(shieldY, halfWidth, neonColor, intensity));
     }
 
+    private enum ShatterMode { Bottom, Boss }
+
     /// <summary>
-    /// 触底扣血：密集像素块向下飞散（方案 1，不裁切 Sprite）。
+    /// 触底扣血：网格像素解构 → 列错位下坠（数字雨式，不裁切 Sprite）。
     /// </summary>
     public void SpawnBottomDissolve(Vector2 worldPos, Color neonColor, float intensity = 1f)
     {
-        EmitBottomDissolve(worldPos, neonColor, intensity, 1f, false);
+        StartCoroutine(PixelShatterRoutine(worldPos, neonColor, intensity, ShatterMode.Bottom));
     }
 
-    /// <summary>Boss 击杀：金色像素解体，数量 ×2，轻微上飘。</summary>
+    /// <summary>Boss 击杀：金色网格解构 → 冻结裂开 → 上飘飞散。</summary>
     public void SpawnBossDissolve(Vector2 worldPos, Color bossBaseColor, float intensity = 1.5f)
     {
         Color gold = Color.Lerp(bossBaseColor, new Color(1f, 0.82f, 0.15f), 0.65f);
-        EmitBottomDissolve(worldPos, gold, intensity, 2f, true);
+        StartCoroutine(PixelShatterRoutine(worldPos, gold, intensity, ShatterMode.Boss));
         CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
     }
 
-    private void EmitBottomDissolve(Vector2 worldPos, Color neonColor, float intensity, float countMult, bool upwardBias)
+    /// <summary>
+    /// 像素解构三拍：裂纹闪 → 网格按列错位弹出 → 细尘收尾。
+    /// Boss 用 realtime（躲过顿帧）；触底用 scaled time + 底线平面反弹。
+    /// </summary>
+    private IEnumerator PixelShatterRoutine(Vector2 worldPos, Color neonColor, float intensity, ShatterMode mode)
     {
-        Color hdr = NeonColors.Active.ForParticle(neonColor, intensity);
+        bool boss = mode == ShatterMode.Boss;
+        ParticleSystem ps = boss ? _dissolvePS : _bottomShatterPS;
 
-        int count = Mathf.RoundToInt(Mathf.Lerp(32f, 52f, intensity) * countMult);
-        float spread = 0.32f + intensity * 0.12f;
-        float sizeMul = upwardBias ? 1.15f : 1f;
+        // 触底：对齐攻击线 Y，打开平面碰撞；Boss 升解不碰地
+        if (!boss)
+            SyncBouncePlane(MinionLineRules.GetAttackLineY());
 
+        // 触底略降 HDR，减轻 Bloom 糊团；Boss 保持亮
+        float hdrMul = boss ? intensity : intensity * 0.78f;
+        Color hdr = NeonColors.Active.ForParticle(neonColor, hdrMul);
+        Color flash = Color.Lerp(Color.white, hdr, 0.35f);
+        flash = NeonColors.Active.ForParticle(flash, hdrMul * (boss ? 1.35f : 1.05f));
+
+        float cell = boss ? 0.13f : 0.14f;
+        int cols = boss ? 7 : 4;
+        int rows = boss ? 7 : 4;
+        float sizeMul = boss ? 1.2f : 1.28f;
+        // 触底寿命加长，好让反弹/缓冲被看见
+        float lifeMul = boss ? 1.55f : 1.85f;
+
+        StartCoroutine(CrackFlashRoutine(worldPos, flash, intensity, boss));
+        if (!boss)
+        {
+            StartCoroutine(BottomLineFlashRoutine(MinionLineRules.GetAttackLineY(), neonColor, intensity));
+            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+        }
+
+        int midCol = cols / 2;
+        for (int wave = 0; wave <= midCol; wave++)
+        {
+            EmitShatterColumn(ps, worldPos, midCol - wave, rows, cols, cell, hdr, flash, intensity, sizeMul, lifeMul, boss);
+            if (wave > 0)
+                EmitShatterColumn(ps, worldPos, midCol + wave, rows, cols, cell, hdr, flash, intensity, sizeMul, lifeMul, boss);
+
+            float stagger = boss ? 0.028f : 0.018f;
+            if (boss)
+                yield return new WaitForSecondsRealtime(stagger);
+            else
+                yield return new WaitForSeconds(stagger);
+        }
+
+        int dustCount = Mathf.RoundToInt(Mathf.Lerp(10f, 18f, intensity) * (boss ? 1.6f : 0.55f));
+        EmitShatterDust(ps, worldPos, hdr, dustCount, boss, intensity);
+    }
+
+    private void SyncBouncePlane(float lineY)
+    {
+        if (_bouncePlane == null) return;
+        // Plane 的 up = 法线；identity → +Y，即水平底线
+        _bouncePlane.position = new Vector3(0f, lineY, 0f);
+        _bouncePlane.rotation = Quaternion.identity;
+    }
+
+    private void EmitShatterColumn(
+        ParticleSystem ps, Vector2 center, int col, int rows, int cols, float cell,
+        Color hdr, Color flash, float intensity, float sizeMul, float lifeMul, bool boss)
+    {
+        if (col < 0 || col >= cols) return;
+
+        float originX = -(cols - 1) * 0.5f * cell;
+        float originY = -(rows - 1) * 0.5f * cell;
+        float colX = originX + col * cell;
+
+        for (int r = 0; r < rows; r++)
+        {
+            float edge = Mathf.Abs(r - (rows - 1) * 0.5f) / (rows * 0.5f);
+            if (edge > 0.85f && Random.value > 0.55f) continue;
+
+            float px = center.x + colX + Random.Range(-cell * 0.08f, cell * 0.08f);
+            float py = center.y + originY + r * cell + Random.Range(-cell * 0.08f, cell * 0.08f);
+            // 触底：避免粒子生成在碰撞面下方而穿模
+            if (!boss)
+                py = Mathf.Max(py, MinionLineRules.GetAttackLineY() + 0.06f);
+            float rowNorm = r / (float)Mathf.Max(1, rows - 1);
+
+            EmitShatterPixel(ps, px, py, center, hdr, flash, intensity, sizeMul, lifeMul, boss, true, rowNorm);
+
+            // Boss 保留碎屑；触底少叠碎屑，靠大块可读
+            float crumbChance = boss ? 0.34f : 0.14f;
+            if (Random.value < crumbChance)
+            {
+                EmitShatterPixel(
+                    ps,
+                    px + Random.Range(-0.04f, 0.04f),
+                    py + Random.Range(-0.04f, 0.04f),
+                    center, hdr, flash, intensity, sizeMul * 0.55f, lifeMul * 0.85f, boss,
+                    false, rowNorm);
+            }
+        }
+    }
+
+    private void EmitShatterPixel(
+        ParticleSystem ps, float px, float py, Vector2 center, Color hdr, Color flash, float intensity,
+        float sizeMul, float lifeMul, bool boss, bool isChunk, float rowNorm)
+    {
+        var ep = new ParticleSystem.EmitParams();
+        ep.position = new Vector3(px, py, -0.18f);
+
+        Color c = Color.Lerp(flash, hdr, Random.Range(0.35f, 0.85f));
+        c *= Random.Range(0.82f, 1.05f);
+        c.a = 1f;
+        ep.startColor = c;
+
+        float baseSize = isChunk
+            ? (boss ? Random.Range(0.065f, 0.11f) : Random.Range(0.095f, 0.15f))
+            : (boss ? Random.Range(0.03f, 0.05f) : Random.Range(0.04f, 0.065f));
+        ep.startSize = baseSize * intensity * sizeMul;
+        ep.startLifetime = Random.Range(0.38f, 0.58f) * lifeMul;
+        ep.rotation = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+        ep.angularVelocity = Random.Range(-360f, 360f);
+
+        float vx, vy;
+        if (boss)
+        {
+            Vector2 radial = new Vector2(px - center.x, py - center.y);
+            if (radial.sqrMagnitude < 0.0001f)
+                radial = Random.insideUnitCircle;
+            radial.Normalize();
+            float spd = Random.Range(1.8f, 5.2f) * (isChunk ? 1f : 1.25f);
+            vx = radial.x * spd;
+            vy = radial.y * spd * 0.7f + Random.Range(1.4f, 4.6f);
+            if (vy < 0f) vy *= 0.4f;
+        }
+        else
+        {
+            // 扇形下坠：横飞加大、竖速克制，撞线后能弹开而不是糊成一团
+            float down = Mathf.Lerp(1.6f, 4.2f, rowNorm);
+            vx = Random.Range(-3.4f, 3.4f) * (isChunk ? 0.9f : 1.25f);
+            vy = -down * Random.Range(0.9f, 1.15f) + Random.Range(0.2f, 1.1f);
+        }
+
+        ep.velocity = new Vector3(vx, vy, 0f);
+        ps.Emit(ep, 1);
+    }
+
+    private void EmitShatterDust(ParticleSystem ps, Vector2 worldPos, Color hdr, int count, bool boss, float intensity)
+    {
+        Color dust = hdr * 0.65f;
+        dust.a = 1f;
         for (int i = 0; i < count; i++)
         {
             var ep = new ParticleSystem.EmitParams();
-            Vector2 offset = Random.insideUnitCircle * spread;
-            ep.position = new Vector3(worldPos.x + offset.x, worldPos.y + offset.y, -0.18f);
-            ep.startColor = hdr * Random.Range(0.8f, 1f);
-            ep.startSize = Random.Range(0.07f, 0.14f) * intensity * sizeMul;
-            ep.startLifetime = Random.Range(0.26f, 0.38f);
-            float vx = Random.Range(-2.8f, 2.8f);
-            float vy = upwardBias
-                ? Random.Range(-2.5f, 4.5f)
-                : Random.Range(-6f, -1.2f);
-            ep.velocity = new Vector3(vx, vy, 0f);
-            _dissolvePS.Emit(ep, 1);
+            Vector2 o = Random.insideUnitCircle * (boss ? 0.45f : 0.32f);
+            ep.position = new Vector3(worldPos.x + o.x, worldPos.y + o.y, -0.16f);
+            ep.startColor = dust * Random.Range(0.7f, 1f);
+            ep.startSize = Random.Range(0.018f, 0.042f) * intensity * (boss ? 1f : 1.35f);
+            ep.startLifetime = Random.Range(0.55f, 1.05f) * (boss ? 1.15f : 1.4f);
+            if (boss)
+                ep.velocity = new Vector3(Random.Range(-1.5f, 1.5f), Random.Range(0.5f, 3.2f), 0f);
+            else
+                ep.velocity = new Vector3(Random.Range(-2.6f, 2.6f), Random.Range(-3.2f, -0.6f), 0f);
+            ps.Emit(ep, 1);
         }
+    }
 
-        if (!upwardBias)
-            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+    private IEnumerator CrackFlashRoutine(Vector2 worldPos, Color flash, float intensity, bool boss)
+    {
+        var go = new GameObject("ShatterCrackFlash");
+        go.transform.position = new Vector3(worldPos.x, worldPos.y, -0.2f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = MakeDiscSprite(24);
+        sr.material = new Material(Shader.Find("Sprites/Default"));
+        sr.sortingOrder = 13;
+        float peak = (boss ? 0.7f : 0.45f) * Mathf.Lerp(0.85f, 1.15f, intensity);
+        float dur = boss ? 0.16f : 0.1f;
+        float scalePeak = (boss ? 0.85f : 0.5f) * Mathf.Lerp(0.9f, 1.1f, intensity);
+
+        for (float t = 0f; t < dur;)
+        {
+            t += boss ? Time.unscaledDeltaTime : Time.deltaTime;
+            float p = Mathf.Clamp01(t / dur);
+            // 快亮 → 慢收，避免硬闪一下就没
+            float envelope = p < 0.25f
+                ? Mathf.SmoothStep(0f, 1f, p / 0.25f)
+                : 1f - Mathf.SmoothStep(0f, 1f, (p - 0.25f) / 0.75f);
+            sr.color = new Color(flash.r, flash.g, flash.b, peak * envelope);
+            float s = Mathf.Lerp(0.15f, scalePeak, envelope);
+            go.transform.localScale = Vector3.one * s;
+            yield return null;
+        }
+        Destroy(go);
     }
 
     // ── 内部工具 ──────────────────────────────────────────────────────────
@@ -360,12 +525,14 @@ public class ImpactFX : MonoBehaviour
 
         _burstPS = BuildPS("Burst", 0.25f, 0.55f, 2.5f, 9f, 0.05f, 0.18f, 500);
         _dustPS  = BuildPS("Dust",  0.4f,  0.85f, 0.5f, 3f,  0.02f, 0.07f, 300);
-        _dissolvePS = BuildDissolvePS();
+        _dissolvePS = BuildDissolvePS(withFloorBounce: false);
+        _bottomShatterPS = BuildDissolvePS(withFloorBounce: true);
     }
 
-    private ParticleSystem BuildDissolvePS()
+    private ParticleSystem BuildDissolvePS(bool withFloorBounce)
     {
-        var go = new GameObject("ImpactPS_Dissolve");
+        string name = withFloorBounce ? "ImpactPS_BottomShatter" : "ImpactPS_Dissolve";
+        var go = new GameObject(name);
         go.transform.SetParent(transform);
         var ps = go.AddComponent<ParticleSystem>();
 
@@ -373,12 +540,14 @@ public class ImpactFX : MonoBehaviour
         main.loop = false;
         main.playOnAwake = false;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.startLifetime = 0.35f;
+        main.useUnscaledTime = !withFloorBounce; // Boss 躲顿帧；触底跟玩法时间走
+        main.startLifetime = withFloorBounce ? 0.9f : 0.5f;
         main.startSpeed = 0f;
         main.startSize = 0.1f;
         main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
-        main.gravityModifier = 0.15f;
-        main.maxParticles = 600;
+        // 触底重力略大，落地后弹跳弧可读
+        main.gravityModifier = withFloorBounce ? 0.85f : 0.35f;
+        main.maxParticles = withFloorBounce ? 900 : 800;
 
         var em = ps.emission;
         em.enabled = false;
@@ -386,20 +555,91 @@ public class ImpactFX : MonoBehaviour
         var shape = ps.shape;
         shape.enabled = false;
 
-        // 保持块大小，末尾快速消失（避免拖尾感）
+        var vel = ps.velocityOverLifetime;
+        vel.enabled = true;
+        vel.space = ParticleSystemSimulationSpace.World;
+        if (withFloorBounce)
+        {
+            // 保持速度倍率，避免把碰撞反弹也压没
+            vel.speedModifier = new ParticleSystem.MinMaxCurve(1f,
+                new AnimationCurve(
+                    new Keyframe(0f, 0.2f),
+                    new Keyframe(0.06f, 0.2f),
+                    new Keyframe(0.18f, 1f),
+                    new Keyframe(1f, 0.85f)));
+        }
+        else
+        {
+            vel.speedModifier = new ParticleSystem.MinMaxCurve(1f,
+                new AnimationCurve(
+                    new Keyframe(0f, 0.05f),
+                    new Keyframe(0.08f, 0.05f),
+                    new Keyframe(0.22f, 1.15f),
+                    new Keyframe(0.55f, 0.55f),
+                    new Keyframe(1f, 0.08f)));
+        }
+
         var sol = ps.sizeOverLifetime;
         sol.enabled = true;
         sol.size = new ParticleSystem.MinMaxCurve(1f,
-            new AnimationCurve(
-                new Keyframe(0f, 1f), new Keyframe(0.78f, 1f), new Keyframe(1f, 0f)));
+            withFloorBounce
+                ? new AnimationCurve(
+                    new Keyframe(0f, 0.9f),
+                    new Keyframe(0.1f, 1.05f),
+                    new Keyframe(0.55f, 0.95f),
+                    new Keyframe(0.82f, 0.55f),
+                    new Keyframe(1f, 0f))
+                : new AnimationCurve(
+                    new Keyframe(0f, 0.85f),
+                    new Keyframe(0.12f, 1.05f),
+                    new Keyframe(0.7f, 1f),
+                    new Keyframe(1f, 0f)));
 
         var col = ps.colorOverLifetime;
         col.enabled = true;
         var grad = new Gradient();
-        grad.SetKeys(
-            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.75f), new GradientAlphaKey(0f, 0.9f) });
+        if (withFloorBounce)
+        {
+            grad.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(Color.white, 0.2f),
+                    new GradientColorKey(Color.white, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(1f, 0.45f),
+                    new GradientAlphaKey(0.7f, 0.7f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+        }
+        else
+        {
+            grad.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(Color.white, 0.15f),
+                    new GradientColorKey(Color.white, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(1f, 0.55f),
+                    new GradientAlphaKey(0.85f, 0.78f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+        }
         col.color = new ParticleSystem.MinMaxGradient(grad);
+
+        var rot = ps.rotationOverLifetime;
+        rot.enabled = true;
+        rot.z = new ParticleSystem.MinMaxCurve(-2.5f, 2.5f);
+
+        if (withFloorBounce)
+            SetupFloorBounceCollision(ps);
 
         var rend = ps.GetComponent<ParticleSystemRenderer>();
         rend.renderMode = ParticleSystemRenderMode.Billboard;
@@ -407,6 +647,36 @@ public class ImpactFX : MonoBehaviour
         rend.sortingOrder = 11;
 
         return ps;
+    }
+
+    /// <summary>
+    /// 底线无限平面碰撞：轻弹 + 阻尼 + 每次撞线削寿命 → 缓冲后消失。
+    /// </summary>
+    private void SetupFloorBounceCollision(ParticleSystem ps)
+    {
+        if (_bouncePlane == null)
+        {
+            var planeGo = new GameObject("ImpactBouncePlane");
+            planeGo.transform.SetParent(transform);
+            planeGo.transform.position = new Vector3(0f, MinionLineRules.GetAttackLineY(), 0f);
+            planeGo.transform.rotation = Quaternion.identity;
+            _bouncePlane = planeGo.transform;
+        }
+
+        var collision = ps.collision;
+        collision.enabled = true;
+        collision.type = ParticleSystemCollisionType.Planes;
+        collision.mode = ParticleSystemCollisionMode.Collision3D;
+        collision.quality = ParticleSystemCollisionQuality.High;
+        collision.bounce = new ParticleSystem.MinMaxCurve(0.28f, 0.42f);
+        collision.dampen = new ParticleSystem.MinMaxCurve(0.35f, 0.55f);
+        // 每次落地削掉剩余寿命，跳一两下后自然消掉
+        collision.lifetimeLoss = new ParticleSystem.MinMaxCurve(0.18f, 0.28f);
+        collision.minKillSpeed = 0.15f;
+        collision.maxKillSpeed = 10000f;
+        collision.radiusScale = 0.65f;
+        collision.enableDynamicColliders = false;
+        collision.SetPlane(0, _bouncePlane);
     }
 
     private ParticleSystem BuildPS(string goName,

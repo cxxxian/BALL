@@ -41,11 +41,11 @@ public class Boss : EnemyBase
         _maxX        = maxX;
         _waveIndex   = waveIndex;
 
-        maxHits      = def.maxHP;
+        maxHits      = EndlessWaveScaling.GetBossMaxHP(waveIndex);
         scoreOnHit   = def.scoreOnHit;
         scoreOnKill  = def.scoreOnKill;
-        moveSpeed    = def.moveSpeed;
-        _curMoveSpeed = def.moveSpeed;
+        moveSpeed    = EndlessWaveScaling.GetBossMoveSpeed(waveIndex);
+        _curMoveSpeed = moveSpeed;
 
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
@@ -136,7 +136,7 @@ public class Boss : EnemyBase
     private void EnterPhase2()
     {
         _inPhase2     = true;
-        _curMoveSpeed = definition.moveSpeed * definition.phase2SpeedMult;
+        _curMoveSpeed = moveSpeed * definition.phase2SpeedMult;
         _baseScale    = transform.localScale;
         _p2ShakeTimer = 1.2f;
 
@@ -263,6 +263,10 @@ public class Boss : EnemyBase
             effectsT = effectsObj.transform;
         }
 
+        // 关掉试做的危域 / 切角，恢复菱形框
+        DisableExtraP2(effectsT, "P2ThreatAura");
+        DisableExtraP2(effectsT, "P2Shards");
+
         SetupP2Halo(effectsT);
 
         var ringT = effectsT.Find("P2Ring");
@@ -272,6 +276,7 @@ public class Boss : EnemyBase
             ringObj.transform.SetParent(effectsT, false);
             ringT = ringObj.transform;
         }
+        ringT.gameObject.SetActive(true);
         _p2RingInnerT = ringT;
 
         var legacySr = ringT.GetComponent<SpriteRenderer>();
@@ -287,6 +292,7 @@ public class Boss : EnemyBase
             outerObj.transform.SetParent(effectsT, false);
             outerT = outerObj.transform;
         }
+        outerT.gameObject.SetActive(true);
         _p2RingOuterT = outerT;
 
         _p2LineOuter = outerT.GetComponent<LineRenderer>();
@@ -294,6 +300,13 @@ public class Boss : EnemyBase
 
         SetRingDiamond(_p2Line, 1.14f);
         SetRingDiamond(_p2LineOuter, 1.3f);
+    }
+
+    private static void DisableExtraP2(Transform parent, string childName)
+    {
+        var t = parent.Find(childName);
+        if (t == null) return;
+        t.gameObject.SetActive(false);
     }
 
     private void SetupP2Halo(Transform parent)
@@ -305,6 +318,7 @@ public class Boss : EnemyBase
             haloObj.transform.SetParent(parent, false);
             haloT = haloObj.transform;
         }
+        haloT.gameObject.SetActive(true);
 
         _p2Halo = haloT.GetComponent<SpriteRenderer>();
         if (_p2Halo == null) _p2Halo = haloT.gameObject.AddComponent<SpriteRenderer>();
@@ -375,6 +389,7 @@ public class Boss : EnemyBase
     private float GetScaledSpawnInterval()
     {
         float baseInterval = _inPhase2 ? definition.spawnIntervalP2 : definition.spawnInterval;
+        baseInterval = EndlessWaveScaling.GetBossSpawnInterval(_waveIndex, baseInterval, _inPhase2);
         return EndlessWaveScaling.GetSpawnInterval(baseInterval, _waveIndex);
     }
 
@@ -389,6 +404,7 @@ public class Boss : EnemyBase
     private int GetScaledSpawnCount()
     {
         int baseCount = _inPhase2 ? definition.spawnCountP2 : definition.spawnCount;
+        baseCount = EndlessWaveScaling.GetBossSpawnCount(_waveIndex, baseCount, _inPhase2);
         return EndlessWaveScaling.GetSpawnCount(baseCount, _waveIndex, _inPhase2);
     }
 
@@ -477,8 +493,6 @@ public class Boss : EnemyBase
         if (_baseScale.sqrMagnitude > 0.001f) transform.localScale = _baseScale;
         SlowMoFX.Instance?.SetBossKillVignette(0f, Color.clear);
     }
-
-    // GenerateP2RingSprite 保留供后续美术替换；当前 P2 使用 LineRenderer 外框
 
     private static Sprite GenerateBossSprite(int size, Color color)
     {

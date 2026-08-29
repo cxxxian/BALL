@@ -63,14 +63,17 @@ public class ArcadeCRTFeature : ScriptableRendererFeature
             if (!ArcadeCRTController.TryGetRuntimeState(out var state))
                 return false;
 
-            if (state.ScanlineOpacity <= 0f
+            if (state.ScanlineDark <= 0f
+                && state.ScanlineBright <= 0f
                 && state.EffectiveVignette <= 0f
                 && state.EventMaster <= 0f)
                 return false;
 
-            _material.SetFloat("_ScanlineOpacity", state.ScanlineOpacity);
-            _material.SetFloat("_ScanlineCount", state.ScanlineCount);
-            _material.SetFloat("_ScanlineWidth", state.ScanlineWidth);
+            _material.SetFloat("_ScanlineDark", state.ScanlineDark);
+            _material.SetFloat("_ScanlineBright", state.ScanlineBright);
+            _material.SetFloat("_ScanlineSharpness", state.ScanlineSharpness);
+            _material.SetColor("_PhosphorTint", state.PhosphorTint);
+            _material.SetFloat("_NeonBoost", state.NeonBoost);
             _material.SetFloat("_VignetteStrength", state.EffectiveVignette);
             _material.SetFloat("_VignettePower", state.VignettePower);
             _material.SetFloat("_VignetteRoundness", state.VignetteRoundness);

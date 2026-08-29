@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 三层电路竞技场背景：远层母线 / 中层扫描带 / 近层纯渐变暗角。
+/// 三层竞技场背景：远层稀疏代码雨 / 中层主代码雨 + 淡网格 / 近层渐变暗角。
 /// </summary>
 public class TronArenaBackground : MonoBehaviour
 {
@@ -9,6 +9,12 @@ public class TronArenaBackground : MonoBehaviour
 
     private static readonly int ScanBandYId = Shader.PropertyToID("_ScanBandY");
     private static readonly int ScanBandActiveId = Shader.PropertyToID("_ScanBandActive");
+    private static readonly int RainTimeId = Shader.PropertyToID("_RainTime");
+
+    private const string FarRainShader = "Custom/TronArenaFarRain";
+    private const string MidRainShader = "Custom/TronArenaMidRain";
+    private const string FarFallbackShader = "Custom/TronArenaFar";
+    private const string MidFallbackShader = "Custom/TronArenaMid";
 
     [Header("World (defaults overridden by GameConfig)")]
     public float worldWidth  = 9f;
@@ -34,6 +40,10 @@ public class TronArenaBackground : MonoBehaviour
     public float midGridDriftSpeed = 0.09f;
     public float midScanSpeed      = 0.75f;
 
+    [Header("Shaders (auto-resolved if empty)")]
+    public Shader midRainShader;
+    public Shader farRainShader;
+
     [Header("Near Layer — Pure Vignette")]
     public float topVignetteStart  = 0.78f;
     public float bottomVignetteEnd = 0.28f;
@@ -43,6 +53,7 @@ public class TronArenaBackground : MonoBehaviour
     private Transform    _midLayer;
     private Material     _farMat;
     private Material     _midMat;
+    private Texture2D    _glyphAtlas;
     private float        _comboBoost;
     private float        _targetComboBoost;
     private float        _comboBoostVel;
@@ -76,6 +87,7 @@ public class TronArenaBackground : MonoBehaviour
             ComboSystem.Instance.onComboChanged.RemoveListener(OnComboChanged);
         if (_farMat != null) Destroy(_farMat);
         if (_midMat != null) Destroy(_midMat);
+        if (_glyphAtlas != null) Destroy(_glyphAtlas);
         if (Instance == this) Instance = null;
     }
 
@@ -110,12 +122,43 @@ public class TronArenaBackground : MonoBehaviour
 
     private void BuildLayers()
     {
-        _farLayer = CreateShaderLayer("Layer_Far", -100, "Custom/TronArenaFar", out _farMat);
-        _midLayer = CreateShaderLayer("Layer_Mid", -99,  "Custom/TronArenaMid", out _midMat);
+        _glyphAtlas = MatrixGlyphAtlas.CreateAtlas();
+
+        ResolveShaders();
+
+        _farLayer = CreateShaderLayer("Layer_Far", -100, farRainShader, FarFallbackShader, out _farMat);
+        _midLayer = CreateShaderLayer("Layer_Mid", -99, midRainShader, MidFallbackShader, out _midMat);
+
+        MatrixGlyphAtlas.ApplyToMaterial(_farMat, _glyphAtlas);
+        MatrixGlyphAtlas.ApplyToMaterial(_midMat, _glyphAtlas);
+
         CreateNearLayer();
     }
 
-    private Transform CreateShaderLayer(string layerName, int sortingOrder, string shaderName, out Material mat)
+    private void ResolveShaders()
+    {
+        if (midRainShader == null)
+            midRainShader = LoadShader(MidRainShader, "Assets/Shaders/TronArenaMidRain.shader");
+        if (farRainShader == null)
+            farRainShader = LoadShader(FarRainShader, "Assets/Shaders/TronArenaFarRain.shader");
+    }
+
+    private static Shader LoadShader(string shaderName, string assetPath)
+    {
+        var shader = Shader.Find(shaderName);
+#if UNITY_EDITOR
+        if (shader == null)
+            shader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(assetPath);
+#endif
+        return shader;
+    }
+
+    private Transform CreateShaderLayer(
+        string layerName,
+        int sortingOrder,
+        Shader preferredShader,
+        string fallbackShaderName,
+        out Material mat)
     {
         var go = new GameObject(layerName);
         go.transform.SetParent(transform, false);
@@ -127,7 +170,13 @@ public class TronArenaBackground : MonoBehaviour
         meshRenderer.sortingLayerName = "Default";
         meshRenderer.sortingOrder = sortingOrder;
 
-        var shader = Shader.Find(shaderName);
+        var shader = preferredShader;
+        if (shader == null)
+        {
+            Debug.LogWarning($"TronArenaBackground: Preferred rain shader missing, falling back to '{fallbackShaderName}'.");
+            shader = Shader.Find(fallbackShaderName);
+        }
+
         mat = shader != null
             ? new Material(shader)
             : new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default"));
@@ -160,14 +209,20 @@ public class TronArenaBackground : MonoBehaviour
     {
         _comboBoost = Mathf.SmoothDamp(_comboBoost, _targetComboBoost, ref _comboBoostVel, comboSmoothTime);
 
+        // 雨流动画用 unscaledTime，避免 SlowMo 时雨变慢、退出时像加速/回溯
+        float rainTime = Time.unscaledTime;
         if (_farMat != null)
+        {
             _farMat.SetFloat("_DriftSpeed", farDriftSpeed);
+            _farMat.SetFloat(RainTimeId, rainTime);
+        }
 
         if (_midMat != null)
         {
             _midMat.SetFloat("_ComboBoost", _comboBoost);
             _midMat.SetFloat("_GridDriftSpeed", midGridDriftSpeed);
             _midMat.SetFloat("_ScanSpeed", midScanSpeed);
+            _midMat.SetFloat(RainTimeId, rainTime);
 
             if (_scanBandPulseTimer > 0f)
             {

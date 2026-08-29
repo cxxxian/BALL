@@ -6,8 +6,12 @@
 
 | 目录 | 说明 | 数量 |
 |------|------|------|
-| [balance-economy/](balance-economy/) | 数值 / 经济 / 平衡 | 7 |
-| [game-design-gdd/](game-design-gdd/) | 游戏策划 / GDD / 关卡 | 13 |
+| [balance-economy/](balance-economy/) | 数值 / 经济 / 平衡 | 2 |
+| [game-design-gdd/](game-design-gdd/) | 游戏策划 / GDD / 关卡 | 3 |
+| [shader-unity/](shader-unity/) | URP / HLSL 着色器 | 3 |
+| [ui-design/](ui-design/) | 游戏 UI 设计 | 2 |
+| [ui-unity/](ui-unity/) | Unity uGUI / UITK | 2 |
+| **合计** | | **12** |
 
 ## Cursor 集成
 
@@ -17,7 +21,9 @@
 
 ```powershell
 cd F:\Study\GameDesign\Ball\Skill
-powershell -ExecutionPolicy Bypass -File .\install-design-skills.ps1
+.\install-design-skills.ps1    # 策划 + 数值 5 个
+.\install-shader-skills.ps1    # 着色器 3 个
+.\install-ui-skills.ps1        # UI 设计 + Unity UI 4 个
 ```
 
 ## 完整清单

@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// 无尽模式波次缩放（方案 B 骨架）。W1 为教学波不参与缩放；W2+ 以 Boss_W2 为模板加压。
-/// 兵种权重为方案 C 预埋；数值膨胀接口预留，默认 1。
+/// 无尽模式波次缩放。W1 为教学波不参与小兵倍率；W2+ 以 Boss_W2 为模板加压。
+/// Boss HP/移速/派兵间隔：W1–W3 查表，W4+ 公式（方案 B，运行时覆盖资产基准）。
 /// </summary>
 public static class EndlessWaveScaling
 {
@@ -10,11 +10,18 @@ public static class EndlessWaveScaling
 
     public static bool IsTutorialWave(int waveIndex) => waveIndex == TutorialWaveIndex;
 
-    /// <summary>W2→1, W3→2 … W1 返回 0 且不参与缩放计算。</summary>
+    /// <summary>派兵权重/数量/间隔缩放用。W1→0，W2→1，W3→2 …</summary>
     public static int GetScaledWave(int waveIndex)
     {
         if (IsTutorialWave(waveIndex)) return 0;
         return waveIndex;
+    }
+
+    /// <summary>HP/移速倍率与 W4+ Boss 公式用。W1→0，W2→2，W3→3 …</summary>
+    public static int GetDifficultyWave(int waveIndex)
+    {
+        if (IsTutorialWave(waveIndex)) return 0;
+        return waveIndex + 1;
     }
 
     public static float GetSpawnInterval(float baseInterval, int waveIndex)
@@ -33,11 +40,67 @@ public static class EndlessWaveScaling
         return baseCount + Mathf.Min(2, sw / 4);
     }
 
-    /// <summary>Phase 2 预留：小兵 HP 倍率。</summary>
-    public static float GetMinionHpMultiplier(int waveIndex) => 1f;
+    public static float GetMinionHpMultiplier(int waveIndex)
+    {
+        if (IsTutorialWave(waveIndex)) return 1f;
+        int dw = GetDifficultyWave(waveIndex);
+        return Mathf.Min(1.6f, 1f + 0.08f * Mathf.Max(0, dw - 1));
+    }
 
-    /// <summary>Phase 2 预留：小兵移速倍率。</summary>
-    public static float GetMinionSpeedMultiplier(int waveIndex) => 1f;
+    public static float GetMinionSpeedMultiplier(int waveIndex)
+    {
+        if (IsTutorialWave(waveIndex)) return 1f;
+        int dw = GetDifficultyWave(waveIndex);
+        return Mathf.Min(1.35f, 1f + 0.04f * Mathf.Max(0, dw - 1));
+    }
+
+    /// <summary>W1–W3 查表；W4+ round(18 + 8×dw)。</summary>
+    public static int GetBossMaxHP(int waveIndex)
+    {
+        return waveIndex switch
+        {
+            0 => 10,
+            1 => 16,
+            2 => 24,
+            _ => Mathf.RoundToInt(18 + 8 * GetDifficultyWave(waveIndex))
+        };
+    }
+
+    /// <summary>W1–W3 查表；W4+ min(1.8, 1 + 0.08×dw)。</summary>
+    public static float GetBossMoveSpeed(int waveIndex)
+    {
+        if (waveIndex <= 2)
+        {
+            return waveIndex switch
+            {
+                0 => 0.85f,
+                1 => 1.05f,
+                2 => 1.15f,
+                _ => 1.05f
+            };
+        }
+        int dw = GetDifficultyWave(waveIndex);
+        return Mathf.Min(1.8f, 1.0f + 0.08f * dw);
+    }
+
+    /// <summary>W1–W3 固定间隔；W4+ 沿用资产基准再经 GetSpawnInterval 缩放。</summary>
+    public static float GetBossSpawnInterval(int waveIndex, float assetInterval, bool phase2)
+    {
+        return waveIndex switch
+        {
+            0 => phase2 ? 5.0f : 5.5f,
+            1 => phase2 ? 3.0f : 4.5f,
+            2 => phase2 ? 2.4f : 3.8f,
+            _ => assetInterval
+        };
+    }
+
+    /// <summary>W1 固定 1/1；W2+ 沿用资产再经 GetSpawnCount 缩放。</summary>
+    public static int GetBossSpawnCount(int waveIndex, int assetCount, bool phase2)
+    {
+        if (waveIndex == 0) return 1;
+        return assetCount;
+    }
 
     public static MinionDefinition PickMinion(MinionDefinition[] spawnTypes, int waveIndex)
     {

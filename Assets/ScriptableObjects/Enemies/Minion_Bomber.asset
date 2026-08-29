@@ -16,7 +16,7 @@ MonoBehaviour:
   baseColor: {r: 1, g: 0.35, b: 0, a: 1}
   sprite: {fileID: 21300000, guid: bbe35a2a43f5bcd4f95e93cbb173508b, type: 3}
   maxHP: 1
-  moveSpeed: 1.4
+  moveSpeed: 1.35
   scoreOnHit: 15
   scoreOnKill: 80
   damageToPlayer: 1

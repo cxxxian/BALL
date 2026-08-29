@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 两层 CRT：① 常驻细扫描线  ② Boss 每波首次派兵前的扫描线（扫完再出兵）
+/// 两层 CRT：① 常驻 Phosphor 扫描线  ② Boss 每波首次派兵前的扫描线（扫完再出兵）
 /// </summary>
 public class ArcadeCRTController : MonoBehaviour
 {
@@ -11,11 +11,13 @@ public class ArcadeCRTController : MonoBehaviour
     public static float EffectiveVignette { get; private set; }
     public static bool IsScanActive { get; private set; }
 
-    [Header("Layer 1 — Always On CRT")]
-    [Range(0f, 0.15f)] public float scanlineOpacity = 0.04f;
-    [Range(0f, 0.25f)] public float vignetteStrength = 0.10f;
-    public int scanlineCount = 520;
-    [Range(0.02f, 0.2f)] public float scanlineWidth = 0.08f;
+    [Header("Layer 1 — Always On CRT (Phosphor)")]
+    [Range(0f, 0.2f)] public float scanlineDark = 0.07f;
+    [Range(0f, 0.08f)] public float scanlineBright = 0.025f;
+    [Range(1f, 4f)] public float scanlineSharpness = 2f;
+    public Color phosphorTint = new Color(0.72f, 0.94f, 1f, 1f);
+    [Range(0f, 2f)] public float neonBoost = 1.2f;
+    [Range(0f, 0.25f)] public float vignetteStrength = 0.08f;
     public float vignettePower = 2.2f;
     public float vignetteRoundness = 3.5f;
 
@@ -30,9 +32,11 @@ public class ArcadeCRTController : MonoBehaviour
 
     public struct RuntimeState
     {
-        public float ScanlineOpacity;
-        public float ScanlineCount;
-        public float ScanlineWidth;
+        public float ScanlineDark;
+        public float ScanlineBright;
+        public float ScanlineSharpness;
+        public Color PhosphorTint;
+        public float NeonBoost;
         public float EffectiveVignette;
         public float VignettePower;
         public float VignetteRoundness;
@@ -118,9 +122,11 @@ public class ArcadeCRTController : MonoBehaviour
         if (Instance == null || !Instance.isActiveAndEnabled)
             return false;
 
-        state.ScanlineOpacity = Instance.scanlineOpacity;
-        state.ScanlineCount = Instance.scanlineCount;
-        state.ScanlineWidth = Instance.scanlineWidth;
+        state.ScanlineDark = Instance.scanlineDark;
+        state.ScanlineBright = Instance.scanlineBright;
+        state.ScanlineSharpness = Instance.scanlineSharpness;
+        state.PhosphorTint = Instance.phosphorTint;
+        state.NeonBoost = Instance.neonBoost;
         state.EffectiveVignette = EffectiveVignette;
         state.VignettePower = Instance.vignettePower;
         state.VignetteRoundness = Instance.vignetteRoundness;
