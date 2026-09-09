@@ -52,6 +52,8 @@ public class PauseHudButton : MonoBehaviour
 
     private void OnClicked()
     {
+        if (TutorialInputGate.Active && !TutorialInputGate.Allows(TutorialInputMask.Pause))
+            return;
         PauseMenuController.Instance?.Toggle();
     }
 }

@@ -11,7 +11,7 @@ public enum BuffEffectType
     DeployTeslaCoil,    // 建造：特斯拉电圈（范围内单体，触底优先）
     DeployFrostTower,   // 建造：冰霜塔（周期性全屏/范围减速冻结）
     ElectricShell,      // [已移除出池] 元素：感电外壳
-    HeartGuard,         // 护心符：触底免伤，最多储存 2 层
+    HeartGuard,         // 护心符：触底免伤（不回血），最多储存 1 层
     ScoreOnKillUp,      // 击杀得分 +effectValue / 层（如 0.15 = +15%）
 }
 
@@ -45,7 +45,7 @@ public class BuffDefinition : ScriptableObject
             BuffEffectType.ComboThresholdDown   => "Combo 震屏阈值 -2 / 层",
             BuffEffectType.DeployTeslaCoil      => "部署或升级特斯拉塔（单体电击）",
             BuffEffectType.DeployFrostTower     => "部署或升级冰霜塔",
-            BuffEffectType.HeartGuard           => "获得护心层，触底免伤",
+            BuffEffectType.HeartGuard           => "护心层：触底免伤（不回血）",
             BuffEffectType.HealOnKill           => "击杀回复生命",
             BuffEffectType.ElectricShell        => "弹珠附带感电",
             BuffEffectType.ScoreOnKillUp        => "击杀得分 +15% / 层",

@@ -18,3 +18,4 @@ MonoBehaviour:
   effectType: 4
   effectValue: 1
   maxStacks: 3
+  minWave: 2

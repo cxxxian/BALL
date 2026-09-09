@@ -14,11 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ballId: standard
   displayName: "\u6807\u51C6\u5F39\u73E0"
-  loadoutDescription: "\u57FA\u7840\u5747\u8861\u5F39\u73E0\uFF0C\u9002\u5408\u5404\u79CD\u5C40\u9762\u3002"
+  loadoutDescription: "\u534F\u8BAE\u6539\u5411 + \u65A9\u6740\u6B66\u88C5\u3002\u53F3\u952E\u7EAF\u6539\u5411\uFF1BE \u6B66\u88C5\u540E\u518D\u6539\u5411\u786E\u8BA4\u5F00\u94FE\u3002"
   isAvailableInLoadout: 1
+  acquisitionType: 0
+  directPrice: 400
+  crateRarity: 0
+  primarySkill: {fileID: 11400000, guid: e5f6a7b8c9d0123456789abcdef01234, type: 2}
+  secondarySkill: {fileID: 11400000, guid: a1b2c3d4e5f6478990aabbccddeeff01, type: 2}
   ballType: 0
   activeSkillPrefab: {fileID: 0}
   trailColor: {r: 0.5, g: 0.2, b: 1, a: 1}
   glowColor: {r: 0.3, g: 0.7, b: 1, a: 1}
   skillCooldown: 12
-  skillDescription: "8\u9053\u95EA\u7535\u5F39\u5C04\u81F3\u6700\u8FD1\u654C\u4EBA\uFF0C\u5404\u9020\u62103\u6B21\u4F24\u5BB3"
+  skillDescription: 

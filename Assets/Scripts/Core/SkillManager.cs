@@ -18,6 +18,7 @@ public class SkillManager : MonoBehaviour
     public static SkillManager Instance { get; private set; }
 
     public const int MaxSlots = 2;
+    public const string ProtocolRedirectSkillId = "protocol_redirect";
 
     [Header("技能槽（由 RunLoadout 注入）")]
     public SkillSlot[] slots = new SkillSlot[]
@@ -27,12 +28,17 @@ public class SkillManager : MonoBehaviour
     };
 
     public SkillAimMode AimMode { get; private set; } = SkillAimMode.None;
-    public bool IsAiming        => AimMode == SkillAimMode.ExecuteChain;
+    public bool IsAiming        => AimMode == SkillAimMode.ProtocolRedirect;
     public bool IsGroundAiming  => AimMode == SkillAimMode.GravityWell;
     public int  AimingSlot      { get; private set; } = -1;
 
+    public bool IsExecuteArmed { get; private set; }
+    private float _executeArmedUntilUnscaled;
+
     [HideInInspector] public UnityEvent<int, float> onSlotCooldownChanged   = new UnityEvent<int, float>();
     [HideInInspector] public UnityEvent<int>        onSlotActivated         = new UnityEvent<int>();
+    /// <summary>协议改向瞄准开始（原 onExecuteChainActivated）。</summary>
+    [HideInInspector] public UnityEvent             onProtocolRedirectActivated = new UnityEvent();
     [HideInInspector] public UnityEvent             onExecuteChainActivated = new UnityEvent();
     [HideInInspector] public UnityEvent<Vector2>     onFired                 = new UnityEvent<Vector2>();
     [HideInInspector] public UnityEvent             onAimingAborted         = new UnityEvent();
@@ -40,6 +46,8 @@ public class SkillManager : MonoBehaviour
     [HideInInspector] public UnityEvent<int>        onAimingEnded           = new UnityEvent<int>();
     [HideInInspector] public UnityEvent             onExecuteChainStarted   = new UnityEvent();
     [HideInInspector] public UnityEvent             onGravityWellAimStarted = new UnityEvent();
+    [HideInInspector] public UnityEvent             onExecuteArmStarted     = new UnityEvent();
+    [HideInInspector] public UnityEvent             onExecuteArmEnded       = new UnityEvent();
 
     private GameConfig Config => GameManager.Instance?.config;
 
@@ -52,6 +60,8 @@ public class SkillManager : MonoBehaviour
     private void Start()
     {
         GravityWellAim.EnsureInstance();
+        CorePulse.EnsureInstance();
+        SplitProtocol.EnsureInstance();
 
         if (GameManager.Instance != null)
         {
@@ -62,25 +72,39 @@ public class SkillManager : MonoBehaviour
             ComboSystem.Instance.onComboChanged.AddListener(OnComboChanged);
     }
 
-    private void OnBallLost() => CancelAiming();
+    private void OnBallLost()
+    {
+        CancelAiming();
+        ClearExecuteArm();
+    }
 
     public void ApplyLoadout(RunCatalog catalog)
     {
         if (catalog == null) return;
 
+        ClearExecuteArm();
+
+        var redirect = catalog.GetSkill(ProtocolRedirectSkillId);
         for (int i = 0; i < MaxSlots; i++)
         {
             if (slots == null || i >= slots.Length)
                 break;
 
-            slots[i].definition = RunLoadout.GetSkillInSlot(i, catalog);
-            slots[i].currentCD  = 0f;
+            if (i == 0)
+                slots[i].definition = redirect ?? RunLoadout.GetSkillInSlot(0, catalog);
+            else
+                slots[i].definition = RunLoadout.GetSkillInSlot(i, catalog);
+
+            slots[i].currentCD = 0f;
             onSlotCooldownChanged.Invoke(i, 0f);
         }
     }
 
     private void Update()
     {
+        if (IsExecuteArmed && Time.unscaledTime >= _executeArmedUntilUnscaled)
+            ClearExecuteArm();
+
         if (GameManager.Instance == null) return;
         if (!GameManager.Instance.IsWaveSimActive()) return;
 
@@ -97,7 +121,7 @@ public class SkillManager : MonoBehaviour
     private void OnComboChanged(int combo)
     {
         if (combo <= 0) return;
-        float reduce = Config != null ? Config.skillComboCDReduce : 0.4f;
+        float reduce = Config != null ? Config.skillComboCDReduce : 0.28f;
         for (int i = 0; i < slots.Length; i++)
         {
             var slot = slots[i];
@@ -111,7 +135,7 @@ public class SkillManager : MonoBehaviour
     {
         if (AimMode == SkillAimMode.GravityWell)
             CancelGroundAimInternal();
-        if (AimMode != SkillAimMode.ExecuteChain) return;
+        if (AimMode != SkillAimMode.ProtocolRedirect) return;
 
         int idx = AimingSlot;
         AimMode    = SkillAimMode.None;
@@ -137,7 +161,7 @@ public class SkillManager : MonoBehaviour
 
     public void AbortAiming()
     {
-        if (AimMode != SkillAimMode.ExecuteChain) return;
+        if (AimMode != SkillAimMode.ProtocolRedirect) return;
         int idx = AimingSlot;
         AimMode    = SkillAimMode.None;
         AimingSlot = -1;
@@ -165,32 +189,47 @@ public class SkillManager : MonoBehaviour
         if (slotIndex < 0 || slotIndex >= slots.Length) return false;
         if (GameManager.Instance?.State != GameState.Playing) return false;
 
+        if (TutorialInputGate.Active)
+        {
+            var need = slotIndex == 0 ? TutorialInputMask.Skill0 : TutorialInputMask.Skill1;
+            if (!TutorialInputGate.Allows(need)) return false;
+        }
+
         var slot = slots[slotIndex];
         if (slot.definition == null) return false;
         if (!slot.IsReady) return false;
 
         switch (slot.definition.implementationType)
         {
-            case ActiveSkillType.ExecuteChain:
+            case ActiveSkillType.ProtocolRedirect:
                 if (AimMode != SkillAimMode.None) return false;
-                if (TimestopAura.Instance != null && TimestopAura.Instance.IsActive) return false;
+                // 敌方时缓进行中允许改向：标准连招 = 先减速再瞄准切入
                 if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
                 if (BallController.Instance != null && BallController.Instance.IsExecuteChainActive) return false;
-                AimMode    = SkillAimMode.ExecuteChain;
+                AimMode    = SkillAimMode.ProtocolRedirect;
                 AimingSlot = slotIndex;
                 onSlotActivated.Invoke(slotIndex);
+                onProtocolRedirectActivated.Invoke();
                 onExecuteChainActivated.Invoke();
                 break;
 
+            case ActiveSkillType.ExecuteChain:
+                if (AimMode != SkillAimMode.None) return false;
+                if (SplitProtocol.Instance != null && SplitProtocol.Instance.IsActive) return false;
+                if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
+                if (BallController.Instance != null && BallController.Instance.IsExecuteChainActive) return false;
+                ArmExecute(slotIndex);
+                break;
+
             case ActiveSkillType.BlockShield:
-                if (AimMode == SkillAimMode.ExecuteChain) return false;
+                if (IsAiming) return false;
                 BlockShield.Instance?.Activate();
                 StartCooldown(slotIndex);
                 onSlotActivated.Invoke(slotIndex);
                 break;
 
             case ActiveSkillType.TimestopAura:
-                if (AimMode == SkillAimMode.ExecuteChain) return false;
+                if (IsAiming) return false;
                 if (TimestopAura.Instance != null && TimestopAura.Instance.IsActive) return false;
                 TimestopAura.EnsureInstance().Activate();
                 StartCooldown(slotIndex);
@@ -206,6 +245,24 @@ public class SkillManager : MonoBehaviour
                 onGravityWellAimStarted.Invoke();
                 break;
 
+            case ActiveSkillType.CorePulse:
+                if (IsAiming) return false;
+                if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
+                CorePulse.EnsureInstance().Activate();
+                StartCooldown(slotIndex);
+                onSlotActivated.Invoke(slotIndex);
+                break;
+
+            case ActiveSkillType.SplitProtocol:
+                if (AimMode != SkillAimMode.None) return false;
+                if (SplitProtocol.Instance != null && SplitProtocol.Instance.IsActive) return false;
+                if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
+                if (BallController.Instance != null && BallController.Instance.IsExecuteChainActive) return false;
+                SplitProtocol.EnsureInstance().Activate();
+                StartCooldown(slotIndex);
+                onSlotActivated.Invoke(slotIndex);
+                break;
+
             case ActiveSkillType.TestPlaceholder:
                 return false;
         }
@@ -213,22 +270,80 @@ public class SkillManager : MonoBehaviour
         return true;
     }
 
+    private void ArmExecute(int slotIndex)
+    {
+        float window = Config != null ? Config.executeArmWindowSeconds : 5f;
+        IsExecuteArmed = true;
+        _executeArmedUntilUnscaled = Time.unscaledTime + Mathf.Max(0.1f, window);
+        onSlotActivated.Invoke(slotIndex);
+        onExecuteArmStarted.Invoke();
+    }
+
+    public void ClearExecuteArm()
+    {
+        if (!IsExecuteArmed) return;
+        IsExecuteArmed = false;
+        _executeArmedUntilUnscaled = 0f;
+        onExecuteArmEnded.Invoke();
+    }
+
+    /// <summary>教学用：延长斩杀武装窗口（说明拍切换时不让玩家卡关）。</summary>
+    public void TutorialExtendExecuteArm(float windowSeconds = 60f)
+    {
+        IsExecuteArmed = true;
+        _executeArmedUntilUnscaled = Time.unscaledTime + Mathf.Max(0.1f, windowSeconds);
+        onExecuteArmStarted.Invoke();
+    }
+
     public void Fire(Vector2 direction)
     {
-        if (AimMode != SkillAimMode.ExecuteChain) return;
-        int idx    = AimingSlot;
+        if (AimMode != SkillAimMode.ProtocolRedirect) return;
+        int redirectSlot = AimingSlot;
         AimMode    = SkillAimMode.None;
         AimingSlot = -1;
 
-        StartCooldown(idx);
-        onFired.Invoke(direction);
-        onAimingEnded.Invoke(idx);
+        bool confirmed = direction.sqrMagnitude > 0.001f;
+        bool armed = IsExecuteArmed;
 
-        if (BallController.Instance != null && direction.sqrMagnitude > 0.001f)
+        StartCooldown(redirectSlot);
+        onFired.Invoke(direction);
+        onAimingEnded.Invoke(redirectSlot);
+
+        if (!confirmed)
         {
-            BallController.Instance.StartExecuteChain(3);
-            onExecuteChainStarted.Invoke();
+            // Escape / 取消瞄准：改向进 CD，武装保留至窗口结束（可再开改向）
+            return;
         }
+
+        if (armed && BallController.Instance != null)
+        {
+            if (SplitProtocol.Instance != null && SplitProtocol.Instance.IsActive)
+            {
+                ClearExecuteArm();
+                return;
+            }
+
+            int jumps = Config != null ? Mathf.Max(1, Config.executeChainMaxJumps) : 3;
+            BallController.Instance.StartExecuteChain(jumps);
+            onExecuteChainStarted.Invoke();
+
+            int execSlot = FindSlotIndex(ActiveSkillType.ExecuteChain);
+            if (execSlot >= 0)
+                StartCooldown(execSlot);
+
+            ClearExecuteArm();
+        }
+    }
+
+    private int FindSlotIndex(ActiveSkillType type)
+    {
+        if (slots == null) return -1;
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i]?.definition != null && slots[i].definition.implementationType == type)
+                return i;
+        }
+        return -1;
     }
 
     public void StartCooldown(int slotIndex)
@@ -236,6 +351,8 @@ public class SkillManager : MonoBehaviour
         if (slotIndex < 0 || slotIndex >= slots.Length) return;
         var slot = slots[slotIndex];
         float cd = slot.MaxCooldown;
+        if (DebuffManager.Instance != null)
+            cd *= DebuffManager.Instance.SkillCooldownMultiplier;
         slot.currentCD = cd;
         onSlotCooldownChanged.Invoke(slotIndex, slot.CooldownRatio);
     }
@@ -246,6 +363,7 @@ public class SkillManager : MonoBehaviour
     {
         AimMode    = SkillAimMode.None;
         AimingSlot = -1;
+        ClearExecuteArm();
         GravityWell.Instance?.DestroyWell();
         for (int i = 0; i < slots.Length; i++)
         {

@@ -2,8 +2,21 @@
     <ui:Style src="BuffSelection.uss" />
 
     <ui:VisualElement name="overlay" class="overlay">
-
         <ui:VisualElement name="slot-panel" class="slot-panel">
+
+            <ui:VisualElement name="panel-chrome" class="panel-chrome" picking-mode="Ignore">
+                <ui:VisualElement class="corner corner-tl" />
+                <ui:VisualElement class="corner corner-tr" />
+                <ui:VisualElement class="corner corner-bl" />
+                <ui:VisualElement class="corner corner-br" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="status-strip" class="status-strip">
+                <ui:VisualElement class="led led-cyan" />
+                <ui:VisualElement class="led led-fuchsia" />
+                <ui:Label name="status-text" text="SYS · READY" class="status-text" />
+                <ui:Label text="CH-03" class="status-meta" />
+            </ui:VisualElement>
 
             <ui:VisualElement name="panel-header" class="panel-header">
                 <ui:Label name="title-label" text="— POWER SLOT —" class="title" />
@@ -20,58 +33,64 @@
                     <ui:VisualElement class="lever-spacer" />
                     <ui:VisualElement name="reels-row" class="reels-row">
 
-                    <ui:VisualElement name="reel-0" class="reel">
-                        <ui:Label name="outcome-badge-0" text="" class="outcome-badge" />
-                        <ui:Label name="reel-tag-0" text="左" class="reel-tag" />
-                        <ui:VisualElement name="reel-viewport-0" class="reel-viewport">
-                            <ui:VisualElement name="reel-strip-0" class="reel-strip" />
+                        <ui:VisualElement name="reel-0" class="reel">
+                            <ui:Label name="outcome-badge-0" text="" class="outcome-badge" />
+                            <ui:Label name="reel-tag-0" text="左" class="reel-tag" />
+                            <ui:VisualElement name="reel-viewport-0" class="reel-viewport">
+                                <ui:VisualElement name="reel-strip-0" class="reel-strip" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="reel-result-0" class="reel-result">
+                                <ui:Label name="rarity-0" text="—" class="rarity-label rarity-common" />
+                                <ui:Label name="name-0" text="等待" class="buff-name" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
-                        <ui:VisualElement name="reel-result-0" class="reel-result">
-                            <ui:Label name="rarity-0" text="—" class="rarity-label rarity-common" />
-                            <ui:Label name="name-0" text="等待" class="buff-name" />
+
+                        <ui:VisualElement name="reel-1" class="reel">
+                            <ui:Label name="outcome-badge-1" text="" class="outcome-badge" />
+                            <ui:Label name="reel-tag-1" text="中" class="reel-tag" />
+                            <ui:VisualElement name="reel-viewport-1" class="reel-viewport">
+                                <ui:VisualElement name="reel-strip-1" class="reel-strip" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="reel-result-1" class="reel-result">
+                                <ui:Label name="rarity-1" text="—" class="rarity-label rarity-rare" />
+                                <ui:Label name="name-1" text="等待" class="buff-name" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
+
+                        <ui:VisualElement name="reel-2" class="reel">
+                            <ui:Label name="outcome-badge-2" text="" class="outcome-badge" />
+                            <ui:Label name="reel-tag-2" text="右" class="reel-tag" />
+                            <ui:VisualElement name="reel-viewport-2" class="reel-viewport">
+                                <ui:VisualElement name="reel-strip-2" class="reel-strip" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="reel-result-2" class="reel-result">
+                                <ui:Label name="rarity-2" text="—" class="rarity-label rarity-epic" />
+                                <ui:Label name="name-2" text="等待" class="buff-name" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
                     </ui:VisualElement>
 
-                    <ui:VisualElement name="reel-1" class="reel">
-                        <ui:Label name="outcome-badge-1" text="" class="outcome-badge" />
-                        <ui:Label name="reel-tag-1" text="中" class="reel-tag" />
-                        <ui:VisualElement name="reel-viewport-1" class="reel-viewport">
-                            <ui:VisualElement name="reel-strip-1" class="reel-strip" />
+                    <ui:VisualElement name="lever-assembly" class="lever-assembly">
+                        <ui:VisualElement name="lever-housing" class="lever-housing" />
+                        <ui:VisualElement name="lever-base" class="lever-base" />
+                        <ui:VisualElement name="lever-arm" class="lever-arm">
+                            <ui:VisualElement name="lever-knob" class="lever-knob">
+                                <ui:VisualElement class="lever-knob-shine" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
-                        <ui:VisualElement name="reel-result-1" class="reel-result">
-                            <ui:Label name="rarity-1" text="—" class="rarity-label rarity-rare" />
-                            <ui:Label name="name-1" text="等待" class="buff-name" />
-                        </ui:VisualElement>
+                        <ui:Label name="lever-hint" text="PULL" class="lever-hint" />
                     </ui:VisualElement>
-
-                    <ui:VisualElement name="reel-2" class="reel">
-                        <ui:Label name="outcome-badge-2" text="" class="outcome-badge" />
-                        <ui:Label name="reel-tag-2" text="右" class="reel-tag" />
-                        <ui:VisualElement name="reel-viewport-2" class="reel-viewport">
-                            <ui:VisualElement name="reel-strip-2" class="reel-strip" />
-                        </ui:VisualElement>
-                        <ui:VisualElement name="reel-result-2" class="reel-result">
-                            <ui:Label name="rarity-2" text="—" class="rarity-label rarity-epic" />
-                            <ui:Label name="name-2" text="等待" class="buff-name" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-
-                </ui:VisualElement>
-
-                <ui:VisualElement name="lever-assembly" class="lever-assembly">
-                    <ui:VisualElement name="lever-base" class="lever-base" />
-                    <ui:VisualElement name="lever-arm" class="lever-arm">
-                        <ui:VisualElement name="lever-knob" class="lever-knob" />
-                    </ui:VisualElement>
-                    <ui:Label name="lever-hint" text="拉杆" class="lever-hint" />
-                </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <ui:Label name="reroll-hint-label" text="拉动右侧拉杆开始" class="reroll-hint" />
+            <ui:Label name="reroll-hint-label" text="拉动右侧能量杆开始" class="reroll-hint" />
 
             <ui:VisualElement name="outcome-panel" class="outcome-panel">
-                <ui:Label name="outcome-title" text="效果说明" class="outcome-title" />
+                <ui:VisualElement class="outcome-title-row">
+                    <ui:Label name="outcome-title" text="效果说明" class="outcome-title" />
+                    <ui:Label name="outcome-badge" text="IDLE" class="outcome-badge-status" />
+                </ui:VisualElement>
                 <ui:VisualElement name="outcome-list" class="outcome-list" />
             </ui:VisualElement>
 

@@ -3,9 +3,10 @@ using UnityEngine;
 public class TeslaTower : MonoBehaviour
 {
     public int level = 1;
-    public float attackRadius = 5.0f;
-    public float baseAttackInterval = 4.0f;
-    public int baseDamage = 2;
+    public float attackRadius = 4.2f;
+    public float baseAttackInterval = 5.0f;
+    /// <summary>实际伤害 = baseDamage + level（L1=2）。</summary>
+    public int baseDamage = 1;
 
     private float _timer = 0f;
     private int _arcSeed;
@@ -29,7 +30,7 @@ public class TeslaTower : MonoBehaviour
         _timer -= Time.deltaTime;
         if (_timer <= 0f)
         {
-            float interval = Mathf.Max(2.0f, baseAttackInterval - level * 0.5f);
+            float interval = Mathf.Max(2.5f, baseAttackInterval - 0.4f * (level - 1));
             if (DebuffManager.Instance != null)
                 interval *= DebuffManager.Instance.TowerAttackIntervalMultiplier;
             _timer = interval;
@@ -39,8 +40,8 @@ public class TeslaTower : MonoBehaviour
 
     private void AttackSingleTarget()
     {
-        int damage = baseDamage + level * 2;
-        float radius = attackRadius + (level - 1) * 0.25f;
+        int damage = baseDamage + level;
+        float radius = attackRadius + 0.2f * (level - 1);
         Vector2 towerPos = transform.position;
 
         EnemyBase target = FindBottomThreatTarget(towerPos, radius);
@@ -61,6 +62,7 @@ public class TeslaTower : MonoBehaviour
 
     /// <summary>
     /// 攻击范围内、非 Boss：优先 Y 最低（最接近触底），其次距塔心更近。
+    /// Boss 不可选中（Balance 05）。
     /// </summary>
     private static EnemyBase FindBottomThreatTarget(Vector2 towerPos, float radius)
     {

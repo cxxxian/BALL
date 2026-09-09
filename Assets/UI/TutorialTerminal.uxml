@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="TutorialTerminal.uss" />
+    <ui:VisualElement name="TutorialRoot" class="tutorial-root" picking-mode="Ignore">
+        <ui:VisualElement name="TutorialDim" class="tutorial-dim" picking-mode="Position" />
+        <ui:VisualElement name="TerminalFrame" class="terminal-frame">
+            <ui:VisualElement class="terminal-titlebar" picking-mode="Ignore">
+                <ui:Label name="TerminalTitle" text="NODE://CALIBRATION" class="terminal-title" />
+                <ui:Label name="TerminalStep" text="SEQ 01" class="terminal-step" />
+            </ui:VisualElement>
+            <ui:VisualElement class="terminal-scanline" picking-mode="Ignore" />
+            <ui:VisualElement class="terminal-body">
+                <ui:Label name="TerminalPrompt" text="root@rebound:~$" class="terminal-prompt" />
+                <ui:Label name="TerminalLine" text="> 等待指令…" class="terminal-line" />
+                <ui:Label name="TerminalKey" text="" class="terminal-key" />
+                <ui:Label name="TerminalStatus" text="STATUS: IDLE" class="terminal-status" />
+            </ui:VisualElement>
+            <ui:VisualElement class="terminal-actions">
+                <ui:Button name="BtnTerminalSkip" text="ABORT_SKIP" class="terminal-btn terminal-btn-ghost" />
+                <ui:Button name="BtnTerminalContinue" text="ACK_CONTINUE" class="terminal-btn terminal-btn-primary" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

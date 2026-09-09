@@ -4,9 +4,9 @@ using System.Collections;
 public class FrostTower : MonoBehaviour
 {
     public int level = 1;
-    public float attackRadius = 6.0f;
-    public float baseAttackInterval = 8.0f;
-    public float freezeDuration = 1.5f;
+    public float attackRadius = 3.5f;
+    public float baseAttackInterval = 9.0f;
+    public float freezeDuration = 1.0f;
 
     private float _timer = 0f;
 
@@ -26,7 +26,7 @@ public class FrostTower : MonoBehaviour
         _timer -= Time.deltaTime;
         if (_timer <= 0f)
         {
-            float interval = Mathf.Max(3.0f, baseAttackInterval - (level * 0.5f));
+            float interval = Mathf.Max(4.5f, baseAttackInterval - 0.4f * (level - 1));
             if (DebuffManager.Instance != null)
                 interval *= DebuffManager.Instance.TowerAttackIntervalMultiplier;
             _timer = interval;
@@ -38,12 +38,13 @@ public class FrostTower : MonoBehaviour
     {
         Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, attackRadius);
 
-        float currentFreezeDuration = freezeDuration + (level * 0.5f);
+        float currentFreezeDuration = freezeDuration + 0.25f * (level - 1);
         bool hitAny = false;
 
         foreach (var c in cols)
         {
             if (!c.CompareTag("Enemy")) continue;
+            // 仅 Minion；Boss 不冻（Balance 05）
             var minion = c.GetComponent<Minion>();
             if (minion == null || minion.IsDead) continue;
             hitAny = true;

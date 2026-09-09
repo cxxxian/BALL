@@ -97,7 +97,11 @@ public class PauseMenuController : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (TutorialInputGate.Active && !TutorialInputGate.Allows(TutorialInputMask.Pause))
+                return;
             Toggle();
+        }
 
         if (IsOpen)
             RefreshActiveTab();
@@ -113,12 +117,24 @@ public class PauseMenuController : MonoBehaviour
     {
         if (IsOpen) return;
         if (!CanOpen()) return;
+        OpenInternal();
+    }
 
+    /// <summary>UIShowcase 等无局内状态场景用：跳过 CanOpen 门闩。</summary>
+    public void OpenForShowcase()
+    {
+        if (IsOpen) return;
+        OpenInternal();
+    }
+
+    private void OpenInternal()
+    {
         ForceExitAiming();
         HideConfirm();
         SelectTab("run-status");
         RefreshAllTabs();
 
+        if (_overlay == null) return;
         _overlay.style.display = DisplayStyle.Flex;
         IsOpen = true;
         Time.timeScale = 0f;

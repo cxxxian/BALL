@@ -257,7 +257,7 @@ public class GravityWell : MonoBehaviour
     private void CacheConfig()
     {
         _duration      = Config != null ? Config.gravityWellDuration : 2.5f;
-        _radius        = Config != null ? Config.gravityWellRadius : 3.2f;
+        _radius        = Config != null ? Config.gravityWellRadius : 2.4f;
         _pullStrength  = Config != null ? Config.gravityWellPullStrength : 9f;
         _rampTime      = Config != null ? Config.gravityWellRampTime : 0.9f;
         _dwellRampTime = Config != null ? Config.gravityWellDwellRampTime : 0.55f;

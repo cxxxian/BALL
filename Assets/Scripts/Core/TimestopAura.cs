@@ -57,7 +57,7 @@ public class TimestopAura : MonoBehaviour
         CameraShake.Instance?.Shake(CameraShake.Preset.Light);
         SlowMoFX.Instance?.PulseFlash(new Color(0.35f, 0.85f, 1f), 0.35f, 0.12f);
 
-        float duration = Config != null ? Config.timestopDuration : 4f;
+        float duration = Config != null ? Config.timestopDuration : 3f;
         _routine = StartCoroutine(TimestopRoutine(duration));
     }
 
@@ -75,7 +75,7 @@ public class TimestopAura : MonoBehaviour
     public float GetMinionSpeedScale()
     {
         if (!IsActive) return 1f;
-        return Config != null ? Config.timestopMinionSpeedScale : 0.35f;
+        return Config != null ? Config.timestopMinionSpeedScale : 0.45f;
     }
 
     public float GetBossSpeedScale()

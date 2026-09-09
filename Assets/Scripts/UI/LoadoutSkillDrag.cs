@@ -131,20 +131,7 @@ public sealed class LoadoutSkillDrag
     {
         if (string.IsNullOrEmpty(_skillId)) return false;
 
-        if (_sourceKind == LoadoutSkillDragSource.Library)
-        {
-            var skill = _catalog.GetSkill(_skillId);
-            if (skill == null) return false;
-            return RunLoadout.TryEquipSkill(skill, dropSlot, _catalog);
-        }
-
-        if (_sourceKind == LoadoutSkillDragSource.Slot && _sourceSlot >= 0)
-        {
-            if (_sourceSlot == dropSlot) return false;
-            RunLoadout.MoveSkillBetweenSlots(_sourceSlot, dropSlot);
-            return true;
-        }
-
+        // 技能槽由所选弹珠绑定，不再支持手动装备/换槽。
         return false;
     }
 

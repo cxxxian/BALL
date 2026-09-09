@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        PlayerProfile.Load();
         ApplyCyberVisuals();
     }
 
@@ -56,8 +57,17 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // ── 2. SpringBoard（已从场景移除，代码保留供后续重设计）──
-        // foreach (var s in FindObjectsOfType<SpringBoard>()) { ... }
+        // ── 2. SpringBoard ──
+        foreach (var s in FindObjectsOfType<SpringBoard>())
+        {
+            var sr = s.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreateSpringBoardSprite(s.chargedColor);
+                sr.color = s.chargedColor;
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
 
         // ── 3. 升级所有的 BoostGear ──
         foreach (var bg in FindObjectsOfType<BoostGear>())
@@ -70,18 +80,45 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // ── 4. Portal（已从场景移除，代码保留供后续重设计）──
-        // foreach (var p in FindObjectsOfType<Portal>()) { ... }
+        // ── 4. Portal ──
+        foreach (var p in FindObjectsOfType<Portal>())
+        {
+            var sr = p.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreatePortalSprite(p.portalColor);
+                sr.color = p.portalColor;
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
 
-        // ── 5. ReflectivePrism（已从场景移除，代码保留供后续重设计）──
-        // foreach (var pr in FindObjectsOfType<ReflectivePrism>()) { ... }
+        // ── 5. ReflectivePrism ──
+        foreach (var pr in FindObjectsOfType<ReflectivePrism>())
+        {
+            var sr = pr.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sprite = CyberVisualFactory.CreatePrismSprite(pr.prismColor);
+                sr.color = pr.prismColor;
+                sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+        }
 
-        // ── 6. EnergyCannon（已从场景移除，代码保留供后续重设计）──
-        // foreach (var ec in FindObjectsOfType<EnergyCannon>()) { ... }
+        // ── 6. EnergyCannon（炮口 Visual）──
+        foreach (var ec in FindObjectsOfType<EnergyCannon>())
+        {
+            if (ec.muzzle == null) continue;
+            var sr = ec.muzzle.GetComponentInChildren<SpriteRenderer>();
+            if (sr == null) continue;
+            sr.sprite = CyberVisualFactory.CreateCannonSprite(ec.readyColor);
+            sr.color = ec.readyColor;
+            sr.material = CyberVisualFactory.UnlitMaterial;
+        }
     }
 
     public void StartGame()
     {
+        RunSettlement.ResetForNewRun();
         Lives = config.initialLives;
         Score = 0;
         Wave = 0;
@@ -102,6 +139,15 @@ public class GameManager : MonoBehaviour
     public void TakeDamage(int amount)
     {
         if (State != GameState.Playing && State != GameState.BallRespawning) return;
+        if (RunSession.IsTutorial)
+        {
+            // 教学中保留至少 1 命，避免误触底直接结束校准
+            Lives = Mathf.Max(1, Lives - amount);
+            onLivesChanged.Invoke(Lives);
+            CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+            return;
+        }
+
         Lives = Mathf.Max(0, Lives - amount);
         onLivesChanged.Invoke(Lives);
         CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
@@ -117,7 +163,7 @@ public class GameManager : MonoBehaviour
 
     public void AddScore(int points)
     {
-        Score += points;
+        Score = Mathf.Max(0, Score + points);
         onScoreChanged.Invoke(Score);
     }
 

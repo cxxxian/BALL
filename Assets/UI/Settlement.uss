@@ -1,0 +1,295 @@
+/* StyleKit · Cyberpunk Neon — Settlement
+   Align with MainMenu.uss: full-screen center stack, compact CTAs, no heavy card. */
+
+:root {
+    --neon-bg: rgb(10, 10, 15);
+    --neon-panel: rgb(3, 7, 18);
+    --neon-cyan: rgb(0, 255, 255);
+    --neon-fuchsia: rgb(255, 0, 255);
+    --neon-yellow: rgb(255, 255, 0);
+    --neon-text: rgb(255, 255, 255);
+    --neon-muted: rgb(156, 163, 175);
+    --neon-border: rgba(0, 255, 255, 0.3);
+    --neon-fast: 0.12s;
+}
+
+.settlement-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(10, 10, 15, 0.94);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+}
+
+.scanline-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 255, 255, 0.008);
+}
+
+.settle-layout {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 28px 24px 22px;
+    min-height: 0;
+    overflow: visible;
+}
+
+.status-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    margin-right: 10px;
+    background-color: var(--neon-cyan);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.status-dot-offline {
+    background-color: var(--neon-fuchsia);
+}
+
+.status-text {
+    flex-grow: 1;
+    font-size: 11px;
+    color: var(--neon-muted);
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+}
+
+.credits-label {
+    font-size: 11px;
+    color: var(--neon-yellow);
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.settle-center {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    min-height: 0;
+}
+
+.hero-block {
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+    flex-shrink: 0;
+}
+
+.title-line {
+    font-size: 52px;
+    color: var(--neon-fuchsia);
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    margin-bottom: 12px;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 10px rgba(255, 0, 255, 0.45);
+}
+
+.hero-desc {
+    font-size: 10px;
+    color: var(--neon-muted);
+    letter-spacing: 1px;
+    white-space: normal;
+    max-width: 420px;
+    -unity-text-align: middle-center;
+}
+
+.neon-glow-text {
+    text-shadow: 0 0 8px rgba(255, 0, 255, 0.4);
+}
+
+.stat-strip {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+    flex-shrink: 0;
+}
+
+.stat-cell {
+    flex-direction: column;
+    align-items: center;
+    min-width: 120px;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.stat-sep {
+    width: 1px;
+    height: 36px;
+    background-color: var(--neon-border);
+    flex-shrink: 0;
+}
+
+.stat-key {
+    font-size: 11px;
+    color: var(--neon-cyan);
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+    -unity-text-align: middle-center;
+}
+
+.stat-val {
+    font-size: 28px;
+    color: var(--neon-text);
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+}
+
+.credit-hero {
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+    flex-shrink: 0;
+}
+
+.credit-label {
+    font-size: 11px;
+    color: var(--neon-yellow);
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+}
+
+.credit-earned {
+    font-size: 36px;
+    color: var(--neon-yellow);
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 8px rgba(255, 255, 0, 0.4);
+    margin-bottom: 6px;
+}
+
+.credit-hint {
+    font-size: 10px;
+    color: rgba(156, 163, 175, 0.85);
+    letter-spacing: 1px;
+    white-space: normal;
+    max-width: 360px;
+    -unity-text-align: middle-center;
+}
+
+.cta-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.neon-glow-host {
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-self: center;
+    overflow: visible;
+    margin-right: 12px;
+}
+
+.menu-btn {
+    height: 36px;
+    min-width: auto;
+    width: auto;
+    max-width: none;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-right: 0;
+    margin-bottom: 0;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    border-width: 1px;
+    border-radius: 0;
+    background-image: none;
+    overflow: visible;
+    transition-duration: 0.12s;
+    transition-property: background-color, border-color, color, translate;
+    transition-timing-function: ease-out;
+    -unity-text-align: middle-center;
+}
+
+.btn-jack {
+    color: rgb(0, 0, 0);
+    background-color: rgb(0, 255, 255);
+    border-color: rgb(0, 255, 255);
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.35);
+}
+
+.btn-jack:hover {
+    color: rgb(0, 0, 0);
+    background-color: rgb(80, 255, 255);
+    border-color: rgb(180, 255, 255);
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+.btn-jack:active {
+    translate: 2px -1px;
+    color: rgb(255, 0, 255);
+    background-color: transparent;
+    border-color: rgb(255, 0, 255);
+    text-shadow: 0 0 6px rgba(255, 0, 255, 0.45);
+}
+
+.btn-outline-magenta {
+    color: rgb(255, 0, 255);
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgb(255, 0, 255);
+    text-shadow: 0 0 5px rgba(255, 0, 255, 0.35);
+}
+
+.btn-outline-magenta:hover {
+    color: rgb(255, 140, 255);
+    background-color: rgba(255, 0, 255, 0.06);
+    border-color: rgb(255, 100, 255);
+    text-shadow: 0 0 7px rgba(255, 0, 255, 0.5);
+}
+
+.btn-outline-magenta:active {
+    translate: 2px -1px;
+    color: rgb(0, 255, 255);
+    background-color: transparent;
+    border-color: rgb(0, 255, 255);
+}
+
+.menu-footer {
+    font-size: 10px;
+    color: rgba(0, 255, 255, 0.45);
+    letter-spacing: 2px;
+    margin-top: 28px;
+    padding-top: 0;
+    flex-shrink: 0;
+    -unity-text-align: middle-center;
+}

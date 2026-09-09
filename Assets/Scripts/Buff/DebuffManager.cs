@@ -84,6 +84,18 @@ public class DebuffManager : MonoBehaviour
         }
     }
 
+    /// <summary>D1 迟钝齿轮：主动技能进入 CD 时倍率（1.1 = +10%）。</summary>
+    public float SkillCooldownMultiplier
+    {
+        get
+        {
+            float mult = 1f;
+            foreach (var id in _active)
+                if (id == DebuffId.D1_SlowGears) mult *= 1.1f;
+            return mult;
+        }
+    }
+
     public int BumperDamagePenalty
     {
         get

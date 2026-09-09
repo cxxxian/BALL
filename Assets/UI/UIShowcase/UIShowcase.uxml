@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="UIShowcase.uss" />
+    <ui:VisualElement name="ShowcaseRoot" class="showcase-root">
+        <ui:VisualElement class="dock">
+            <ui:Label text="UI SHOWCASE" class="dock-title" />
+            <ui:VisualElement class="dock-group">
+                <ui:Button name="BtnMain" text="主菜单" class="dock-btn" />
+                <ui:Button name="BtnCampaign" text="战役" class="dock-btn" />
+                <ui:Button name="BtnLoadout" text="配置" class="dock-btn" />
+                <ui:Button name="BtnShop" text="商店" class="dock-btn" />
+                <ui:Button name="BtnSettings" text="设置" class="dock-btn" />
+            </ui:VisualElement>
+            <ui:VisualElement class="dock-sep" picking-mode="Ignore" />
+            <ui:VisualElement class="dock-group">
+                <ui:Button name="BtnSlot" text="老虎机" class="dock-btn dock-accent" />
+                <ui:Button name="BtnSettlement" text="结算" class="dock-btn dock-accent" />
+                <ui:Button name="BtnPause" text="暂停" class="dock-btn dock-accent" />
+            </ui:VisualElement>
+            <ui:Label name="DockHint" text="预览模式 · 启动进关已禁用" class="dock-hint" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

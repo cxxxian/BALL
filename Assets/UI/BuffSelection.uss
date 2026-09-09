@@ -1,81 +1,189 @@
-/* ── 全屏遮罩 ─────────────────────────────────────────── */
+/* BuffSelection — 紧凑复刻 HTML Lab
+   干净实色 + 原版比例；去掉会弄脏画面的半透明叠层 */
+
+:root {
+    --neon-cyan: rgb(0, 242, 255);
+    --neon-fuchsia: rgb(255, 0, 200);
+    --neon-yellow: rgb(255, 200, 50);
+    --neon-muted: rgb(140, 170, 190);
+    --neon-fast: 0.12s;
+}
+
 .overlay {
     position: absolute;
-    left: 0; top: 0; right: 0; bottom: 0;
-    background-color: rgba(1, 3, 10, 0.94);
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(1, 3, 12, 0.92);
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 16px;
+    padding: 12px;
     overflow: hidden;
 }
 
-/* ── 单一主面板（无滚动条）────────────────────────────── */
+/* ── 主面板：厚 cyan 硬边，对齐 HTML / 旧版可用比例 ── */
 .slot-panel {
+    position: relative;
     align-self: center;
     width: 100%;
-    max-width: 580px;
-    background-color: rgba(6, 10, 24, 0.98);
-    border-width: 2px;
-    border-color: rgb(255, 240, 0);
-    border-radius: 8px;
+    max-width: 560px;
+    background-color: rgb(6, 10, 24);
+    border-width: 3px;
+    border-color: rgb(0, 242, 255);
+    border-radius: 2px;
     padding: 8px 12px 10px;
     align-items: stretch;
     flex-shrink: 0;
     transform-origin: center center;
+    overflow: hidden;
+}
+
+.slot-panel.is-spinning {
+    border-color: rgb(255, 0, 200);
+}
+
+.slot-panel.is-reveal {
+    border-color: rgb(0, 255, 255);
+}
+
+/* 四角 L 饰：轻量，不占布局 */
+.panel-chrome {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    picking-mode: ignore;
+}
+
+.corner {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-width: 2px;
+    border-color: rgb(0, 242, 255);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.corner-tl {
+    top: 3px;
+    left: 3px;
+    border-right-width: 0;
+    border-bottom-width: 0;
+}
+
+.corner-tr {
+    top: 3px;
+    right: 3px;
+    border-left-width: 0;
+    border-bottom-width: 0;
+}
+
+.corner-bl {
+    bottom: 3px;
+    left: 3px;
+    border-right-width: 0;
+    border-top-width: 0;
+}
+
+.corner-br {
+    bottom: 3px;
+    right: 3px;
+    border-left-width: 0;
+    border-top-width: 0;
+}
+
+.status-strip {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 2px 6px;
+    background-color: rgb(0, 12, 24);
+    border-width: 1px;
+    border-color: rgba(0, 242, 255, 0.35);
+}
+
+.led {
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+.led-cyan { background-color: rgb(0, 242, 255); }
+.led-fuchsia { background-color: rgb(255, 0, 200); }
+
+.status-text {
+    color: rgb(0, 242, 255);
+    font-size: 9px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    flex-grow: 1;
+}
+
+.status-meta {
+    color: rgb(100, 160, 180);
+    font-size: 8px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-right;
 }
 
 .panel-header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
+    padding-bottom: 3px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 242, 255, 0.3);
 }
 
 .title {
-    color: rgb(255, 246, 0);
-    font-size: 14px;
+    color: rgb(0, 242, 255);
+    font-size: 13px;
     -unity-font-style: bold;
     letter-spacing: 3px;
 }
 
 .wave-tag {
-    color: rgb(0, 242, 255);
-    font-size: 10px;
-    letter-spacing: 4px;
+    color: rgb(0, 200, 220);
+    font-size: 9px;
+    letter-spacing: 3px;
     -unity-font-style: bold;
 }
 
 .combo-header {
     flex-direction: column;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 .combo-label {
     color: rgb(255, 200, 50);
-    font-size: 17px;
+    font-size: 15px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     margin-bottom: 1px;
-    min-height: 20px;
+    min-height: 18px;
 }
 
 .combo-rule {
-    color: rgb(170, 190, 210);
-    font-size: 9px;
+    color: rgb(140, 170, 190);
+    font-size: 8px;
     -unity-text-align: middle-center;
     white-space: normal;
-    min-height: 12px;
+    min-height: 10px;
 }
 
-/* ── 转轮 + 拉杆 ─────────────────────────────────────── */
 .machine-row {
     flex-direction: row;
     align-items: flex-end;
     justify-content: center;
     width: 100%;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .machine-center {
@@ -86,9 +194,9 @@
 }
 
 .lever-spacer {
-    width: 48px;
+    width: 28px;
     height: 1px;
-    margin-right: 10px;
+    margin-right: 6px;
     flex-shrink: 0;
 }
 
@@ -97,59 +205,51 @@
     justify-content: center;
     align-items: stretch;
     flex-shrink: 0;
+    padding: 5px 6px;
+    background-color: rgb(0, 16, 32);
+    border-width: 1px;
+    border-color: rgba(0, 242, 255, 0.4);
+    border-radius: 2px;
 }
 
 .reel {
-    width: 88px;
-    min-width: 88px;
+    width: 84px;
+    min-width: 84px;
     flex-shrink: 0;
-    margin: 0 4px;
+    margin: 0 3px;
     align-items: center;
     border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    padding: 4px 4px 6px;
-    background-color: rgba(2, 5, 14, 0.95);
+    border-color: rgba(0, 180, 200, 0.4);
+    border-radius: 2px;
+    padding: 3px 3px 5px;
+    background-color: rgb(2, 6, 16);
     transition-duration: 0.12s;
+    transition-property: border-color, background-color, opacity;
     position: relative;
 }
 
-.reel-border-common {
-    border-color: rgba(220, 230, 240, 0.82);
-}
-
-.reel-border-rare {
-    border-color: rgba(180, 100, 255, 0.9);
-}
-
-.reel-border-epic {
-    border-color: rgba(255, 200, 50, 0.92);
-}
-
-.reel-border-mystery {
-    border-color: rgba(255, 90, 90, 0.88);
-}
-
-.reel-border-neutral {
-    border-color: rgba(140, 160, 185, 0.45);
-}
+.reel-border-common { border-color: rgba(200, 220, 235, 0.9); }
+.reel-border-rare { border-color: rgb(0, 242, 255); }
+.reel-border-epic { border-color: rgb(255, 0, 200); }
+.reel-border-mystery { border-color: rgb(255, 70, 90); }
+.reel-border-neutral { border-color: rgba(0, 120, 150, 0.45); }
 
 .reel-tag {
-    color: rgb(140, 150, 170);
-    font-size: 9px;
+    color: rgb(100, 160, 180);
+    font-size: 8px;
     letter-spacing: 2px;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 .reel-viewport {
     width: 100%;
-    height: 96px;
+    height: 84px;
     overflow: hidden;
     position: relative;
-    background-color: rgba(0, 0, 0, 0.45);
+    background-color: rgb(0, 8, 18);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.15);
-    border-radius: 2px;
+    border-color: rgba(0, 242, 255, 0.25);
+    border-radius: 0;
 }
 
 .reel-strip {
@@ -161,21 +261,21 @@
 }
 
 .reel-slot {
-    height: 96px;
+    height: 84px;
     justify-content: center;
     align-items: center;
-    padding: 2px 2px;
-    border-width: 2px;
-    border-radius: 2px;
-    border-color: rgba(140, 160, 185, 0.35);
+    padding: 2px;
+    border-width: 1px;
+    border-radius: 0;
+    border-color: rgba(0, 140, 170, 0.35);
     margin-bottom: 1px;
 }
 
-.reel-slot.reel-border-common { border-color: rgba(220, 230, 240, 0.75); }
-.reel-slot.reel-border-rare   { border-color: rgba(180, 100, 255, 0.82); }
-.reel-slot.reel-border-epic   { border-color: rgba(255, 200, 50, 0.85); }
-.reel-slot.reel-border-mystery { border-color: rgba(255, 90, 90, 0.82); }
-.reel-slot.reel-border-neutral { border-color: rgba(140, 160, 185, 0.35); }
+.reel-slot.reel-border-common { border-color: rgba(200, 220, 235, 0.7); }
+.reel-slot.reel-border-rare { border-color: rgba(0, 242, 255, 0.85); }
+.reel-slot.reel-border-epic { border-color: rgba(255, 0, 200, 0.85); }
+.reel-slot.reel-border-mystery { border-color: rgba(255, 70, 90, 0.85); }
+.reel-slot.reel-border-neutral { border-color: rgba(0, 120, 150, 0.35); }
 
 .reel-slot-rarity,
 .rarity-label {
@@ -183,25 +283,25 @@
 }
 
 .reel-slot-name {
-    font-size: 11px;
+    font-size: 10px;
     -unity-font-style: bold;
-    color: rgb(255, 255, 255);
+    color: rgb(230, 245, 255);
     -unity-text-align: middle-center;
     white-space: nowrap;
-    max-width: 88px;
+    max-width: 78px;
 }
 
 .reel-slot-final .reel-slot-name {
-    color: rgb(255, 240, 0);
+    color: rgb(0, 242, 255);
 }
 
 .reel-spinning .reel-viewport {
-    border-color: rgba(255, 240, 0, 0.45);
+    border-color: rgba(255, 0, 200, 0.65);
 }
 
 .reel-result {
     width: 100%;
-    min-height: 96px;
+    min-height: 84px;
     justify-content: center;
     align-items: center;
     display: none;
@@ -210,35 +310,35 @@
 .reel-selected {
     border-color: rgb(0, 242, 255);
     border-width: 3px;
-    scale: 1.02 1.02;
 }
 
 .reel-selectable-hint {
-    border-color: rgba(0, 242, 255, 0.55);
+    border-color: rgba(0, 242, 255, 0.6);
 }
 
 .reel-stop-flash {
-    border-color: rgb(255, 240, 0);
+    border-color: rgb(255, 0, 200);
+    background-color: rgb(40, 8, 28);
 }
 
 .reel-outcome-apply {
-    border-color: rgb(120, 255, 120);
-    background-color: rgba(40, 120, 60, 0.25);
+    border-color: rgb(80, 255, 180);
+    background-color: rgb(12, 48, 36);
 }
 
 .reel-outcome-scrap {
-    border-color: rgb(180, 100, 255);
-    background-color: rgba(100, 40, 160, 0.2);
+    border-color: rgb(200, 80, 255);
+    background-color: rgb(36, 12, 56);
 }
 
 .reel-outcome-ignored {
     opacity: 0.4;
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .reel-outcome-inactive {
     opacity: 0.72;
-    border-color: rgba(0, 242, 255, 0.35);
+    border-color: rgba(0, 242, 255, 0.4);
 }
 
 .outcome-badge {
@@ -247,55 +347,76 @@
     right: 1px;
     font-size: 8px;
     letter-spacing: 0;
-    padding: 1px 4px;
-    border-radius: 2px;
+    padding: 1px 3px;
+    border-radius: 1px;
     color: rgb(255, 255, 255);
-    background-color: rgba(0, 0, 0, 0.55);
+    background-color: rgb(0, 0, 0);
     display: none;
 }
 
 .reel-outcome-apply .outcome-badge {
-    background-color: rgba(40, 120, 60, 0.85);
-    color: rgb(180, 255, 200);
+    background-color: rgb(16, 80, 56);
+    color: rgb(160, 255, 200);
 }
 
 .reel-outcome-inactive .outcome-badge {
-    background-color: rgba(0, 80, 120, 0.85);
+    background-color: rgb(0, 64, 96);
     color: rgb(160, 240, 255);
 }
 
-/* ── 拉杆 ─────────────────────────────────────────────── */
+/* ── 拉杆：对齐 HTML Lab（品红球 + 青杆 + 外壳 + 支点环）── */
 .lever-assembly {
-    width: 48px;
-    height: 132px;
+    width: 42px;
+    height: 148px;
     align-items: center;
     justify-content: flex-end;
     cursor: link;
-    padding-bottom: 4px;
+    padding-bottom: 0;
     margin-left: 10px;
     position: relative;
     overflow: visible;
     flex-shrink: 0;
+    transition-duration: 0.12s;
+}
+
+.lever-assembly:active {
+    translate: 2px -1px;
+}
+
+.lever-housing {
+    width: 26px;
+    height: 50px;
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    translate: -50% 0;
+    background-color: rgba(0, 24, 40, 0.92);
+    border-width: 1px;
+    border-color: rgba(0, 242, 255, 0.55);
+    border-radius: 1px;
 }
 
 .lever-base {
-    width: 32px;
-    height: 12px;
-    background-color: rgb(80, 85, 100);
-    border-radius: 3px;
+    width: 16px;
+    height: 16px;
+    background-color: rgb(8, 16, 28);
+    border-width: 2px;
+    border-color: rgb(0, 242, 255);
+    border-radius: 8px;
     position: absolute;
-    bottom: 22px;
+    bottom: 30px;
     left: 50%;
     translate: -50% 0;
 }
 
 .lever-arm {
-    width: 7px;
-    height: 72px;
-    background-color: rgb(200, 50, 70);
-    border-radius: 4px;
+    width: 5px;
+    height: 96px;
+    background-color: rgb(94, 240, 255);
+    border-width: 0;
+    border-radius: 2px;
     position: absolute;
-    bottom: 30px;
+    bottom: 36px;
     left: 50%;
     translate: -50% 0;
     transform-origin: 50% 100%;
@@ -305,31 +426,44 @@
 }
 
 .lever-arm-pulled {
-    rotate: -42deg;
+    rotate: 48deg;
+    background-color: rgb(0, 242, 255);
 }
 
 .lever-arm-pulled .lever-knob {
-    scale: 1.12 1.12;
+    background-color: rgb(255, 120, 230);
+    border-color: rgb(255, 255, 255);
 }
 
 .lever-knob {
-    width: 24px;
-    height: 24px;
-    border-radius: 12px;
-    background-color: rgb(255, 220, 40);
-    border-width: 2px;
-    border-color: rgb(200, 160, 0);
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background-color: rgb(255, 43, 214);
+    border-width: 1px;
+    border-color: rgba(255, 180, 255, 0.85);
     position: absolute;
-    top: -10px;
+    top: -11px;
     left: 50%;
     translate: -50% 0;
+    overflow: hidden;
+}
+
+.lever-knob-shine {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background-color: rgb(255, 255, 255);
+    position: absolute;
+    top: 3px;
+    left: 3px;
 }
 
 .lever-hint {
-    color: rgb(255, 240, 0);
+    color: rgb(120, 210, 230);
     font-size: 9px;
-    letter-spacing: 1px;
-    margin-top: 6px;
+    letter-spacing: 2px;
+    margin-top: 2px;
     -unity-text-align: middle-center;
 }
 
@@ -339,34 +473,41 @@
 }
 
 .buff-name {
-    color: rgb(255, 255, 255);
-    font-size: 11px;
+    color: rgb(230, 245, 255);
+    font-size: 10px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     white-space: nowrap;
-    max-width: 88px;
+    max-width: 78px;
 }
 
 .reroll-hint {
-    color: rgb(0, 242, 255);
-    font-size: 9px;
-    margin-bottom: 4px;
-    letter-spacing: 0;
-    min-height: 12px;
+    color: rgba(0, 242, 255, 0.9);
+    font-size: 8px;
+    margin-bottom: 3px;
+    margin-top: 1px;
+    letter-spacing: 1px;
+    min-height: 11px;
     width: 100%;
     -unity-text-align: middle-center;
     white-space: normal;
 }
 
-/* ── 本波奖励（面板内，无滚动）──────────────────────── */
 .outcome-panel {
-    padding: 6px 8px;
-    margin-bottom: 6px;
-    background-color: rgba(4, 12, 28, 0.85);
+    padding: 5px 7px;
+    margin-bottom: 5px;
+    background-color: rgb(4, 14, 32);
     border-width: 1px;
-    border-color: rgba(0, 242, 255, 0.3);
-    border-radius: 4px;
+    border-color: rgba(0, 242, 255, 0.4);
+    border-radius: 1px;
     display: none;
+}
+
+.outcome-title-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
 }
 
 .outcome-title {
@@ -374,7 +515,20 @@
     font-size: 9px;
     -unity-font-style: bold;
     letter-spacing: 2px;
-    margin-bottom: 4px;
+}
+
+.outcome-badge-status {
+    color: rgb(140, 170, 190);
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 1px 4px;
+    border-width: 1px;
+    border-color: rgba(0, 242, 255, 0.25);
+}
+
+.outcome-badge-status.is-live {
+    color: rgb(255, 0, 200);
+    border-color: rgba(255, 0, 200, 0.55);
 }
 
 .outcome-list {
@@ -382,7 +536,7 @@
 }
 
 .outcome-entry {
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 .outcome-line {
@@ -396,44 +550,68 @@
     font-size: 8px;
     color: rgba(170, 185, 205, 0.9);
     margin-top: 1px;
-    padding-left: 8px;
+    padding-left: 6px;
     white-space: normal;
     -unity-font-style: normal;
 }
 
-.outcome-line-apply { color: rgb(140, 255, 170); }
-.outcome-line-scrap { color: rgb(200, 150, 255); }
+.outcome-line-apply { color: rgb(120, 255, 190); }
+.outcome-line-scrap { color: rgb(210, 140, 255); }
 .outcome-line-ignored { color: rgba(180, 190, 210, 0.75); }
-.outcome-line-debuff { color: rgb(255, 130, 130); }
+.outcome-line-debuff { color: rgb(255, 120, 140); }
 
-.outcome-detail-apply { color: rgba(120, 200, 150, 0.85); }
+.outcome-detail-apply { color: rgba(100, 210, 160, 0.85); }
 .outcome-detail-scrap { color: rgba(180, 140, 220, 0.85); }
 .outcome-detail-ignored { color: rgba(150, 160, 180, 0.7); }
-.outcome-detail-debuff { color: rgba(255, 140, 140, 0.85); }
+.outcome-detail-debuff { color: rgba(255, 140, 150, 0.85); }
 
 .confirm-btn {
-    background-color: rgba(0, 242, 255, 0.12);
-    border-color: rgb(0, 242, 255);
-    border-width: 2px;
-    color: rgb(0, 242, 255);
-    font-size: 14px;
+    background-color: rgb(0, 242, 255);
+    border-color: rgb(160, 255, 255);
+    border-width: 1px;
+    border-radius: 2px;
+    color: rgb(3, 16, 24);
+    font-size: 12px;
     -unity-font-style: bold;
-    letter-spacing: 5px;
+    letter-spacing: 4px;
     padding: 8px 0;
     width: 100%;
     display: none;
     cursor: link;
+    transition-duration: 0.12s;
+    transition-property: background-color, border-color, color, translate;
 }
 
 .confirm-btn:hover {
-    background-color: rgb(255, 240, 0);
-    color: rgb(1, 3, 10);
+    background-color: rgb(160, 255, 255);
+    color: rgb(3, 16, 24);
 }
 
-/* ── 轮位税弹窗（无滚动）────────────────────────────── */
+.confirm-btn:active {
+    translate: 2px -1px;
+    color: rgb(255, 0, 200);
+    background-color: rgb(220, 255, 255);
+}
+
+.slot-panel > .neon-glow-host {
+    width: 100%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-self: stretch;
+    margin-right: 0;
+    overflow: visible;
+}
+
+.slot-panel > .neon-glow-host > .confirm-btn {
+    width: 100%;
+}
+
 .debuff-modal {
     position: absolute;
-    left: 0; top: 0; right: 0; bottom: 0;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     background-color: rgba(1, 3, 10, 0.9);
     align-items: center;
     justify-content: center;
@@ -442,68 +620,81 @@
 
 .debuff-card {
     width: 90%;
-    max-width: 440px;
-    padding: 16px 18px 14px;
-    background-color: rgba(36, 8, 12, 0.98);
+    max-width: 420px;
+    padding: 14px 16px 12px;
+    background-color: rgb(28, 6, 14);
     border-width: 2px;
-    border-color: rgba(255, 90, 100, 0.75);
-    border-radius: 6px;
+    border-color: rgba(255, 0, 128, 0.75);
+    border-radius: 2px;
     align-items: stretch;
 }
 
 .debuff-modal-title {
-    color: rgb(255, 90, 100);
-    font-size: 14px;
+    color: rgb(255, 90, 130);
+    font-size: 13px;
     -unity-font-style: bold;
-    letter-spacing: 4px;
-    margin-bottom: 8px;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
 }
 
 .debuff-list {
     flex-direction: column;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .debuff-line {
-    font-size: 11px;
-    color: rgb(255, 160, 160);
-    margin-bottom: 4px;
+    font-size: 10px;
+    color: rgb(255, 160, 180);
+    margin-bottom: 3px;
     white-space: normal;
 }
 
 .debuff-continue-btn {
     align-self: center;
-    background-color: rgba(255, 80, 90, 0.15);
-    border-color: rgb(255, 90, 100);
+    background-color: rgba(255, 0, 128, 0.15);
+    border-color: rgb(255, 0, 128);
     border-width: 1px;
-    color: rgb(255, 180, 180);
-    padding: 8px 32px;
+    color: rgb(255, 180, 200);
+    padding: 7px 28px;
     display: none;
 }
 
+.debuff-continue-btn:active {
+    translate: 2px -1px;
+}
+
 .select-btn {
-    background-color: rgba(255, 240, 0, 0.08);
-    border-color: rgb(255, 240, 0);
-    border-width: 1.5px;
+    background-color: rgba(0, 242, 255, 0.08);
+    border-color: rgb(0, 242, 255);
+    border-width: 2px;
     border-radius: 2px;
-    color: rgb(255, 240, 0);
-    font-size: 13px;
+    color: rgb(0, 242, 255);
+    font-size: 12px;
     -unity-font-style: bold;
-    letter-spacing: 4px;
-    padding: 9px 0;
+    letter-spacing: 3px;
+    padding: 8px 0;
     width: 100%;
     cursor: link;
+    transition-duration: 0.12s;
 }
 
 .select-btn:hover {
-    background-color: rgb(255, 240, 0);
-    color: rgb(1, 3, 10);
+    background-color: rgba(255, 0, 128, 0.22);
+    border-color: rgb(255, 0, 128);
+    color: rgb(255, 200, 230);
+}
+
+.select-btn:active {
+    translate: 2px -1px;
 }
 
 .tower-choice {
     position: absolute;
-    left: 0; top: 0; right: 0; bottom: 0;
-    background-color: rgba(1, 3, 10, 0.97);
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(1, 3, 12, 0.96);
     align-items: center;
     justify-content: center;
     flex-direction: column;
@@ -513,10 +704,10 @@
 .tower-choice-buttons {
     flex-direction: row;
     justify-content: center;
-    margin-top: 24px;
+    margin-top: 20px;
 }
 
 .tower-choice-buttons .select-btn {
-    width: 220px;
-    margin: 0 12px;
+    width: 200px;
+    margin: 0 10px;
 }

@@ -96,8 +96,10 @@ public class SpringBoard : MonoBehaviour
     private void RefreshVisual()
     {
         if (_sr == null) return;
+        Color c = _charges > 0 ? chargedColor : depletedColor;
+        _sr.color = c;
         _sr.GetPropertyBlock(_mpb);
-        _mpb.SetColor("_Color", _charges > 0 ? chargedColor : depletedColor);
+        _mpb.SetColor("_Color", c);
         _sr.SetPropertyBlock(_mpb);
     }
 

@@ -39,7 +39,8 @@ float3 EvaluateMatrixRain(
     float4 headColor,
     float4 trailColor,
     float combo,
-    float scanBand)
+    float scanBand,
+    float trailFadePower)
 {
     float colId = floor(worldXY.x / max(columnWidth, 0.001));
     float colHash = MatrixHash21(float2(colId, 17.3));
@@ -79,7 +80,8 @@ float3 EvaluateMatrixRain(
     if (glyph < 0.01)
         return float3(0.0, 0.0, 0.0);
 
-    float rowFade = pow(saturate(1.0 - charRow / max(trailLen - 1.0, 1.0)), 2.4);
+    float fadePow = max(trailFadePower, 0.5);
+    float rowFade = pow(saturate(1.0 - charRow / max(trailLen - 1.0, 1.0)), fadePow);
     float headPulse = (charRow < 0.5) ? (1.0 - smoothstep(0.0, 0.18, charFrac)) : 0.0;
     float brightness = saturate(rowFade * trailBright + headPulse * headBright);
     // Combo / ScanBand 只调亮度与存在感，不调下落位移

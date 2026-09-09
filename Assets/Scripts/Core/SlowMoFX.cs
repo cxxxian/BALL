@@ -27,6 +27,15 @@ public class SlowMoFX : MonoBehaviour
     private Coroutine           _enemyTimestopCoroutine;
     private bool                _slowMoHeld;
     private bool                _enemyTimestopHeld;
+    private int                 _combatHitStopDepth;
+    private Coroutine           _combatHitStopPulseCo;
+    private float               _combatHitStopEndUnscaled;
+
+    /// <summary>斩杀瞄准时缓是否占用 timeScale（含进入/退出过渡）。</summary>
+    public bool IsSkillSlowMoActive => _slowMoHeld || _coroutine != null;
+
+    /// <summary>战斗顿帧是否占用 timeScale（含脉冲倒计时）。</summary>
+    public bool IsCombatHitStopActive => _combatHitStopDepth > 0;
 
     private void Awake()
     {
@@ -58,6 +67,14 @@ public class SlowMoFX : MonoBehaviour
     // ── 技能激活时调用 ─────────────────────────────────────────────────
     public void Activate(float targetTimeScale)
     {
+        // 斩杀瞄准接管时间：丢弃战斗顿帧计数，避免结束后误写回
+        if (_combatHitStopPulseCo != null)
+        {
+            StopCoroutine(_combatHitStopPulseCo);
+            _combatHitStopPulseCo = null;
+        }
+        _combatHitStopDepth = 0;
+        _combatHitStopEndUnscaled = 0f;
         if (_coroutine != null) StopCoroutine(_coroutine);
         _coroutine = StartCoroutine(EnterRoutine(targetTimeScale));
     }
@@ -92,6 +109,13 @@ public class SlowMoFX : MonoBehaviour
 
         _slowMoHeld = false;
         _enemyTimestopHeld = false;
+        _combatHitStopDepth = 0;
+        if (_combatHitStopPulseCo != null)
+        {
+            StopCoroutine(_combatHitStopPulseCo);
+            _combatHitStopPulseCo = null;
+        }
+        _combatHitStopEndUnscaled = 0f;
 
         if (flashOverlay != null) flashOverlay.color = Color.clear;
         SetPostFX(0f);
@@ -189,13 +213,109 @@ public class SlowMoFX : MonoBehaviour
     public void ForceRestore()
     {
         ClearVisualOverlays();
+        _combatHitStopDepth = 0;
         Time.timeScale      = 1f;
+        Time.fixedDeltaTime = 0.02f;
+    }
+
+    /// <summary>
+    /// 战斗顿帧（导弹弹刀等）。与 Slash 瞄准时缓互斥：瞄准中直接跳过，避免互相写坏 timeScale。
+    /// 返回是否实际持有顿帧（调用方须成对 EndCombatHitStop）。
+    /// </summary>
+    public bool BeginCombatHitStop(float stopScale)
+    {
+        if (!CanStartCombatHitStop()) return false;
+
+        stopScale = Mathf.Clamp(stopScale, 0.02f, 1f);
+        if (_combatHitStopDepth == 0 || Time.timeScale > stopScale)
+            Time.timeScale = stopScale;
+        _combatHitStopDepth++;
+        return true;
+    }
+
+    public void EndCombatHitStop()
+    {
+        if (_combatHitStopDepth <= 0) return;
+        _combatHitStopDepth--;
+        if (_combatHitStopDepth > 0) return;
+
+        // Slash 已接管则交还，勿强行拉回 1
+        if (IsSkillSlowMoActive) return;
+        if (SkillManager.Instance != null && SkillManager.Instance.IsAiming) return;
+
+        RestoreTimeScaleAfterCombatHitStop();
+    }
+
+    /// <summary>
+    /// 自动结束的顿帧脉冲。重叠时取更深 scale、更晚结束时刻（不叠加 depth）。
+    /// </summary>
+    public void PulseCombatHitStop(float stopScale, float unscaledSeconds)
+    {
+        if (!CanStartCombatHitStop() && _combatHitStopDepth <= 0) return;
+
+        stopScale = Mathf.Clamp(stopScale, 0.02f, 1f);
+        unscaledSeconds = Mathf.Clamp(unscaledSeconds, 0.01f, 0.25f);
+        float endAt = Time.unscaledTime + unscaledSeconds;
+
+        if (_combatHitStopDepth > 0)
+        {
+            if (Time.timeScale > stopScale)
+                Time.timeScale = stopScale;
+            if (endAt > _combatHitStopEndUnscaled)
+                _combatHitStopEndUnscaled = endAt;
+            return;
+        }
+
+        if (!BeginCombatHitStop(stopScale)) return;
+        _combatHitStopEndUnscaled = endAt;
+        if (_combatHitStopPulseCo != null)
+            StopCoroutine(_combatHitStopPulseCo);
+        _combatHitStopPulseCo = StartCoroutine(CombatHitStopPulseRoutine());
+    }
+
+    private IEnumerator CombatHitStopPulseRoutine()
+    {
+        while (Time.unscaledTime < _combatHitStopEndUnscaled && _combatHitStopDepth > 0)
+            yield return null;
+
+        _combatHitStopPulseCo = null;
+        if (_combatHitStopDepth > 0)
+            EndCombatHitStop();
+    }
+
+    private bool CanStartCombatHitStop()
+    {
+        if (IsSkillSlowMoActive) return false;
+        if (SkillManager.Instance != null && SkillManager.Instance.IsAiming) return false;
+        if (TutorialTimeControl.Mode == TutorialTimeMode.HardPause) return false;
+        if (TutorialTimeControl.Mode == TutorialTimeMode.SoftFreeze) return false;
+        if (GameManager.Instance != null && GameManager.Instance.State == GameState.BuffSelection)
+            return false;
+        if (PauseMenuController.Instance != null && PauseMenuController.Instance.IsOpen)
+            return false;
+        return true;
+    }
+
+    private void RestoreTimeScaleAfterCombatHitStop()
+    {
+        // 教程 SlowMo：交还给校准态，避免强行拉回 1
+        if (RunSession.IsTutorial && TutorialTimeControl.Mode == TutorialTimeMode.SlowMo)
+        {
+            Time.timeScale = TutorialTimeControl.SlowMoScale;
+            Time.fixedDeltaTime = 0.02f * TutorialTimeControl.SlowMoScale;
+            return;
+        }
+
+        Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
     }
 
     // ── 进入时缓动画 ──────────────────────────────────────────────────
     private IEnumerator EnterRoutine(float targetScale)
     {
+        // 进入 Slash 时清掉战斗顿帧归属，避免结束后误恢复
+        _combatHitStopDepth = 0;
+
         if (fxVolume != null) fxVolume.enabled = true;
 
         // ① 瞬间亮闪（使用非缩放时间，避免慢动作影响）

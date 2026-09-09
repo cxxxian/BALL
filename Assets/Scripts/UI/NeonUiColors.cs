@@ -22,6 +22,13 @@ public static class NeonUiColors
     public static Color ScoreUi(float intensity = 1.15f) =>
         new Color(1f * intensity, 1f * intensity, 1.05f * intensity, 1f);
 
+    /// <summary>StyleKit --neon-yellow / Combo 语义，Boss 血格等 HUD 用。</summary>
+    public static Color YellowUi(float intensity = 1f)
+    {
+        var hdr = NeonColors.Active.GetBase(NeonRole.Combo);
+        return MapHdrToUi(hdr, intensity);
+    }
+
     /// <summary>与主菜单 / Buff 选卡 wave-tag 一致的赛博青。</summary>
     public static Color MenuCyanUi(float intensity = 1f)
     {

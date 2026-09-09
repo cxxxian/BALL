@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 818b23b45bec2c844aa1f761c1a77d6a, type: 3}
+  m_Name: Ball_Gravity
+  m_EditorClassIdentifier: 
+  ballId: gravity_ball
+  displayName: "\u5F15\u529B\u534F\u8BAE\u7403"
+  loadoutDescription: "\u534F\u8BAE\u6539\u5411 + \u5F15\u529B\u9631\uFF08\u70B9\u5730\u805A\u602A\uFF09\u3002\u914D\u5408\u5854\u6D41\u4F7F\u7528\u3002"
+  isAvailableInLoadout: 1
+  acquisitionType: 1
+  directPrice: 380
+  crateRarity: 0
+  primarySkill: {fileID: 11400000, guid: e5f6a7b8c9d0123456789abcdef01234, type: 2}
+  secondarySkill: {fileID: 11400000, guid: d4e5f6a7b8c90123456789abcdef0123, type: 2}
+  ballType: 0
+  activeSkillPrefab: {fileID: 0}
+  trailColor: {r: 0.5, g: 0.6, b: 1, a: 1}
+  glowColor: {r: 0.4, g: 0.5, b: 0.9, a: 1}
+  skillCooldown: 12
+  skillDescription: 

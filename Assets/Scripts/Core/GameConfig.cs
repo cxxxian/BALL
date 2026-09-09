@@ -6,7 +6,9 @@ public class GameConfig : ScriptableObject
     [Header("Ball Physics")]
     public float ballLaunchSpeed = 8f;
     public float ballMinSpeed = 5f;
-    public float ballMaxSpeed = 20f;
+    public float ballMaxSpeed = 15f;
+    [Tooltip("齿轮/冲量叠加后的绝对速度硬顶（弹刀可读性）")]
+    public float ballHardMaxSpeed = 19f;
     public float ballBounciness = 1f;
     public float ballFriction = 0f;
 
@@ -31,6 +33,14 @@ public class GameConfig : ScriptableObject
     [Header("Score")]
     public int scorePerGruntHit = 10;
     public int scorePerGruntKill = 50;
+    [Tooltip("Boss 导弹 Miss 且球在挡板区时扣除的积分（不扣命）")]
+    public int missileMissFlipperZoneScorePenalty = 80;
+
+    [Header("Meta Progression")]
+    [Tooltip("局末 Score 折算协议币比率（1000 分 ≈ 100 币）")]
+    public float scoreToCreditsRate = 0.1f;
+    [Tooltip("每局最低到账协议币")]
+    public int minCreditsPerRun = 10;
 
     [Header("Combo")]
     public float comboTimeout = 2f;                  // 超时重置连击
@@ -53,6 +63,19 @@ public class GameConfig : ScriptableObject
     public float shakeDecaySpeed = 7f;
     public float shakeMaxOffset = 0.22f;
 
+    [Header("Hit Stop")]
+    [Tooltip("球打怪顿帧时长（真实秒，约 1–2 帧）")]
+    public float hitStopLightSeconds = 0.028f;
+    public float hitStopLightScale = 0.07f;
+    [Tooltip("击杀 / 斩杀段顿帧（约 2–3 帧）")]
+    public float hitStopMediumSeconds = 0.045f;
+    public float hitStopMediumScale = 0.045f;
+    [Tooltip("Boss / 重事件顿帧")]
+    public float hitStopHeavySeconds = 0.08f;
+    public float hitStopHeavyScale = 0.03f;
+    [Tooltip("球速归一化参考（≈ ballMaxSpeed）")]
+    public float hitStopSpeedRef = 15f;
+
     [Header("Launch Guide")]
     public float launchGuideLength = 6f;
     public int launchGuideDots = 20;
@@ -61,13 +84,13 @@ public class GameConfig : ScriptableObject
     public float guideMaxAngle = 135f;               // 最大发射角
 
     [Header("Skill - Timestop Aura")]
-    public float timestopDuration          = 4f;
-    public float timestopMinionSpeedScale  = 0.35f;
+    public float timestopDuration          = 3f;
+    public float timestopMinionSpeedScale  = 0.45f;
     public float timestopBossSpeedScale    = 0.6f;
 
     [Header("Skill - Gravity Well")]
     public float gravityWellDuration         = 2.5f;
-    public float gravityWellRadius           = 3.2f;
+    public float gravityWellRadius           = 2.4f;
     public float gravityWellPullStrength     = 9f;
     [Tooltip("阱内向下速度保留比例（越低越易被横向吸过来）")]
     public float gravityWellDownSpeedScale   = 0.3f;
@@ -84,11 +107,34 @@ public class GameConfig : ScriptableObject
     public float gravityWellMinPlaceOffset   = 0.8f;
     public float gravityWellPlaceMarginX     = 0.5f;
 
-    [Header("Skill - Bullet Time")]
+    [Header("Skill - Bullet Time / Protocol Redirect")]
     public float skillCooldown        = 12f;   // 基础冷却秒数
-    public float skillComboCDReduce   = 0.4f;  // 每次 Combo 命中减少的 CD 秒数
+    public float skillComboCDReduce   = 0.28f; // 每次 Combo 命中减少的 CD 秒数（02 平衡：原 0.4）
     public float skillBottomZoneRatio = 0.22f; // 手机触控底部挡板区占屏高比例
-    public float skillSlowMoScale     = 0.12f; // 时缓倍率（0.1 = 十分之一速度）
+    public float skillSlowMoScale     = 0.12f; // 协议改向时缓倍率
+    [Tooltip("协议改向瞄准决定窗（真实时间秒）；到期按当前瞄准方向自动确认")]
+    public float protocolAimMaxSeconds = 4f;
+    [Tooltip("决定窗末段紧迫反馈时长（真实时间秒）")]
+    public float protocolAimWarnSeconds = 1f;
+    [Tooltip("Slash/斩杀连锁期间球速上限（不受普通硬顶限制）")]
+    public float executeChainMaxSpeed = 26f;
+    [Tooltip("斩杀武装窗口（真实时间秒）；确认开链才进完整 CD")]
+    public float executeArmWindowSeconds = 5f;
+    [Tooltip("斩杀连锁最大跳数")]
+    public int executeChainMaxJumps = 3;
+
+    [Header("Skill - Core Pulse")]
+    public float corePulseRadius = 2.5f;
+    public float corePulseDamageMult = 2f;
+    public float corePulseKnockback = 2.5f;
+    [Tooltip("冲击波扩散动画时长（真实秒）")]
+    public float corePulseWaveDuration = 0.4f;
+
+    [Header("Skill - Split Protocol")]
+    public float splitDuration = 5f;
+    public float splitDamageScale = 0.5f;
+    public float splitSpawnAngleDeg = 28f;
+    public float splitPhantomAlpha = 0.92f;
 
     [Header("Camera / World")]
     public float worldWidth = 9f;

@@ -77,14 +77,55 @@ public class SkillUI : MonoBehaviour
                         OnSlotCooldownChanged(slotIndex, SkillManager.Instance.slots[slotIndex].CooldownRatio);
                 }
             }
+            else if (def != null && def.implementationType == ActiveSkillType.ExecuteChain)
+            {
+                bool armedNow = SkillManager.Instance.IsExecuteArmed;
+                if (armedNow != _isEffectActive)
+                {
+                    _isEffectActive = armedNow;
+                    if (!_isEffectActive)
+                        OnSlotCooldownChanged(slotIndex, SkillManager.Instance.slots[slotIndex].CooldownRatio);
+                }
+            }
+            else if (def != null && def.implementationType == ActiveSkillType.SplitProtocol)
+            {
+                bool splitNow = SplitProtocol.Instance != null && SplitProtocol.Instance.IsActive;
+                if (splitNow != _isEffectActive)
+                {
+                    _isEffectActive = splitNow;
+                    if (!_isEffectActive)
+                        OnSlotCooldownChanged(slotIndex, SkillManager.Instance.slots[slotIndex].CooldownRatio);
+                }
+            }
         }
 
         if (_isEffectActive)
         {
-            _pulse += Time.unscaledDeltaTime * 5f;
-            float g = (Mathf.Sin(_pulse) + 1f) * 0.5f;
-            if (cdRing   != null) cdRing.color   = Color.Lerp(ringActiveColor, Color.white, g * 0.6f);
-            if (iconDisc != null) iconDisc.color = Color.Lerp(discActiveColor, Color.white, g * 0.4f);
+            bool protocolAiming = IsProtocolRedirectAiming();
+            if (protocolAiming && BulletTimeAim.Instance != null)
+            {
+                float remain = BulletTimeAim.Instance.AimRemainingRatio;
+                bool warn = BulletTimeAim.Instance.IsInAimWarning;
+                _pulse += Time.unscaledDeltaTime * (warn ? 10f : 5f);
+                float g = (Mathf.Sin(_pulse) + 1f) * 0.5f;
+                Color baseRing = warn
+                    ? Color.Lerp(ringActiveColor, new Color(1f, 0.35f, 0.1f), 0.75f)
+                    : ringActiveColor;
+                if (cdRing != null)
+                {
+                    cdRing.fillAmount = remain;
+                    cdRing.color = Color.Lerp(baseRing, Color.white, g * (warn ? 0.85f : 0.6f));
+                }
+                if (iconDisc != null)
+                    iconDisc.color = Color.Lerp(discActiveColor, Color.white, g * (warn ? 0.55f : 0.4f));
+            }
+            else
+            {
+                _pulse += Time.unscaledDeltaTime * 5f;
+                float g = (Mathf.Sin(_pulse) + 1f) * 0.5f;
+                if (cdRing   != null) cdRing.color   = Color.Lerp(ringActiveColor, Color.white, g * 0.6f);
+                if (iconDisc != null) iconDisc.color = Color.Lerp(discActiveColor, Color.white, g * 0.4f);
+            }
         }
         else if (IsSlotReady())
         {
@@ -101,6 +142,15 @@ public class SkillUI : MonoBehaviour
         if (SkillManager.Instance.slots == null) return false;
         if (slotIndex < 0 || slotIndex >= SkillManager.Instance.slots.Length) return false;
         return SkillManager.Instance.slots[slotIndex].IsReady;
+    }
+
+    private bool IsProtocolRedirectAiming()
+    {
+        if (SkillManager.Instance == null || !SkillManager.Instance.IsAiming) return false;
+        if (SkillManager.Instance.slots == null) return false;
+        if (slotIndex < 0 || slotIndex >= SkillManager.Instance.slots.Length) return false;
+        var def = SkillManager.Instance.slots[slotIndex].definition;
+        return def != null && def.implementationType == ActiveSkillType.ProtocolRedirect;
     }
 
     private void OnSlotCooldownChanged(int idx, float ratio)
@@ -131,9 +181,11 @@ public class SkillUI : MonoBehaviour
         var def = SkillManager.Instance.slots[slotIndex].definition;
         if (def == null) return;
 
-        if (def.implementationType == ActiveSkillType.ExecuteChain
+        if (def.implementationType == ActiveSkillType.ProtocolRedirect
+            || def.implementationType == ActiveSkillType.ExecuteChain
             || def.implementationType == ActiveSkillType.TimestopAura
-            || def.implementationType == ActiveSkillType.GravitySpike)
+            || def.implementationType == ActiveSkillType.GravitySpike
+            || def.implementationType == ActiveSkillType.SplitProtocol)
         {
             _pulse          = 0f;
             _isEffectActive = true;

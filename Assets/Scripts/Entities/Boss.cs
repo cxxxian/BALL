@@ -27,6 +27,10 @@ public class Boss : EnemyBase
     private static readonly Color P2ThreatVignette = new Color(1f, 0.06f, 0.02f);
     private static Sprite _p2HaloSprite;
     private int _waveIndex;
+    private BossMissileAttack _missileAttack;
+
+    public bool InPhase2 => _inPhase2;
+    public int WaveIndex => _waveIndex;
 
     protected override void Awake()
     {
@@ -95,6 +99,10 @@ public class Boss : EnemyBase
         var hb = GetComponent<BossHealthBar>();
         if (hb == null) hb = gameObject.AddComponent<BossHealthBar>();
         hb.Bind(this);
+
+        _missileAttack = GetComponent<BossMissileAttack>();
+        if (_missileAttack == null) _missileAttack = gameObject.AddComponent<BossMissileAttack>();
+        _missileAttack.Initialize(this, waveIndex);
 
         _spawnCoroutine = StartCoroutine(SpawnCycle());
     }
@@ -487,6 +495,7 @@ public class Boss : EnemyBase
         if (_rb != null) _rb.velocity = Vector2.zero;
         if (_spawnCoroutine != null) StopCoroutine(_spawnCoroutine);
         if (_p2PulseCoroutine != null) StopCoroutine(_p2PulseCoroutine);
+        if (_missileAttack != null) _missileAttack.enabled = false;
         if (_p2Line != null) _p2Line.enabled = false;
         if (_p2LineOuter != null) _p2LineOuter.enabled = false;
         if (_p2Halo != null) _p2Halo.enabled = false;

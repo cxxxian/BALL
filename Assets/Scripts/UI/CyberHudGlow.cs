@@ -12,8 +12,8 @@ public class CyberHudGlow : MonoBehaviour
     public enum GlowStyle { BumperCyan, WhiteScore, DangerRed }
 
     [SerializeField] GlowStyle style = GlowStyle.BumperCyan;
-    [SerializeField] float outlineSpread = 1f;
-    [SerializeField] float glowAlpha = 0.5f;
+    [SerializeField] float outlineSpread = 1.4f;
+    [SerializeField] float glowAlpha = 0.62f;
 
     private Outline _outline;
     private Graphic _graphic;

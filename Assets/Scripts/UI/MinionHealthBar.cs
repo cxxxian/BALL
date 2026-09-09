@@ -106,7 +106,7 @@ public class MinionHealthBar : MonoBehaviour, IEnemyHealthBar
 
         float targetPct = _enemy.maxHits <= 0
             ? 0f
-            : Mathf.Clamp01(1f - (float)_enemy.CurrentHits / _enemy.maxHits);
+            : Mathf.Clamp01(1f - _enemy.DamageProgress / _enemy.maxHits);
         _hpPct = Mathf.Lerp(_hpPct, targetPct, Time.deltaTime * 20f);
         ApplyBarGeometry(_hpPct);
 

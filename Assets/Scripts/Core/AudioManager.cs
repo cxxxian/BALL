@@ -10,7 +10,15 @@ public class AudioManager : MonoBehaviour
 
     [Header("音效设置")]
     public AudioClip bounceClip;
+    public AudioClip explodeClip;
+    public AudioClip reboundClip;
     [Range(0f, 1f)] public float volume = 0.8f;
+    [Range(0f, 1f)] public float explodeVolume = 0.9f;
+    [Range(0f, 1f)] public float reboundVolume = 0.95f;
+    [Tooltip("跳过 WAV 起音软段，直接落到冲击峰值（explode 峰值约 90ms）")]
+    [Range(0f, 0.25f)] public float explodeStartOffset = 0.07f;
+    [Tooltip("相对画面冲击提前播放（秒），补偿听感滞后")]
+    [Range(0f, 0.2f)] public float explodeAnticipate = 0.06f;
 
     [Header("背景音乐")]
     public AudioClip bgmClip;
@@ -75,10 +83,16 @@ public class AudioManager : MonoBehaviour
         _bgmSource.priority = 32;
         _bgmSource.volume = bgmVolume;
 
-        if (bounceClip != null && bounceClip.loadState != AudioDataLoadState.Loaded)
-            bounceClip.LoadAudioData();
-        if (bgmClip != null && bgmClip.loadState != AudioDataLoadState.Loaded)
-            bgmClip.LoadAudioData();
+        PreloadClip(bounceClip);
+        PreloadClip(explodeClip);
+        PreloadClip(reboundClip);
+        PreloadClip(bgmClip);
+    }
+
+    private static void PreloadClip(AudioClip clip)
+    {
+        if (clip != null && clip.loadState != AudioDataLoadState.Loaded)
+            clip.LoadAudioData();
     }
 
     private void Start()
@@ -152,6 +166,43 @@ public class AudioManager : MonoBehaviour
         AudioSource src = GetPooledSource();
         src.pitch = pitch;
         src.PlayOneShot(bounceClip, volume);
+    }
+
+    public void PlayExplode(float pitch = 1f)
+    {
+        PlaySfxWithOffset(explodeClip, explodeVolume, pitch, explodeStartOffset);
+    }
+
+    public void PlayRebound(float pitch = 1f)
+    {
+        PlaySfxWithOffset(reboundClip, reboundVolume, pitch, 0f);
+    }
+
+    /// <summary>相对画面冲击的提前量（秒），供事件侧提前触发爆炸音。</summary>
+    public float ExplodeAnticipate => explodeAnticipate;
+
+    private void PlaySfxWithOffset(AudioClip clip, float vol, float pitch, float startOffset)
+    {
+        if (clip == null || _bouncePool == null) return;
+
+        PreloadClip(clip);
+
+        if (Time.frameCount != _lastFrameCount)
+        {
+            _lastFrameCount = Time.frameCount;
+            _playsThisFrame = 0;
+        }
+        if (_playsThisFrame >= maxPlaysPerFrame) return;
+        _playsThisFrame++;
+
+        AudioSource src = GetPooledSource();
+        src.Stop();
+        src.clip = clip;
+        src.pitch = Mathf.Clamp(pitch, 0.7f, 1.4f);
+        src.volume = Mathf.Clamp01(vol);
+        float maxSkip = Mathf.Max(0f, clip.length * 0.45f);
+        src.time = Mathf.Clamp(startOffset, 0f, maxSkip);
+        src.Play();
     }
 
     private void UpdateSpectrum()

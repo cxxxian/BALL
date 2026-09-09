@@ -14,8 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   balls:
   - {fileID: 11400000, guid: c9c9a7ae78951ab4ab7fc7a305569c2d, type: 2}
+  - {fileID: 11400000, guid: 6c21051c1acc18645a95551e52e122ff, type: 2}
+  - {fileID: 11400000, guid: 60050edf06a9598428d2888fb5bdcccb, type: 2}
+  - {fileID: 11400000, guid: 70f97e5bd20ed0c438021e395857783e, type: 2}
+  - {fileID: 11400000, guid: b8c9d0e1f2a3456789abcdef01234567, type: 2}
+  - {fileID: 11400000, guid: eee7377168ba128498c8a9eca066146d, type: 2}
   skills:
+  - {fileID: 11400000, guid: e5f6a7b8c9d0123456789abcdef01234, type: 2}
   - {fileID: 11400000, guid: a1b2c3d4e5f6478990aabbccddeeff01, type: 2}
   - {fileID: 11400000, guid: b2c3d4e5f6a748901bcdef1234567890, type: 2}
   - {fileID: 11400000, guid: c3d4e5f6a7b8490123456789abcdef01, type: 2}
   - {fileID: 11400000, guid: d4e5f6a7b8c90123456789abcdef0123, type: 2}
+  - {fileID: 11400000, guid: f6a7b8c9d0e123456789abcdef012345, type: 2}
+  - {fileID: 11400000, guid: a7b8c9d0e1f23456789abcdef0123456, type: 2}

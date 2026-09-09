@@ -351,4 +351,41 @@ public static class CyberVisualFactory
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, sz, sz), new Vector2(0.5f, 0.5f), sz / 1.0f);
     }
+
+    // ── 8. Boss 威胁体：实心菱形（与小兵三角同一套几何符号语言）────
+    public static Sprite CreateMissileDiamondSprite()
+    {
+        const int sz = 48;
+        var tex = new Texture2D(sz, sz, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        var px = new Color[sz * sz];
+        float half = sz * 0.5f;
+
+        for (int y = 0; y < sz; y++)
+        {
+            for (int x = 0; x < sz; x++)
+            {
+                float dx = Mathf.Abs(x - half + 0.5f);
+                float dy = Mathf.Abs(y - half + 0.5f);
+                float d = dx + dy * 0.85f;
+                float outer = half - 4f;
+
+                if (d <= outer)
+                {
+                    float t = 1f - d / outer;
+                    // 实心：边缘略亮，中心更实
+                    float v = Mathf.Lerp(0.75f, 1f, t);
+                    px[y * sz + x] = new Color(v, v, v, 1f);
+                }
+                else
+                {
+                    px[y * sz + x] = Color.clear;
+                }
+            }
+        }
+
+        tex.SetPixels(px);
+        tex.Apply(false, true);
+        return Sprite.Create(tex, new Rect(0, 0, sz, sz), new Vector2(0.5f, 0.5f), sz / 0.85f);
+    }
 }

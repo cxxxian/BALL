@@ -19,6 +19,15 @@ public abstract class EnemyBase : MonoBehaviour
     public int  CurrentHits { get; protected set; } = 0;
     public bool IsDead      { get; protected set; } = false;
 
+    /// <summary>Boss 击杀清场中：停步且禁止冲线扣血。</summary>
+    public bool FrozenForWaveClear { get; private set; }
+
+    /// <summary>协议校准：仅斩杀连锁可击杀，普通球撞击不掉血。</summary>
+    public bool TutorialExecuteOnlyHits { get; set; }
+
+    /// <summary>含分裂等小数积攒的受击进度，供血条显示（避免「闪了但条不动」）。</summary>
+    public float DamageProgress => CurrentHits + _ballHitCredit;
+
     public UnityEvent<EnemyBase> onDeath = new UnityEvent<EnemyBase>();
 
     protected Rigidbody2D     _rb;
@@ -33,7 +42,7 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void LateUpdate()
     {
-        if (IsDead) return;
+        if (IsDead || FrozenForWaveClear) return;
         if (checkBottomLine)
         {
             float checkY = MinionLineRules.GetAttackLineY();
@@ -51,7 +60,7 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void FixedUpdate()
     {
-        if (IsDead) return;
+        if (IsDead || FrozenForWaveClear) return;
         if (GameManager.Instance == null) return;
         var state = GameManager.Instance.State;
         if (state == GameState.GameOver || state == GameState.BuffSelection || state == GameState.Idle) return;
@@ -111,14 +120,38 @@ public abstract class EnemyBase : MonoBehaviour
         Destroy(gameObject);
     }
 
+    /// <summary>Boss 击杀瞬间冻结：停步 + 禁止冲线，等待冲线解体。</summary>
+    public void FreezeForWaveClear()
+    {
+        if (IsDead) return;
+        FrozenForWaveClear = true;
+        if (_rb != null) _rb.velocity = Vector2.zero;
+    }
+
+    /// <summary>Boss 击杀后清场：复用冲线底部解体，不用 Boss 同款特效，不计分不伤玩家。</summary>
+    public void DissolveAsBreachClear()
+    {
+        if (IsDead) return;
+        IsDead = true;
+        FrozenForWaveClear = true;
+        if (_rb != null) _rb.velocity = Vector2.zero;
+        GetHealthBar()?.OnEnemyDeath();
+        HideVisualForDissolve();
+        ImpactFX.Instance?.SpawnBottomDissolveCompact(transform.position, GetDissolveColor(), 0.72f);
+        WaveManager.Instance?.UnregisterMinion(this);
+        Destroy(gameObject);
+    }
+
     /// <summary>护盾吸收清场：青闪后解体，不触发普通击杀粒子。</summary>
     public void DissolveFromShieldAbsorb()
     {
         if (IsDead) return;
         IsDead = true;
         if (_rb != null) _rb.velocity = Vector2.zero;
+        int killPts = ResolveKillScore(scoreOnKill);
         if (GameManager.Instance != null)
-            GameManager.Instance.AddScore(ResolveKillScore(scoreOnKill));
+            GameManager.Instance.AddScore(killPts);
+        ScorePopUI.Spawn(transform.position, killPts);
         GetHealthBar()?.OnEnemyDeath();
         WaveManager.Instance?.UnregisterMinion(this);
         HideVisualForDissolve();
@@ -145,15 +178,85 @@ public abstract class EnemyBase : MonoBehaviour
         TakeHit();
     }
 
+    private float _ballHitCredit;
+
     private void OnCollisionEnter2D(Collision2D col)
     {
         if (IsDead) return;
+
+        Vector2? hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2?)null;
+
+        // 幻影球：固定走倍率积攒（默认 0.5×）
+        var phantom = col.gameObject.GetComponent<SplitPhantomBall>();
+        if (phantom != null)
+        {
+            float scale = SplitProtocol.Instance != null ? SplitProtocol.Instance.DamageScale : 0.5f;
+            TakeBallHitScaled(scale, hitPos);
+            return;
+        }
+
+        // 主球：始终满伤；分裂期间也不吃幻影倍率
         if (col.gameObject.CompareTag("Ball"))
         {
             BallController ball = col.gameObject.GetComponent<BallController>();
             if (ball != null && ball.IsExecuteChainActive) return;
-            Vector2? hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2?)null;
+            // 教学靶：未开斩杀链前不掉血，避免误杀卡关
+            if (TutorialExecuteOnlyHits && ball != null) return;
+            if (ball != null)
+            {
+                TakeHit(1, true, hitPos);
+                return;
+            }
+
+            // 其它带 Ball 标签但无 BallController 的物体：按满伤
+            if (TutorialExecuteOnlyHits) return;
             TakeHit(1, true, hitPos);
+        }
+    }
+
+    /// <summary>按倍率累计碰撞伤（分裂幻影 0.5× 等），凑整后走 TakeHit。</summary>
+    public void TakeBallHitScaled(float scale, Vector2? hitPos = null)
+    {
+        if (IsDead) return;
+        float dmg = 1f;
+        if (BuffManager.Instance != null)
+            dmg += BuffManager.Instance.BallDamageBonus;
+        dmg *= Mathf.Max(0f, scale);
+        _ballHitCredit += dmg;
+        int whole = Mathf.FloorToInt(_ballHitCredit + 1e-4f);
+        if (whole <= 0)
+        {
+            // 未凑满 1 点：仍播受击反馈，血条按 DamageProgress 显示半格进度
+            OnHit();
+            EnemyJuice.OnHit(this, true, hitPos);
+            return;
+        }
+        _ballHitCredit -= whole;
+        // 力量加成已计入 credit，避免 TakeHit 再加一次
+        ApplyBallHits(whole, hitPos);
+    }
+
+    /// <summary>已含力量加成的整点伤害（分裂积攒兑现）。</summary>
+    private void ApplyBallHits(int damage, Vector2? hitPos)
+    {
+        if (IsDead || damage <= 0) return;
+        CurrentHits += damage;
+        if (GameManager.Instance != null)
+            GameManager.Instance.AddScore(scoreOnHit * damage);
+        OnHit();
+        EnemyJuice.OnHit(this, true, hitPos);
+
+        if (CurrentHits >= maxHits)
+        {
+            if (this is Boss)
+            {
+                VFXDirector.Instance?.TriggerBossKillEffect(transform.position);
+                HideVisualForDissolve();
+                ImpactFX.Instance?.SpawnBossDissolve(transform.position, BaseColor, 1.5f);
+                Die(skipKillJuice: true);
+                return;
+            }
+            Die();
         }
     }
 
@@ -183,6 +286,40 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
+    /// <summary>球心震爆命中：伤害只加一次力量加成；击杀走脉冲散落 Juice。</summary>
+    public void TakeHitFromCorePulse(int baseDamage, Vector2 hitPos)
+    {
+        if (IsDead) return;
+
+        int damage = Mathf.Max(1, baseDamage);
+        if (BuffManager.Instance != null)
+            damage += BuffManager.Instance.BallDamageBonus;
+
+        CurrentHits += damage;
+        if (GameManager.Instance != null)
+            GameManager.Instance.AddScore(scoreOnHit * damage);
+        OnHit();
+
+        if (CurrentHits >= maxHits)
+        {
+            if (this is Boss)
+            {
+                EnemyJuice.OnHit(this, true, hitPos);
+                VFXDirector.Instance?.TriggerBossKillEffect(transform.position);
+                HideVisualForDissolve();
+                ImpactFX.Instance?.SpawnBossDissolve(transform.position, BaseColor, 1.5f);
+                Die(skipKillJuice: true);
+                return;
+            }
+
+            Die(skipKillJuice: true);
+            EnemyJuice.OnPulseKill(this, hitPos);
+            return;
+        }
+
+        EnemyJuice.OnHit(this, true, hitPos);
+    }
+
     protected virtual void OnHit() { }
 
     private static int ResolveKillScore(int baseKillScore)
@@ -195,8 +332,12 @@ public abstract class EnemyBase : MonoBehaviour
     {
         IsDead = true;
         if (_rb != null) _rb.velocity = Vector2.zero;
+        if (this is Boss)
+            WaveManager.Instance?.NotifyBossKilledClearField();
+        int killPts = ResolveKillScore(scoreOnKill);
         if (GameManager.Instance != null)
-            GameManager.Instance.AddScore(ResolveKillScore(scoreOnKill));
+            GameManager.Instance.AddScore(killPts);
+        ScorePopUI.Spawn(transform.position, killPts);
         if (!skipKillJuice)
             EnemyJuice.OnKill(this, transform.position);
         else

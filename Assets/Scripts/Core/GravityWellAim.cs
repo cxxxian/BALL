@@ -186,7 +186,7 @@ public class GravityWellAim : MonoBehaviour
     private void ShowPreview()
     {
         if (_previewRing == null) return;
-        float radius = Config != null ? Config.gravityWellRadius : 2.2f;
+        float radius = Config != null ? Config.gravityWellRadius : 2.4f;
         _previewRing.transform.localScale = Vector3.one * radius;
         _previewRing.enabled = true;
         UpdatePreview();

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 818b23b45bec2c844aa1f761c1a77d6a, type: 3}
+  m_Name: Ball_Pulse
+  m_EditorClassIdentifier: 
+  ballId: pulse_ball
+  displayName: "\u8109\u51B2\u534F\u8BAE\u7403"
+  loadoutDescription: "\u534F\u8BAE\u6539\u5411 + \u7403\u5FC3\u9707\u7206\u3002\u602A\u56F4\u4E0A\u6765\u65F6\u4E00\u952E\u6E05\u8FD1\u8EAB\u3002"
+  isAvailableInLoadout: 1
+  acquisitionType: 1
+  directPrice: 420
+  crateRarity: 0
+  primarySkill: {fileID: 11400000, guid: e5f6a7b8c9d0123456789abcdef01234, type: 2}
+  secondarySkill: {fileID: 11400000, guid: f6a7b8c9d0e123456789abcdef012345, type: 2}
+  ballType: 0
+  activeSkillPrefab: {fileID: 0}
+  trailColor: {r: 0.2, g: 0.95, b: 1, a: 1}
+  glowColor: {r: 0.35, g: 0.95, b: 1, a: 1}
+  skillCooldown: 12
+  skillDescription: 

@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 public class SlotReelView
 {
-    public const float ViewportHeight = 96f;
+    public const float ViewportHeight = 84f;
     public const float SlotHeight = ViewportHeight;
 
     private static readonly string[] ReelBorderClasses =

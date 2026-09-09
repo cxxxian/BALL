@@ -62,6 +62,31 @@ public class RunCatalog : ScriptableObject
         return list;
     }
 
+    public List<BallDefinition> GetLoadoutBalls()
+    {
+        var list = new List<BallDefinition>();
+        if (balls == null) return list;
+        PlayerProfile.Load();
+        foreach (var b in balls)
+        {
+            if (b != null && b.isAvailableInLoadout)
+                list.Add(b);
+        }
+        return list;
+    }
+
+    public List<BallDefinition> GetDirectPurchaseBalls()
+    {
+        var list = new List<BallDefinition>();
+        if (balls == null) return list;
+        foreach (var b in balls)
+        {
+            if (b != null && b.acquisitionType == BallAcquisitionType.DirectPurchase)
+                list.Add(b);
+        }
+        return list;
+    }
+
     public BallDefinition GetDefaultBall()
     {
         var available = GetAvailableBalls();

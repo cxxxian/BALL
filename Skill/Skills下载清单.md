@@ -232,30 +232,33 @@ BALL 是 **Unity 2D + URP + 弹球/塔防**，建议按优先级装：
 
 见第四节。写/改 `Assets/Shaders/` 里的 `.shader` 时会自动用到。
 
-### 强烈推荐（Unity 开发，尚未安装）
+### 已装（Unity 开发 + Tilemap，5 个，`Skill/unity-dev/`）
+
+> 从原「强烈推荐 8 个 + 地编若干」精简到 **5 个**，控制上下文体积。
+> 重装：`Skill/install-unity-skills.ps1`
+
+| Skill | 干什么 | 对应 BALL |
+|---|---|---|
+| **unity-2d** | Sprite / Tilemap / 2D 物理概念 | 弹球 2D 场景 |
+| **unity-physics** | 2D/3D 物理查询与配置 | 弹球碰撞、挡板 |
+| **unity-csharp-scripting** | C# 脚本模式 | `Assets/Scripts/` |
+| **unity-cli** | Unity CLI / 批处理 | Agent 自动化、构建 |
+| **unity-tilemap-2d** | 2D Tilemap 关卡落地 | 竞技场 / 布局 |
+
+**未装（及原因）：**
+| 未装的 Skill | 原因 |
+|---|---|
+| unity-scripting | 与 unity-csharp-scripting 重叠 |
+| unity-performance / urp-postprocessing / sprite-editor | 低频，用到时再装 |
+| unity-level-design | 已有通用 `level-design` |
+| terrain / probuilder / procedural-gen | 3D 或非当前需求 |
+
+### 可选（以后按需）
 
 ```bash
-# Unity 官方
-npx skills add unity-technologies/skills@unity-cli -y --copy
-npx skills add unity-technologies/skills@sprite-editor -y --copy
-npx skills add unity-technologies/skills@urp-postprocessing -y --copy
-
-# Unity 2D + 物理 + 脚本
-npx skills add nice-wolf-studio/unity-claude-skills@unity-2d -y --copy
-npx skills add nice-wolf-studio/unity-claude-skills@unity-physics -y --copy
-npx skills add nice-wolf-studio/unity-claude-skills@unity-scripting -y --copy
-npx skills add gamedev-skills/awesome-gamedev-agent-skills@unity-csharp-scripting -y --copy
-
-# 性能
 npx skills add nice-wolf-studio/unity-claude-skills@unity-performance -y --copy
-```
-
-### 可选（地编 / 关卡）
-
-```bash
-npx skills add nice-wolf-studio/unity-claude-skills@unity-level-design -y --copy
-npx skills add gamedev-skills/awesome-gamedev-agent-skills@level-design -y --copy
-npx skills add gamedev-skills/awesome-gamedev-agent-skills@unity-tilemap-2d -y --copy
+npx skills add unity-technologies/skills@urp-postprocessing -y --copy
+npx skills add unity-technologies/skills@sprite-editor -y --copy
 ```
 
 ### 土豪版（整仓库全装）
@@ -293,7 +296,8 @@ npx skills find "game balance"
    cd Skill
    .\install-design-skills.ps1    # 策划 + 数值 5 个
    .\install-shader-skills.ps1    # 着色器 3 个
-   .\install-ui-skills.ps1      # UI 设计 + Unity UI 4 个
+   .\install-ui-skills.ps1        # UI 设计 + Unity UI 4 个
+   .\install-unity-skills.ps1     # Unity 开发 + Tilemap 5 个
    ```
 
 ## 九、UI 设计 / Unity UI Skill（4 个，已精简）
@@ -335,7 +339,7 @@ npx skills find "game balance"
 
 ---
 
-### 当前已安装汇总（12 个）
+### 当前已安装汇总（17 个）
 
 | 分类 | 数量 | 目录 | 核心 Skill |
 |---|---|---|---|
@@ -343,4 +347,5 @@ npx skills find "game balance"
 | 游戏策划 | 3 | `Skill/game-design-gdd/` | fundamentals, design-review, level-design |
 | 着色器 | 3 | `Skill/shader-unity/` | urp-hlsl-templates, shader-programming, shader-techniques |
 | UI 设计 / Unity UI | 4 | `Skill/ui-design/` `Skill/ui-unity/` | game-ui-design, game-ui-ux, ui-ugui, ui-uitk |
-| **合计** | **12** | | |
+| Unity 开发 + Tilemap | 5 | `Skill/unity-dev/` | unity-2d, physics, csharp, cli, tilemap-2d |
+| **合计** | **17** | | |

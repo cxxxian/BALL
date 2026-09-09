@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 818b23b45bec2c844aa1f761c1a77d6a, type: 3}
+  m_Name: Ball_Split
+  m_EditorClassIdentifier: 
+  ballId: split_ball
+  displayName: "\u5206\u88C2\u534F\u8BAE\u7403"
+  loadoutDescription: "\u534F\u8BAE\u6539\u5411 + \u5206\u88C2\u534F\u8BAE\u3002\u77ED\u65F6 3 \u7403\u6E05\u573A\uFF1B\u4EC5\u4E3B\u7403\u6389\u547D\u3002"
+  isAvailableInLoadout: 1
+  acquisitionType: 2
+  directPrice: 0
+  crateRarity: 1
+  primarySkill: {fileID: 11400000, guid: e5f6a7b8c9d0123456789abcdef01234, type: 2}
+  secondarySkill: {fileID: 11400000, guid: a7b8c9d0e1f23456789abcdef0123456, type: 2}
+  ballType: 0
+  activeSkillPrefab: {fileID: 0}
+  trailColor: {r: 0.2, g: 0.95, b: 1, a: 1}
+  glowColor: {r: 1, g: 0.2, b: 0.6, a: 1}
+  skillCooldown: 12
+  skillDescription: 

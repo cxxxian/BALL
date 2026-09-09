@@ -1,0 +1,46 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="Settlement.uss" />
+    <ui:VisualElement name="SettlementOverlay" class="settlement-overlay" style="display: none;">
+        <ui:VisualElement class="scanline-overlay" picking-mode="Ignore" />
+
+        <ui:VisualElement class="settle-layout">
+            <ui:VisualElement class="status-row">
+                <ui:VisualElement class="status-dot status-dot-offline" picking-mode="Ignore" />
+                <ui:Label text="SYSTEM_STATUS: OFFLINE" class="status-text" />
+                <ui:Label name="SettleCreditsTotal" text="0 CR" class="credits-label" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="settle-center">
+                <ui:VisualElement class="hero-block">
+                    <ui:Label text="协议终止" class="title-line neon-glow-text" />
+                    <ui:Label text="> PROTOCOL TERMINATED. RUN ARCHIVE UPDATED." class="hero-desc" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="stat-strip">
+                    <ui:VisualElement class="stat-cell">
+                        <ui:Label text="WAVE" class="stat-key" />
+                        <ui:Label name="SettleWave" text="01" class="stat-val" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="stat-sep" picking-mode="Ignore" />
+                    <ui:VisualElement class="stat-cell">
+                        <ui:Label text="SCORE" class="stat-key" />
+                        <ui:Label name="SettleScore" text="0" class="stat-val" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="credit-hero">
+                    <ui:Label text="CREDITS EARNED" class="credit-label" />
+                    <ui:Label name="SettleCreditsEarned" text="+0 CR" class="credit-earned neon-glow-text" />
+                    <ui:Label name="SettleCreditsHint" text="" class="credit-hint" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="cta-row">
+                    <ui:Button name="BtnSettleRetry" text="再次协议" class="menu-btn btn-jack settle-retry-btn" />
+                    <ui:Button name="BtnSettleMenu" text="返回主页" class="menu-btn btn-outline-magenta settle-menu-btn" />
+                </ui:VisualElement>
+
+                <ui:Label text="> AWAITING INPUT" class="menu-footer" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ballLaunchSpeed: 8
   ballMinSpeed: 5
-  ballMaxSpeed: 20
+  ballMaxSpeed: 15
+  ballHardMaxSpeed: 19
   ballBounciness: 1
   ballFriction: 0
   ballRadius: 0.15
@@ -28,6 +29,9 @@ MonoBehaviour:
   flipperAnimDuration: 0.08
   scorePerGruntHit: 10
   scorePerGruntKill: 50
+  missileMissFlipperZoneScorePenalty: 80
+  scoreToCreditsRate: 0.1
+  minCreditsPerRun: 10
   worldWidth: 9
   worldHeight: 16
   minionAttackLineY: -4
@@ -37,11 +41,20 @@ MonoBehaviour:
   bumperPulseMilestoneDamage: 1
   bumperPulseRadius: 3.2
   bumperPulseRingDuration: 1
-  timestopDuration: 4
-  timestopMinionSpeedScale: 0.35
+  skillCooldown: 12
+  skillComboCDReduce: 0.28
+  skillBottomZoneRatio: 0.22
+  skillSlowMoScale: 0.12
+  protocolAimMaxSeconds: 4
+  protocolAimWarnSeconds: 1
+  executeChainMaxSpeed: 26
+  comboTimeout: 2
+  comboDisplayThreshold: 3
+  timestopDuration: 3
+  timestopMinionSpeedScale: 0.45
   timestopBossSpeedScale: 0.6
   gravityWellDuration: 2.5
-  gravityWellRadius: 3.2
+  gravityWellRadius: 2.4
   gravityWellPullStrength: 9
   gravityWellDownSpeedScale: 0.3
   gravityWellRampTime: 0.9

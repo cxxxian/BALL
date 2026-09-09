@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>统一敌人受击 / 击杀 Juice 反馈（闪白、粒子、震屏、Combo、血条、音效）。</summary>
+/// <summary>统一敌人受击 / 击杀 Juice 反馈（闪白、粒子、震屏、Combo、血条、音效、HitStop）。</summary>
 public static class EnemyJuice
 {
     private const float FlashDuration = 0.02f; // ~1 帧 HDR 白闪
@@ -18,16 +18,23 @@ public static class EnemyJuice
 
         StartHitFlash(enemy);
 
+        Vector2 pos = hitPos ?? (Vector2)enemy.transform.position;
+        float speed = BallSpeed();
+        bool execute = IsExecuteChain();
+
         if (isFromBall)
         {
             Color hitColor = enemy.BaseColor;
-            Vector2 pos = hitPos ?? (Vector2)enemy.transform.position;
-            ImpactFX.Instance?.SpawnHit(pos, hitColor, 1f);
+            var tier = execute ? JuiceRouter.Tier.Skill : JuiceRouter.Tier.Hit;
+            JuiceRouter.Play(tier, pos, hitColor, speed, applyHitStop: true);
             ComboSystem.Instance?.RegisterAirtimeHit(pos);
             AudioManager.Instance?.PlayBounce();
         }
+        else
+        {
+            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+        }
 
-        CameraShake.Instance?.Shake(CameraShake.Preset.Light);
         GetHealthBar(enemy)?.OnEnemyHit();
     }
 
@@ -38,8 +45,24 @@ public static class EnemyJuice
         GetHealthBar(enemy)?.OnEnemyDeath();
 
         Color enemyColor = enemy.BaseColor;
-        ImpactFX.Instance?.SpawnHit(deathPos, enemyColor, 1f);
-        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+        float speed = BallSpeed();
+        bool execute = IsExecuteChain();
+        var tier = execute || enemy is Boss ? JuiceRouter.Tier.Ultimate : JuiceRouter.Tier.Skill;
+        JuiceRouter.Play(tier, deathPos, enemyColor, speed, applyHitStop: true);
+    }
+
+    /// <summary>球心震爆专用击杀：网格像素散落（血条已由 Die(skip) 处理）。</summary>
+    public static void OnPulseKill(EnemyBase enemy, Vector2 deathPos)
+    {
+        if (enemy == null) return;
+
+        Color enemyColor = enemy.BaseColor;
+        float speed = BallSpeed();
+        float vMult = JuiceRouter.VelocityMult(speed);
+        ImpactFX.Instance?.SpawnMissileShatter(deathPos, enemyColor, 1.25f * vMult);
+        JuiceRouter.Play(JuiceRouter.Tier.Skill, deathPos, enemyColor, speed, applyHitStop: true);
+        ComboSystem.Instance?.RegisterAirtimeHit(deathPos);
+        AudioManager.Instance?.PlayBounce();
     }
 
     /// <summary>护盾吸收清场：统一闪青（~2 帧）。</summary>
@@ -55,6 +78,25 @@ public static class EnemyJuice
     {
         if (enemy == null || enemy.IsDead) return;
         enemy.DissolveFromShieldAbsorb();
+    }
+
+    /// <summary>Boss 击杀清场：冲线底部解体（非 Boss 金屑）。</summary>
+    public static void BreachClearDissolve(EnemyBase enemy)
+    {
+        if (enemy == null || enemy.IsDead) return;
+        enemy.DissolveAsBreachClear();
+    }
+
+    private static float BallSpeed()
+    {
+        if (BallController.Instance != null && BallController.Instance.Rb != null)
+            return BallController.Instance.Rb.velocity.magnitude;
+        return 8f;
+    }
+
+    private static bool IsExecuteChain()
+    {
+        return BallController.Instance != null && BallController.Instance.IsExecuteChainActive;
     }
 
     private static void StartHitFlash(EnemyBase enemy)
@@ -76,7 +118,8 @@ public static class EnemyJuice
             sr.color = flash;
         }
 
-        yield return new WaitForSeconds(FlashDuration);
+        // 顿帧期间闪白用 realtime，否则停格时看不见闪
+        yield return new WaitForSecondsRealtime(FlashDuration);
 
         if (enemy != null && sr != null)
             sr.color = enemy.BaseColor;

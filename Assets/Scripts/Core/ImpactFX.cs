@@ -54,28 +54,68 @@ public class ImpactFX : MonoBehaviour
     /// </summary>
     public void SpawnBottomDissolve(Vector2 worldPos, Color neonColor, float intensity = 1f)
     {
-        StartCoroutine(PixelShatterRoutine(worldPos, neonColor, intensity, ShatterMode.Bottom));
+        StartCoroutine(PixelShatterRoutine(worldPos, neonColor, intensity, ShatterMode.Bottom, compact: false));
+    }
+
+    /// <summary>Boss 击杀清场等：同冲线语汇，飞散略紧于完整冲线。</summary>
+    public void SpawnBottomDissolveCompact(Vector2 worldPos, Color neonColor, float intensity = 0.72f)
+    {
+        StartCoroutine(PixelShatterRoutine(worldPos, neonColor, intensity, ShatterMode.Bottom, compact: true));
     }
 
     /// <summary>Boss 击杀：金色网格解构 → 冻结裂开 → 上飘飞散。</summary>
     public void SpawnBossDissolve(Vector2 worldPos, Color bossBaseColor, float intensity = 1.5f)
     {
         Color gold = Color.Lerp(bossBaseColor, new Color(1f, 0.82f, 0.15f), 0.65f);
-        StartCoroutine(PixelShatterRoutine(worldPos, gold, intensity, ShatterMode.Boss));
+        StartCoroutine(PixelShatterRoutine(worldPos, gold, intensity, ShatterMode.Boss, compact: false));
         CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+    }
+
+    /// <summary>
+    /// 导弹相关空中解构（无底线反弹）：Miss 打球 / 弹刀截断导弹共用。
+    /// </summary>
+    public void SpawnMissileShatter(Vector2 worldPos, Color neonColor, float intensity = 1.15f)
+    {
+        StartCoroutine(PixelShatterRoutine(worldPos, neonColor, intensity, ShatterMode.Boss, compact: false));
+    }
+
+    /// <summary>弹刀瞬间定向爆裂（沿回击方向多喷一撮）。</summary>
+    public void SpawnParryClash(Vector2 worldPos, Vector2 towardBoss, Color neonColor, float intensity = 1.35f)
+    {
+        SpawnMissileShatter(worldPos, neonColor, intensity);
+        SpawnHit(worldPos, neonColor, intensity * 1.15f);
+        // 沿回击方向额外一撮，强化「弹回去」方向感
+        if (_burstPS == null) return;
+        Color hdr = NeonColors.Active.ForParticle(neonColor, intensity);
+        Vector2 dir = towardBoss.sqrMagnitude > 0.01f ? towardBoss.normalized : Vector2.up;
+        int n = Mathf.RoundToInt(Mathf.Lerp(8f, 16f, intensity));
+        var emit = new ParticleSystem.EmitParams();
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 jitter = dir + Random.insideUnitCircle * 0.35f;
+            emit.position = worldPos;
+            emit.velocity = jitter.normalized * Random.Range(3.5f, 7.5f) * intensity;
+            emit.startSize = Random.Range(0.06f, 0.14f);
+            emit.startColor = hdr;
+            emit.startLifetime = Random.Range(0.25f, 0.55f);
+            _burstPS.Emit(emit, 1);
+        }
+        CameraShake.Instance?.Shake(intensity > 1.2f ? CameraShake.Preset.Heavy : CameraShake.Preset.Medium);
     }
 
     /// <summary>
     /// 像素解构三拍：裂纹闪 → 网格按列错位弹出 → 细尘收尾。
     /// Boss 用 realtime（躲过顿帧）；触底用 scaled time + 底线平面反弹。
+    /// compact：清场用紧凑飞散，不刷整条底线闪。
     /// </summary>
-    private IEnumerator PixelShatterRoutine(Vector2 worldPos, Color neonColor, float intensity, ShatterMode mode)
+    private IEnumerator PixelShatterRoutine(
+        Vector2 worldPos, Color neonColor, float intensity, ShatterMode mode, bool compact)
     {
         bool boss = mode == ShatterMode.Boss;
         ParticleSystem ps = boss ? _dissolvePS : _bottomShatterPS;
 
         // 触底：对齐攻击线 Y，打开平面碰撞；Boss 升解不碰地
-        if (!boss)
+        if (!boss && !compact)
             SyncBouncePlane(MinionLineRules.GetAttackLineY());
 
         // 触底略降 HDR，减轻 Bloom 糊团；Boss 保持亮
@@ -84,15 +124,16 @@ public class ImpactFX : MonoBehaviour
         Color flash = Color.Lerp(Color.white, hdr, 0.35f);
         flash = NeonColors.Active.ForParticle(flash, hdrMul * (boss ? 1.35f : 1.05f));
 
-        float cell = boss ? 0.13f : 0.14f;
-        int cols = boss ? 7 : 4;
-        int rows = boss ? 7 : 4;
-        float sizeMul = boss ? 1.2f : 1.28f;
+        float cell = boss ? 0.13f : (compact ? 0.11f : 0.14f);
+        int cols = boss ? 7 : (compact ? 4 : 4);
+        int rows = boss ? 7 : (compact ? 4 : 4);
+        float sizeMul = boss ? 1.2f : (compact ? 1.05f : 1.28f);
         // 触底寿命加长，好让反弹/缓冲被看见
-        float lifeMul = boss ? 1.55f : 1.85f;
+        float lifeMul = boss ? 1.55f : (compact ? 1.4f : 1.85f);
+        float spread = compact ? 0.68f : 1f;
 
         StartCoroutine(CrackFlashRoutine(worldPos, flash, intensity, boss));
-        if (!boss)
+        if (!boss && !compact)
         {
             StartCoroutine(BottomLineFlashRoutine(MinionLineRules.GetAttackLineY(), neonColor, intensity));
             CameraShake.Instance?.Shake(CameraShake.Preset.Light);
@@ -101,9 +142,9 @@ public class ImpactFX : MonoBehaviour
         int midCol = cols / 2;
         for (int wave = 0; wave <= midCol; wave++)
         {
-            EmitShatterColumn(ps, worldPos, midCol - wave, rows, cols, cell, hdr, flash, intensity, sizeMul, lifeMul, boss);
+            EmitShatterColumn(ps, worldPos, midCol - wave, rows, cols, cell, hdr, flash, intensity, sizeMul, lifeMul, boss, spread);
             if (wave > 0)
-                EmitShatterColumn(ps, worldPos, midCol + wave, rows, cols, cell, hdr, flash, intensity, sizeMul, lifeMul, boss);
+                EmitShatterColumn(ps, worldPos, midCol + wave, rows, cols, cell, hdr, flash, intensity, sizeMul, lifeMul, boss, spread);
 
             float stagger = boss ? 0.028f : 0.018f;
             if (boss)
@@ -112,8 +153,8 @@ public class ImpactFX : MonoBehaviour
                 yield return new WaitForSeconds(stagger);
         }
 
-        int dustCount = Mathf.RoundToInt(Mathf.Lerp(10f, 18f, intensity) * (boss ? 1.6f : 0.55f));
-        EmitShatterDust(ps, worldPos, hdr, dustCount, boss, intensity);
+        int dustCount = Mathf.RoundToInt(Mathf.Lerp(10f, 18f, intensity) * (boss ? 1.6f : (compact ? 0.4f : 0.55f)));
+        EmitShatterDust(ps, worldPos, hdr, dustCount, boss, intensity, spread);
     }
 
     private void SyncBouncePlane(float lineY)
@@ -126,7 +167,7 @@ public class ImpactFX : MonoBehaviour
 
     private void EmitShatterColumn(
         ParticleSystem ps, Vector2 center, int col, int rows, int cols, float cell,
-        Color hdr, Color flash, float intensity, float sizeMul, float lifeMul, bool boss)
+        Color hdr, Color flash, float intensity, float sizeMul, float lifeMul, bool boss, float spread)
     {
         if (col < 0 || col >= cols) return;
 
@@ -142,11 +183,11 @@ public class ImpactFX : MonoBehaviour
             float px = center.x + colX + Random.Range(-cell * 0.08f, cell * 0.08f);
             float py = center.y + originY + r * cell + Random.Range(-cell * 0.08f, cell * 0.08f);
             // 触底：避免粒子生成在碰撞面下方而穿模
-            if (!boss)
+            if (!boss && spread >= 0.99f)
                 py = Mathf.Max(py, MinionLineRules.GetAttackLineY() + 0.06f);
             float rowNorm = r / (float)Mathf.Max(1, rows - 1);
 
-            EmitShatterPixel(ps, px, py, center, hdr, flash, intensity, sizeMul, lifeMul, boss, true, rowNorm);
+            EmitShatterPixel(ps, px, py, center, hdr, flash, intensity, sizeMul, lifeMul, boss, true, rowNorm, spread);
 
             // Boss 保留碎屑；触底少叠碎屑，靠大块可读
             float crumbChance = boss ? 0.34f : 0.14f;
@@ -157,14 +198,14 @@ public class ImpactFX : MonoBehaviour
                     px + Random.Range(-0.04f, 0.04f),
                     py + Random.Range(-0.04f, 0.04f),
                     center, hdr, flash, intensity, sizeMul * 0.55f, lifeMul * 0.85f, boss,
-                    false, rowNorm);
+                    false, rowNorm, spread);
             }
         }
     }
 
     private void EmitShatterPixel(
         ParticleSystem ps, float px, float py, Vector2 center, Color hdr, Color flash, float intensity,
-        float sizeMul, float lifeMul, bool boss, bool isChunk, float rowNorm)
+        float sizeMul, float lifeMul, bool boss, bool isChunk, float rowNorm, float spread)
     {
         var ep = new ParticleSystem.EmitParams();
         ep.position = new Vector3(px, py, -0.18f);
@@ -197,31 +238,31 @@ public class ImpactFX : MonoBehaviour
         else
         {
             // 扇形下坠：横飞加大、竖速克制，撞线后能弹开而不是糊成一团
-            float down = Mathf.Lerp(1.6f, 4.2f, rowNorm);
-            vx = Random.Range(-3.4f, 3.4f) * (isChunk ? 0.9f : 1.25f);
-            vy = -down * Random.Range(0.9f, 1.15f) + Random.Range(0.2f, 1.1f);
+            float down = Mathf.Lerp(1.6f, 4.2f, rowNorm) * spread;
+            vx = Random.Range(-3.4f, 3.4f) * (isChunk ? 0.9f : 1.25f) * spread;
+            vy = -down * Random.Range(0.9f, 1.15f) + Random.Range(0.2f, 1.1f) * spread;
         }
 
         ep.velocity = new Vector3(vx, vy, 0f);
         ps.Emit(ep, 1);
     }
 
-    private void EmitShatterDust(ParticleSystem ps, Vector2 worldPos, Color hdr, int count, bool boss, float intensity)
+    private void EmitShatterDust(ParticleSystem ps, Vector2 worldPos, Color hdr, int count, bool boss, float intensity, float spread = 1f)
     {
         Color dust = hdr * 0.65f;
         dust.a = 1f;
         for (int i = 0; i < count; i++)
         {
             var ep = new ParticleSystem.EmitParams();
-            Vector2 o = Random.insideUnitCircle * (boss ? 0.45f : 0.32f);
+            Vector2 o = Random.insideUnitCircle * (boss ? 0.45f : 0.32f * spread);
             ep.position = new Vector3(worldPos.x + o.x, worldPos.y + o.y, -0.16f);
             ep.startColor = dust * Random.Range(0.7f, 1f);
             ep.startSize = Random.Range(0.018f, 0.042f) * intensity * (boss ? 1f : 1.35f);
-            ep.startLifetime = Random.Range(0.55f, 1.05f) * (boss ? 1.15f : 1.4f);
+            ep.startLifetime = Random.Range(0.55f, 1.05f) * (boss ? 1.15f : 1.4f) * Mathf.Lerp(0.7f, 1f, spread);
             if (boss)
                 ep.velocity = new Vector3(Random.Range(-1.5f, 1.5f), Random.Range(0.5f, 3.2f), 0f);
             else
-                ep.velocity = new Vector3(Random.Range(-2.6f, 2.6f), Random.Range(-3.2f, -0.6f), 0f);
+                ep.velocity = new Vector3(Random.Range(-2.6f, 2.6f) * spread, Random.Range(-3.2f, -0.6f) * spread, 0f);
             ps.Emit(ep, 1);
         }
     }
@@ -373,6 +414,86 @@ public class ImpactFX : MonoBehaviour
                 spokes[s].endColor = new Color(spokeC.r, spokeC.g, spokeC.b, 0f);
                 spokes[s].SetPosition(1, new Vector3(spokeLen, 0f, 0f));
             }
+
+            yield return null;
+        }
+
+        Destroy(root);
+    }
+
+    /// <summary>
+    /// 球心震爆扩散环：光滑圆环 + 柔光盘（无八角/无射线，区别于 Combo Bumper 脉冲）。
+    /// </summary>
+    public void SpawnCorePulseWave(Vector2 worldPos, float worldRadius, Color neonColor, float duration = 0.4f)
+    {
+        StartCoroutine(CorePulseWaveRoutine(worldPos, worldRadius, neonColor, duration));
+    }
+
+    private IEnumerator CorePulseWaveRoutine(Vector2 pos, float worldRadius, Color neonColor, float duration)
+    {
+        var root = new GameObject("CorePulseWave");
+        root.transform.position = new Vector3(pos.x, pos.y, -0.12f);
+
+        Color hdr = NeonColors.Active.ForParticle(neonColor, 1.65f);
+        Color ice = Color.Lerp(hdr, Color.white, 0.35f);
+
+        // 柔光填充盘（由中心胀开后淡出）
+        var fillGo = new GameObject("Fill");
+        fillGo.transform.SetParent(root.transform, false);
+        var fillSr = fillGo.AddComponent<SpriteRenderer>();
+        fillSr.sprite = MakeDiscSprite(48);
+        fillSr.material = new Material(Shader.Find("Sprites/Default"));
+        fillSr.color = new Color(ice.r, ice.g, ice.b, 0.4f);
+        fillSr.sortingOrder = 16;
+
+        // 主圆环（高分段，看起来是圆不是八角）
+        var ringGo = new GameObject("SoftRing");
+        ringGo.transform.SetParent(root.transform, false);
+        var ringLr = BuildLoopLine(ringGo, 48, 0.2f, 18);
+        ringLr.material = new Material(Shader.Find("Sprites/Default"));
+
+        // 滞后外环
+        var outerGo = new GameObject("OuterRing");
+        outerGo.transform.SetParent(root.transform, false);
+        var outerLr = BuildLoopLine(outerGo, 48, 0.08f, 17);
+        outerLr.material = new Material(Shader.Find("Sprites/Default"));
+
+        // 中心爆发粒子
+        SpawnHit(pos, neonColor, 1.35f);
+
+        float startScale = 0.08f;
+        float endScale = Mathf.Max(worldRadius, 0.9f);
+        duration = Mathf.Max(0.12f, duration);
+
+        for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+        {
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
+            float ringScale = Mathf.Lerp(startScale, endScale, p);
+            ringGo.transform.localScale = Vector3.one * ringScale;
+
+            float outerP = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t / duration) * 0.85f));
+            float outerScale = Mathf.Lerp(startScale * 0.6f, endScale * 1.08f, outerP);
+            outerGo.transform.localScale = Vector3.one * outerScale;
+
+            float fillScale = Mathf.Lerp(0.15f, endScale * 0.95f, p);
+            fillGo.transform.localScale = Vector3.one * fillScale;
+
+            float alpha = 1f - p * p;
+            fillSr.color = new Color(ice.r, ice.g, ice.b, 0.38f * alpha);
+
+            float ringW = Mathf.Lerp(0.28f, 0.04f, p);
+            ringLr.startWidth = ringW;
+            ringLr.endWidth = ringW;
+            var ringC = new Color(hdr.r, hdr.g, hdr.b, alpha);
+            ringLr.startColor = ringC;
+            ringLr.endColor = ringC;
+
+            float outerW = Mathf.Lerp(0.12f, 0.03f, outerP);
+            outerLr.startWidth = outerW;
+            outerLr.endWidth = outerW;
+            var outerC = new Color(ice.r, ice.g, ice.b, alpha * 0.65f);
+            outerLr.startColor = outerC;
+            outerLr.endColor = outerC;
 
             yield return null;
         }
@@ -694,6 +815,7 @@ public class ImpactFX : MonoBehaviour
         main.loop            = false;
         main.playOnAwake     = false;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.useUnscaledTime = true; // 顿帧时粒子仍正常消亡
         main.startLifetime   = new ParticleSystem.MinMaxCurve(lifeMin, lifeMax);
         main.startSpeed      = new ParticleSystem.MinMaxCurve(spdMin, spdMax);
         main.startSize       = new ParticleSystem.MinMaxCurve(sizeMin, sizeMax);

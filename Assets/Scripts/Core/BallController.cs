@@ -26,14 +26,145 @@ public class BallController : MonoBehaviour
     public float SpeedMultiplier   { get; set; } = 1f;  // 动态速度倍率限制（加速齿轮等机制使用）
     public Rigidbody2D Rb => _rb;
 
-    private float EffectiveMaxSpeed
+    /// <summary>
+    /// Boss 导弹 Miss：搅角 + 硬减速；挡板区额外扣积分，不扣命。
+    /// </summary>
+    public void ApplyMissileGlitch(float maxAngleDeg = 15f)
+    {
+        if (_rb == null || IsWaitingForLaunch || !_launched) return;
+        Vector2 vel = _rb.velocity;
+        float speed = vel.magnitude;
+        if (speed < 0.05f) return;
+
+        float jitter = UnityEngine.Random.Range(-maxAngleDeg, maxAngleDeg);
+        Vector2 dir = Quaternion.Euler(0f, 0f, jitter) * vel.normalized;
+        if (Mathf.Abs(dir.y) < 0.2f)
+            dir.y = dir.y >= 0f ? 0.25f : -0.25f;
+        dir.Normalize();
+
+        const float instantSlowMul = 0.45f;
+        _rb.velocity = dir * (speed * instantSlowMul);
+
+        if (IsInFlipperZone())
+            ApplyFlipperZoneMissScorePenalty();
+
+        if (_missileGlitchCo != null)
+            StopCoroutine(_missileGlitchCo);
+        _missileGlitchCo = StartCoroutine(MissileGlitchRoutine(speed * instantSlowMul));
+
+        if (_sr != null)
+            StartCoroutine(MissileScrambleFlash());
+    }
+
+    /// <summary>兼容旧调用；新逻辑请用 <see cref="ApplyMissileGlitch"/>。</summary>
+    public void ApplyMissileAngleScramble(float maxAngleDeg = 15f) => ApplyMissileGlitch(maxAngleDeg);
+
+    private bool IsInFlipperZone()
+    {
+        float attackY = MinionLineRules.GetAttackLineY();
+        return transform.position.y <= attackY + 1.5f;
+    }
+
+    private void ApplyFlipperZoneMissScorePenalty()
+    {
+        if (GameManager.Instance == null) return;
+        int penalty = config != null ? config.missileMissFlipperZoneScorePenalty : 80;
+        if (penalty <= 0) return;
+        GameManager.Instance.AddScore(-penalty);
+    }
+
+    private Coroutine _missileGlitchCo;
+
+    private IEnumerator MissileGlitchRoutine(float startSpeed)
+    {
+        const float recoverDur = 0.35f;
+        float endSpeed = EffectiveMaxSpeed * 0.85f;
+
+        float t = 0f;
+        while (t < recoverDur)
+        {
+            t += Time.fixedDeltaTime;
+            if (_rb == null || !_launched) yield break;
+
+            float u = Mathf.Clamp01(t / recoverDur);
+            float target = Mathf.Lerp(startSpeed, endSpeed, u);
+            Vector2 v = _rb.velocity;
+            if (v.sqrMagnitude > 0.0001f)
+                _rb.velocity = v.normalized * target;
+
+            yield return new WaitForFixedUpdate();
+        }
+
+        _missileGlitchCo = null;
+    }
+
+    private IEnumerator MissileScrambleFlash()
+    {
+        if (_sr == null) yield break;
+        Color orig = _sr.color;
+        _sr.color = Color.Lerp(orig, new Color(1.8f, 0.25f, 0.2f, 1f), 0.65f);
+        float t = 0f;
+        while (t < 0.18f)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (_sr != null) _sr.color = orig;
+    }
+
+    /// <summary>测试场景：跳过发球引导，直接进入可弹刀 / 可被搅角状态。</summary>
+    public void ForceTestInPlay(Vector2 velocity)
+    {
+        IsWaitingForLaunch = false;
+        _launched = true;
+        IsInvincible = false;
+        if (_rb != null)
+            _rb.velocity = velocity;
+        LaunchGuide.Instance?.Hide();
+    }
+
+    /// <summary>弹刀成功时球身闪光。</summary>
+    public void PulseParryFlash(Color hdr, float duration = 0.15f)
+    {
+        if (_sr == null) return;
+        StartCoroutine(ParryFlashRoutine(hdr, duration));
+    }
+
+    private IEnumerator ParryFlashRoutine(Color hdr, float duration)
+    {
+        Color orig = _sr.color;
+        _sr.color = Color.Lerp(orig, hdr, 0.85f);
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = t / Mathf.Max(0.01f, duration);
+            if (_sr != null)
+                _sr.color = Color.Lerp(hdr, orig, u);
+            yield return null;
+        }
+        if (_sr != null) _sr.color = orig;
+    }
+
+    /// <summary>含齿轮倍率与绝对硬顶后的有效上限；Slash 连锁期间走更高技能上限。</summary>
+    public float EffectiveMaxSpeed
     {
         get
         {
-            float mult = SpeedMultiplier;
+            if (config == null) return 18f;
+            if (_executeChainActive)
+            {
+                float slash = config.executeChainMaxSpeed > 0.1f
+                    ? config.executeChainMaxSpeed
+                    : config.ballMaxSpeed * 1.7f;
+                return slash;
+            }
+
+            float uncapped = config.ballMaxSpeed * SpeedMultiplier;
             if (DebuffManager.Instance != null)
-                mult *= DebuffManager.Instance.BallMaxSpeedMultiplier;
-            return config.ballMaxSpeed * mult;
+                uncapped *= DebuffManager.Instance.BallMaxSpeedMultiplier;
+            float hard = config.ballHardMaxSpeed > 0.1f ? config.ballHardMaxSpeed : config.ballMaxSpeed;
+            return Mathf.Min(uncapped, hard);
         }
     }
 
@@ -70,6 +201,11 @@ public class BallController : MonoBehaviour
     private TrailRenderer    _trail;
     private Vector2          _spawnPosition;
     private bool             _launched = false;
+
+    // 碰撞后短暂关闭最低速补能，避免墙角/边缘多接触时「减速→补速→再撞」自激振荡
+    private float _minSpeedBoostCooldown = 0f;
+    private const float MinSpeedBoostSuppress = 0.1f;
+    private readonly ContactPoint2D[] _contactBuf = new ContactPoint2D[8];
 
     // 引导线摆动状态
     private float _guideAngle    = 90f;
@@ -403,11 +539,23 @@ public class BallController : MonoBehaviour
 
         if (!_launched) return;
 
+        if (_minSpeedBoostCooldown > 0f)
+            _minSpeedBoostCooldown -= Time.fixedDeltaTime;
+
         float speed = _rb.velocity.magnitude;
         float minS  = config.ballMinSpeed * SpeedMultiplier;
         float maxS  = EffectiveMaxSpeed;
 
-        if (speed < minS && speed > 0.1f)
+        // 多接触（墙角/弧缝）时禁止最低速补能，否则会把穿透修正变成高频弹跳
+        bool multiContact = false;
+        if (_minSpeedBoostCooldown > 0f || speed < minS)
+        {
+            int n = _rb.GetContacts(_contactBuf);
+            multiContact = n >= 2;
+        }
+
+        bool allowMinBoost = _minSpeedBoostCooldown <= 0f && !multiContact;
+        if (allowMinBoost && speed < minS && speed > 0.1f)
             _rb.velocity = _rb.velocity.normalized * minS;
         else if (speed > maxS)
             _rb.velocity = _rb.velocity.normalized * maxS;
@@ -476,6 +624,8 @@ public class BallController : MonoBehaviour
     {
         if (!_launched) return;
 
+        _minSpeedBoostCooldown = MinSpeedBoostSuppress;
+
         TruncateTrailOnImpact();
 
         // ── 斩杀连锁逻辑 ──────────────────────────────────────────────────
@@ -493,9 +643,10 @@ public class BallController : MonoBehaviour
                 bool isBoss = enemy is Boss;
                 if (!isBoss)
                 {
-                    // 小兵：瞬杀，消耗连锁次数，尝试追踪下一个小兵目标
+                    // 小兵：瞬杀；isFromBall 走 EnemyJuice（与正式对局同一套 Bounce 音效/粒子）
                     int hitsNeeded = enemy.maxHits - enemy.CurrentHits;
-                    for (int i = 0; i < hitsNeeded; i++) enemy.TakeHit();
+                    if (hitsNeeded > 0)
+                        enemy.TakeHit(hitsNeeded, isFromBall: true, chainHitPos);
 
                     _chainsRemaining--;
                     if (_chainsRemaining > 0)
@@ -511,7 +662,7 @@ public class BallController : MonoBehaviour
                 else
                 {
                     // Boss：1 次普通伤害，立即终止连锁（Boss 不是有效的链式目标）
-                    enemy.TakeHit();
+                    enemy.TakeHit(1, isFromBall: true, chainHitPos);
                 }
 
                 StopExecuteChain();
@@ -580,9 +731,7 @@ public class BallController : MonoBehaviour
 
         Vector2 dir = ((Vector2)target.position - (Vector2)transform.position).normalized;
         if (_rb != null)
-        {
-            _rb.velocity = dir * config.ballMaxSpeed * 1.25f; // 超高速破空重弹
-        }
+            _rb.velocity = dir * EffectiveMaxSpeed;
 
         // 斩击爆发时的豪华声光反馈
         CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);

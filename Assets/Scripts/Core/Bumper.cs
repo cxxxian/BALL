@@ -4,7 +4,7 @@ using UnityEngine;
 public class Bumper : MonoBehaviour
 {
     [Header("Settings")]
-    public int scoreOnHit = 100;
+    public int scoreOnHit = 15;
     public float pushForce = 12f;
     public float flashDuration = 0.12f;
 
@@ -27,6 +27,17 @@ public class Bumper : MonoBehaviour
         _sr  = GetComponentInChildren<SpriteRenderer>();
         _col = GetComponent<Collider2D>();
         RefreshFromPalette();
+
+        // 弹开完全由脚本控速；材质弹力 >1 会在冷却帧/二次接触时偷偷加能量，诱发高频抖。
+        if (_col != null)
+        {
+            var mat = new PhysicsMaterial2D("BumperScripted")
+            {
+                friction = 0f,
+                bounciness = 0f
+            };
+            _col.sharedMaterial = mat;
+        }
 
         var glowT = transform.Find("Glow");
         if (glowT != null)
@@ -98,10 +109,16 @@ public class Bumper : MonoBehaviour
 
         Vector2 hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2)transform.position;
         ComboSystem.Instance?.RegisterAirtimeHit(hitPos);
-        JuiceRouter.Play(JuiceRouter.Tier.Hit, hitPos, _baseColor);
+        float speed = rb != null ? rb.velocity.magnitude : 8f;
+        JuiceRouter.Play(JuiceRouter.Tier.Hit, hitPos, _baseColor, speed, applyHitStop: false);
+
+        OnBallHit?.Invoke();
 
         if (!_flashing) StartCoroutine(Flash());
     }
+
+    /// <summary>任意 Bumper 被弹珠击中时广播（教学用）。</summary>
+    public static event System.Action OnBallHit;
 
     private IEnumerator Flash()
     {

@@ -24,10 +24,10 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
     [Header("Motion")]
     [SerializeField] private float bufferLerpSpeed = 1.2f;
     [SerializeField] private float bufferDelay = 0.45f;
-    [SerializeField] private float eqPulseSpeed = 1.1f;
-    [SerializeField] private float eqPulseAmount = 0.18f;
-    [SerializeField] [Range(0f, 1.5f)] private float musicDrive = 0.85f;
-    [SerializeField] private float musicFloor = 0.35f;
+    [SerializeField] private float eqPulseSpeed = 1.35f;
+    [SerializeField] private float eqPulseAmount = 0.32f;
+    [SerializeField] [Range(0f, 1.5f)] private float musicDrive = 1.15f;
+    [SerializeField] private float musicFloor = 0.2f;
     [SerializeField] private float hitFlashDuration = 0.1f;
 
     private EnemyBase _enemy;
@@ -107,7 +107,7 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
 
         float targetPct = _enemy.maxHits <= 0
             ? 0f
-            : Mathf.Clamp01(1f - (float)_enemy.CurrentHits / _enemy.maxHits);
+            : Mathf.Clamp01(1f - _enemy.DamageProgress / _enemy.maxHits);
         _currentPct = targetPct;
 
         if (_delayTimer > 0f)
@@ -161,7 +161,11 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         if (!force && key == _cachedNameKey) return;
         _cachedNameKey = key;
 
-        if (_nameText != null) _nameText.text = name;
+        if (_nameText != null)
+        {
+            _nameText.text = name;
+            _nameText.color = NeonUiColors.YellowUi(p2 ? 1.05f : 0.95f);
+        }
 
         if (_phaseText != null)
         {
@@ -170,23 +174,25 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         }
 
         if (_rail != null)
-            _rail.color = p2
-                ? new Color(1f, 0.35f, 0.12f, 0.95f)
-                : new Color(1f, 0.2f, 0.55f, 0.9f);
+        {
+            var c = NeonUiColors.YellowUi(p2 ? 1.1f : 0.95f);
+            c.a = 0.92f;
+            _rail.color = c;
+        }
     }
 
     private void UpdateBars(bool phase2)
     {
         if (_fillBars == null || _bufferBars == null) return;
 
-        // P1: 粉 fill + 琥珀 buffer；P2: 血红 fill + 柠檬黄 buffer（避免同色相糊成一片）
+        // 霓虹黄长条；P2 偏热橙黄
         Color fillLive = phase2
-            ? new Color(1f, 0.16f, 0.1f, 1f)
-            : new Color(1f, 0.12f, 0.55f, 1f);
+            ? new Color(1f, 0.72f, 0.12f, 1f)
+            : NeonUiColors.YellowUi(1.08f);
         Color fillFlash = Color.white;
         Color bufferCol = phase2
-            ? new Color(1f, 0.9f, 0.22f, 0.52f)
-            : new Color(1f, 0.62f, 0.18f, 0.4f);
+            ? new Color(1f, 0.55f, 0.08f, 0.5f)
+            : new Color(1f, 0.9f, 0.2f, 0.42f);
 
         float flashT = hitFlashDuration > 0f ? Mathf.Clamp01(_hitFlash / hitFlashDuration) : 0f;
         float time = Time.unscaledTime * eqPulseSpeed;
@@ -205,7 +211,6 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
             if (_fillBars[i] != null)
             {
                 Color c = Color.Lerp(fillLive, fillFlash, flashT * flashT);
-                // 已灭的柱保持极低透明度轮廓
                 if (fillH < 0.04f)
                     c.a = 0.12f;
                 _fillBars[i].color = c;
@@ -236,11 +241,10 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         float fallback = Mathf.PerlinNoise(seed, time);
         float eqSrc = music > 0.001f ? music : fallback;
 
-        // 血量控「这根还亮不亮」；音乐控「亮着的柱怎么跳」
         float eq = musicFloor + (1f - musicFloor) * Mathf.Clamp01(eqSrc * musicDrive);
-        eq = Mathf.Lerp(1f - eqPulseAmount + eqPulseAmount * fallback, eq, music > 0.001f ? 1f : 0.35f);
+        eq = Mathf.Lerp(1f - eqPulseAmount + eqPulseAmount * fallback, eq, music > 0.001f ? 1f : 0.45f);
 
-        float urgency = 1f + (1f - pct) * 0.35f;
+        float urgency = 1f + (1f - pct) * 0.45f;
         float h = baseLit * profile * eq * urgency;
         return Mathf.Clamp01(h);
     }
@@ -285,7 +289,6 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
             targetCanvas = canvas;
         }
 
-        // 清理旧版厚面板（热重载 / 重复挂载）
         var legacy = canvas.transform.Find("BossUI_Panel");
         if (legacy != null) Destroy(legacy.gameObject);
 
@@ -304,12 +307,10 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         _group.interactable = false;
         _group.blocksRaycasts = false;
 
-        // 顶栏微暗底，不再用厚金属框
-        var plate = CreateImage("Plate", panelObj.transform, new Color(0.02f, 0.04f, 0.08f, 0.55f));
+        var plate = CreateImage("Plate", panelObj.transform, new Color(0.04f, 0.04f, 0.08f, 0.55f));
         Stretch(plate.rectTransform);
 
-        // 名称（左）— 去掉 WARNING 喊话
-        _nameText = CreateText("Name", panelObj.transform, 15, TextAnchor.MiddleLeft, NeonUiColors.MenuCyanUi(0.95f));
+        _nameText = CreateText("Name", panelObj.transform, 15, TextAnchor.MiddleLeft, NeonUiColors.YellowUi(0.95f));
         _nameText.rectTransform.anchorMin = new Vector2(0f, 1f);
         _nameText.rectTransform.anchorMax = new Vector2(1f, 1f);
         _nameText.rectTransform.pivot = new Vector2(0f, 1f);
@@ -318,7 +319,6 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         _nameText.fontStyle = FontStyle.Bold;
         _nameText.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-        // 阶段（右）
         _phaseText = CreateText("Phase", panelObj.transform, 13, TextAnchor.MiddleRight, NeonUiColors.MenuCyanUi(0.9f));
         _phaseText.rectTransform.anchorMin = new Vector2(1f, 1f);
         _phaseText.rectTransform.anchorMax = new Vector2(1f, 1f);
@@ -327,7 +327,6 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         _phaseText.rectTransform.sizeDelta = new Vector2(110f, 16f);
         _phaseText.fontStyle = FontStyle.Bold;
 
-        // 灯轨容器
         var stripObj = new GameObject("EqStrip");
         stripObj.transform.SetParent(panelObj.transform, false);
         var strip = stripObj.AddComponent<RectTransform>();
@@ -336,8 +335,9 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         strip.offsetMin = new Vector2(12f, 4f);
         strip.offsetMax = new Vector2(-12f, -20f);
 
-        // 顶光轨（柱子悬挂线）
-        _rail = CreateImage("Rail", strip, new Color(1f, 0.2f, 0.55f, 0.9f));
+        var railCol = NeonUiColors.YellowUi(0.95f);
+        railCol.a = 0.92f;
+        _rail = CreateImage("Rail", strip, railCol);
         _rail.rectTransform.anchorMin = new Vector2(0f, 1f);
         _rail.rectTransform.anchorMax = new Vector2(1f, 1f);
         _rail.rectTransform.pivot = new Vector2(0.5f, 1f);
@@ -361,18 +361,14 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
 
         for (int i = 0; i < barCount; i++)
         {
-            // 中间偏高、两端略矮的轮廓，满血时也不像砖墙
             float t = (i + 0.5f) / barCount;
             _barProfile[i] = 0.42f + 0.58f * Mathf.Sin(t * Mathf.PI);
             _noiseSeed[i] = i * 0.37f + 1.7f;
 
             float x = startX + i * (barWidth + barGap);
 
-            var buf = CreateBar("Buf_" + i, strip, x, new Color(1f, 0.62f, 0.18f, 0.4f));
-            _bufferBars[i] = buf;
-
-            var fill = CreateBar("Fill_" + i, strip, x, new Color(1f, 0.12f, 0.55f, 1f));
-            _fillBars[i] = fill;
+            _bufferBars[i] = CreateBar("Buf_" + i, strip, x, new Color(1f, 0.9f, 0.2f, 0.42f));
+            _fillBars[i] = CreateBar("Fill_" + i, strip, x, NeonUiColors.YellowUi(1.08f));
         }
     }
 
@@ -382,7 +378,7 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         var rt = img.rectTransform;
         rt.anchorMin = new Vector2(0.5f, 1f);
         rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f); // 从顶光轨向下生长
+        rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = new Vector2(x, -railThickness);
         rt.sizeDelta = new Vector2(barWidth, barMaxHeight);
         rt.localScale = new Vector3(1f, 1f, 1f);

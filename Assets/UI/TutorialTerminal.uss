@@ -1,0 +1,297 @@
+/* Cyberpunk Neon · Calibration Terminal — 右侧空白区侧栏 */
+
+.tutorial-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-top: 10%;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 12%;
+}
+
+/* 说明 / 实战：右侧空白，避开左上 Wave/生命 */
+.tutorial-root-brief,
+.tutorial-root-compact {
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-top: 10%;
+    padding-left: 0;
+    padding-right: 8px;
+    padding-bottom: 14%;
+}
+
+/* 说明拍：仅右侧窄遮罩，防误点；台面仍可见 */
+.tutorial-dim {
+    position: absolute;
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 34%;
+    max-width: 320px;
+    height: auto;
+    background-color: rgba(10, 10, 15, 0.35);
+}
+
+.tutorial-dim-full {
+    width: 100%;
+    max-width: none;
+    left: 0;
+    right: 0;
+    background-color: rgba(10, 10, 15, 0.22);
+}
+
+.terminal-frame {
+    position: relative;
+    width: 30%;
+    min-width: 220px;
+    max-width: 300px;
+    min-height: 0;
+    background-color: rgba(3, 7, 18, 0.9);
+    border-width: 1px;
+    border-color: rgb(0, 255, 255);
+    border-top-color: rgb(0, 255, 255);
+    border-bottom-color: rgba(255, 0, 255, 0.55);
+    border-left-color: rgba(0, 255, 255, 0.55);
+    border-right-color: rgba(0, 255, 255, 0.85);
+    padding: 0;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.terminal-frame-brief {
+    width: 32%;
+    min-width: 240px;
+    max-width: 320px;
+}
+
+/* 实战：略窄一点，仍可读 */
+.terminal-frame-compact {
+    width: 28%;
+    min-width: 200px;
+    max-width: 280px;
+    background-color: rgba(3, 7, 18, 0.82);
+    border-left-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-right-width: 2px;
+    border-right-color: rgb(0, 255, 255);
+}
+
+.terminal-frame-compact .terminal-titlebar {
+    padding: 4px 8px;
+    min-height: 0;
+    flex-wrap: wrap;
+}
+
+.terminal-frame-compact .terminal-title {
+    font-size: 8px;
+    letter-spacing: 0.5px;
+}
+
+.terminal-frame-compact .terminal-step {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+}
+
+.terminal-frame-compact .terminal-scanline {
+    display: none;
+}
+
+.terminal-frame-compact .terminal-body {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    padding: 6px 8px 4px;
+}
+
+.terminal-frame-compact .terminal-prompt {
+    display: none;
+}
+
+.terminal-frame-compact .terminal-line {
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: auto;
+    font-size: 12px;
+    min-height: 0;
+    margin-bottom: 4px;
+    -unity-text-align: upper-left;
+    white-space: normal;
+}
+
+.terminal-frame-compact .terminal-key {
+    flex-shrink: 0;
+    flex-grow: 0;
+    font-size: 10px;
+    padding: 4px 6px;
+    margin-bottom: 2px;
+    margin-left: 0;
+    background-color: rgba(0, 255, 255, 0.08);
+    border-color: rgba(0, 255, 255, 0.35);
+    white-space: normal;
+}
+
+.terminal-frame-compact .terminal-status {
+    display: none;
+}
+
+.terminal-frame-compact .terminal-actions {
+    position: relative;
+    top: auto;
+    right: auto;
+    padding: 2px 6px 6px;
+    margin: 0;
+    justify-content: flex-start;
+}
+
+.terminal-frame-compact .terminal-btn {
+    height: 22px;
+    min-height: 22px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 0;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+}
+
+.terminal-frame-compact .terminal-btn-primary {
+    display: none;
+}
+
+.terminal-titlebar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    background-color: rgba(0, 255, 255, 0.12);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 255, 255, 0.45);
+}
+
+.terminal-title {
+    font-size: 10px;
+    color: rgb(255, 255, 0);
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    white-space: normal;
+}
+
+.terminal-step {
+    font-size: 11px;
+    color: rgb(0, 255, 255);
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+}
+
+.terminal-scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 255, 255, 0.03);
+    picking-mode: ignore;
+}
+
+.terminal-body {
+    flex-direction: column;
+    padding: 8px 10px 4px;
+    flex-grow: 1;
+}
+
+.terminal-prompt {
+    font-size: 9px;
+    color: rgba(0, 255, 255, 0.5);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.terminal-line {
+    font-size: 13px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    white-space: normal;
+    margin-bottom: 6px;
+    min-height: 18px;
+}
+
+.terminal-key {
+    font-size: 12px;
+    color: rgb(0, 255, 255);
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    padding: 5px 8px;
+    background-color: rgba(0, 255, 255, 0.1);
+    border-width: 1px;
+    border-color: rgba(0, 255, 255, 0.5);
+    white-space: normal;
+}
+
+.terminal-status {
+    font-size: 10px;
+    color: rgb(156, 163, 175);
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    white-space: normal;
+}
+
+.terminal-actions {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 4px 8px 8px;
+}
+
+.terminal-btn {
+    height: 28px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-left: 0;
+    margin-right: 6px;
+    margin-top: 2px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    border-width: 1px;
+}
+
+.terminal-btn-primary {
+    color: rgb(0, 0, 0);
+    background-color: rgb(0, 255, 255);
+    border-color: rgb(0, 255, 255);
+}
+
+.terminal-btn-primary:hover {
+    background-color: rgb(120, 255, 255);
+}
+
+.terminal-btn-primary:disabled {
+    background-color: rgba(0, 255, 255, 0.25);
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.terminal-btn-ghost {
+    color: rgb(156, 163, 175);
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(156, 163, 175, 0.55);
+}
+
+.terminal-btn-ghost:hover {
+    color: rgb(255, 0, 255);
+    border-color: rgb(255, 0, 255);
+}
+
+.terminal-key-pulse {
+    border-color: rgb(255, 255, 0);
+    color: rgb(255, 255, 0);
+}

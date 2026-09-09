@@ -1,20 +1,138 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="MainMenu.uss" />
     <ui:VisualElement name="MainContainer" class="main-container">
-        <!-- 主菜单 -->
-        <ui:VisualElement name="MainMenuPanel" class="panel">
-            <ui:Label text="回 弹 协 议" class="title" />
-            <ui:Label text="- REBOUND PROTOCOL -" class="subtitle" />
-            <ui:VisualElement class="button-group">
-                <ui:Button name="BtnEndless" text="无尽挑战" class="menu-btn endless-btn" />
-                <ui:Button name="BtnCampaign" text="战役模式" class="menu-btn campaign-btn" />
-                <ui:Button name="BtnLoadout" text="战前配置" class="menu-btn loadout-btn" />
-                <ui:Button name="BtnSettings" text="设  置" class="menu-btn" />
-                <ui:Button name="BtnQuit" text="退  出" class="menu-btn" />
+        <ui:VisualElement class="scanline-overlay" picking-mode="Ignore" />
+
+                        <!-- 主菜单 · home landing（对齐 HTML demos/main-menu） -->
+        <ui:VisualElement name="MainMenuPanel" class="menu-panel home-panel">
+            <ui:VisualElement class="home-topbar">
+                <ui:VisualElement class="home-status-chip">
+                    <ui:VisualElement class="home-live-dot" picking-mode="Ignore" />
+                    <ui:Label text="SYSTEM ONLINE" class="home-status-text" />
+                </ui:VisualElement>
+                <ui:VisualElement class="home-topbar-spacer" />
+                <ui:VisualElement class="home-top-nav">
+                    <ui:Button text="DOCS" class="home-nav-link" />
+                    <ui:Button text="TELEMETRY" class="home-nav-link" />
+                    <ui:Button name="BtnSettings" text="SETTINGS" class="home-nav-link" />
+                </ui:VisualElement>
+                <ui:VisualElement class="home-credits-chip">
+                    <ui:Label text="CR" class="home-credits-key" />
+                    <ui:Label name="MainCreditsLabel" text="999,999" class="home-credits-label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="home-hero-row">
+                <ui:VisualElement class="home-hero-stage">
+                <ui:VisualElement class="home-hero-copy">
+                    <ui:Label text="NEURAL COMBAT INTERFACE // BUILD 0.9" class="home-eyebrow" />
+                    <ui:VisualElement class="home-brand-title">
+                        <ui:Label text="回弹协议" class="home-brand-cn" />
+                        <ui:Label text="REBOUND PROTOCOL" class="home-brand-en" />
+                    </ui:VisualElement>
+                    <ui:Label text="弹珠即武器。在霓虹竞技场中连击、斩杀、构筑协议 —— 把每一次反弹写成你的运行记录。" class="home-lede" />
+
+                    <ui:VisualElement class="home-cta-stack">
+                        <ui:Button name="BtnEndless" text="" class="menu-btn home-cta home-cta-primary btn-jack endless-btn">
+                            <ui:VisualElement class="home-cta-row" picking-mode="Ignore">
+                                <ui:Label text="PRIMARY RUN" class="home-cta-kicker" picking-mode="Ignore" />
+                                <ui:Label text="无尽挑战" class="home-cta-label" picking-mode="Ignore" />
+                                <ui:Label text="→" class="home-cta-arrow" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                        </ui:Button>
+                        <ui:Button name="BtnCampaign" text="" class="menu-btn home-cta home-cta-magenta btn-outline-magenta campaign-btn">
+                            <ui:VisualElement class="home-cta-row" picking-mode="Ignore">
+                                <ui:Label text="STORY ARC" class="home-cta-kicker" picking-mode="Ignore" />
+                                <ui:Label text="战役模式" class="home-cta-label" picking-mode="Ignore" />
+                                <ui:Label text="→" class="home-cta-arrow" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                        </ui:Button>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="home-secondary-row">
+                        <ui:Button name="BtnTutorial" text="协议校准" class="menu-btn home-ghost" />
+                        <ui:Button name="BtnLoadout" text="战前配置" class="menu-btn home-ghost" />
+                        <ui:Button name="BtnShop" text="协议商店" class="menu-btn home-ghost" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="home-hero-side">
+                    <ui:VisualElement class="home-side-card">
+                        <ui:VisualElement class="home-card-head">
+                            <ui:Label text="ACTIVE LOADOUT" class="home-card-head-label" />
+                            <ui:Label text="SYNCED" class="home-pill" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="home-ball-preview">
+                            <ui:VisualElement class="home-ball-orb" picking-mode="Ignore" />
+                            <ui:VisualElement class="home-ball-meta">
+                                <ui:Label name="HomeBallName" text="标准弹珠" class="home-ball-name" />
+                                <ui:Label name="HomeBallDesc" text="均衡核心 · 适合全模式" class="home-ball-desc" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="home-skill-row">
+                            <ui:VisualElement class="home-skill-chip">
+                                <ui:Label text="Q" class="home-skill-key" />
+                                <ui:Label name="HomeSkill0Name" text="斩杀连锁" class="home-skill-name" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="home-skill-chip home-stat-end">
+                                <ui:Label text="E" class="home-skill-key" />
+                                <ui:Label name="HomeSkill1Name" text="护盾格挡" class="home-skill-name" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Button name="BtnHomeEditLoadout" text="修改配置 →" class="home-link-edit" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="home-side-card">
+                        <ui:VisualElement class="home-card-head">
+                            <ui:Label text="RUN TELEMETRY" class="home-card-head-label" />
+                            <ui:Label text="LIVE" class="home-pill home-pill-dim" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="home-stat-grid">
+                            <ui:VisualElement class="home-stat-row">
+                                <ui:VisualElement class="home-stat">
+                                    <ui:Label text="BEST WAVE" class="home-stat-label" />
+                                    <ui:Label name="HomeStatWave" text="47" class="home-stat-value" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="home-stat home-stat-end">
+                                    <ui:Label text="MAX COMBO" class="home-stat-label" />
+                                    <ui:Label name="HomeStatCombo" text="128" class="home-stat-value" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="home-stat-row">
+                                <ui:VisualElement class="home-stat">
+                                    <ui:Label text="BOSSES" class="home-stat-label" />
+                                    <ui:Label name="HomeStatBosses" text="12" class="home-stat-value" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="home-stat home-stat-end">
+                                    <ui:Label text="PROTOCOLS" class="home-stat-label" />
+                                    <ui:Label name="HomeStatProtocols" text="36" class="home-stat-value" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="home-side-card home-log-card">
+                        <ui:VisualElement class="home-card-head">
+                            <ui:Label text="BOOT LOG" class="home-card-head-label" />
+                        </ui:VisualElement>
+                        <ui:Label text="> matrix rain uplink … OK" class="home-boot-line" picking-mode="Ignore" />
+                        <ui:Label text="> flipper actuators … ARMED" class="home-boot-line" picking-mode="Ignore" />
+                        <ui:Label text="> buff slot machine … READY" class="home-boot-line" picking-mode="Ignore" />
+                        <ui:Label text="> awaiting operator input_" class="home-boot-line" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="home-footer">
+                <ui:Label text="> SELECT MODE TO INITIALIZE RUN" class="home-footer-hint" picking-mode="Ignore" />
+                <ui:VisualElement class="home-footer-actions">
+                    <ui:Button name="BtnFooterSettings" text="设置" class="menu-btn home-quiet btn-outline-muted" />
+                    <ui:Button name="BtnQuit" text="退出" class="menu-btn home-quiet btn-outline-muted quit-btn" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- 战役选关 -->
         <ui:VisualElement name="CampaignPanel" class="panel" style="display: none; flex-direction: row;">
             <ui:VisualElement class="campaign-left">
                 <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center;">
@@ -24,7 +142,7 @@
                 <ui:ScrollView name="LevelScrollView" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="level-scroll" />
             </ui:VisualElement>
 
-            <ui:VisualElement class="campaign-right">
+            <ui:VisualElement class="campaign-right neon-panel">
                 <ui:Label name="DetailStage" text="STAGE 01" class="detail-stage" />
                 <ui:Label name="DetailTitle" text="石巨像之怒" class="detail-title" />
                 <ui:VisualElement class="divider" />
@@ -33,7 +151,7 @@
                 <ui:VisualElement style="margin-top: 40px;">
                     <ui:Label name="DetailBoss" text="核心目标: 石巨像" class="detail-info highlight-info" />
                     <ui:Label name="DetailPower" text="推荐战力: 100" class="detail-info" />
-                    <ui:Label name="DetailScore" text="最高得分: 0" class="detail-info" style="color: rgb(255, 245, 0);" />
+                    <ui:Label name="DetailScore" text="最高得分: 0" class="detail-info detail-score" />
                 </ui:VisualElement>
 
                 <ui:VisualElement name="RunConfigSummary" class="run-config-summary">
@@ -52,10 +170,7 @@
             <ui:VisualElement class="loadout-header">
                 <ui:Button name="BtnLoadoutBack" text="◀ 返回" class="back-btn" />
                 <ui:Label text="战 前 配 置" class="loadout-title" />
-                <ui:VisualElement name="LoadoutStatusHost" class="loadout-status-host">
-                    <ui:VisualElement name="LoadoutStatusSpinner" class="loadout-status-spinner" picking-mode="Ignore" />
-                    <ui:Label name="LoadoutStatusLabel" text="" class="loadout-status" />
-                </ui:VisualElement>
+                <ui:VisualElement class="loadout-header-spacer" />
             </ui:VisualElement>
 
             <ui:VisualElement class="loadout-body">
@@ -64,45 +179,145 @@
                     <ui:VisualElement name="BallPreviewHost" class="ball-preview-host">
                         <ui:VisualElement name="BallPreviewOrb" class="ball-preview-orb" />
                     </ui:VisualElement>
-                    <ui:VisualElement name="BallPagerDots" class="ball-pager-dots" />
+                    <ui:VisualElement class="ball-pager-row">
+                        <ui:Button name="BtnBallPrev" text="◀" class="ball-nav-btn" />
+                        <ui:VisualElement name="BallPagerDots" class="ball-pager-dots" />
+                        <ui:Button name="BtnBallNext" text="▶" class="ball-nav-btn" />
+                    </ui:VisualElement>
+                    <ui:Label name="BallLockHint" text="" class="ball-lock-hint" style="display: none;" />
                     <ui:Label name="BallNameLabel" text="标准弹珠" class="ball-name-label" />
                     <ui:Label name="BallDescLabel" text="基础均衡弹珠，适合各种局面。" class="ball-desc-label" />
-                    <ui:VisualElement class="ball-stat-rows">
-                        <ui:Label text="伤害  ●●●○○" class="ball-stat-line" />
-                        <ui:Label text="体积  ●●○○○" class="ball-stat-line" />
-                        <ui:Label text="元素  无" class="ball-stat-line" />
-                    </ui:VisualElement>
+                    <ui:Button name="BtnEquipBall" text="装备此弹珠" class="hangar-equip-btn" />
                 </ui:VisualElement>
 
                 <ui:VisualElement name="SkillColumn" class="loadout-column skill-column">
-                    <ui:Label text="主动技能 · 装备槽（2/2）" class="column-title" />
+                    <ui:Label text="绑定技能 · 随弹珠固定" class="column-title" />
                     <ui:VisualElement name="SkillSlotRow" class="skill-slot-row">
-                        <ui:VisualElement name="SkillSlot0" class="skill-slot">
+                        <ui:VisualElement name="SkillSlot0" class="skill-slot skill-slot-readonly">
                             <ui:VisualElement name="SlotIcon" class="skill-slot-icon" />
                             <ui:Label name="SlotSkillName" text="斩杀连锁" class="skill-slot-name" />
                             <ui:Label name="SlotKeyHint" text="Q" class="skill-slot-key" />
                             <ui:Label name="SlotCooldown" text="CD 12s" class="skill-slot-cd" />
                             <ui:Label name="SlotMode" text="瞄准" class="skill-slot-mode" />
                         </ui:VisualElement>
-                        <ui:VisualElement name="SkillSlot1" class="skill-slot">
+                        <ui:VisualElement name="SkillSlot1" class="skill-slot skill-slot-readonly">
                             <ui:VisualElement name="SlotIcon" class="skill-slot-icon" />
                             <ui:Label name="SlotSkillName" text="护盾格挡" class="skill-slot-name" />
-                            <ui:Label name="SlotKeyHint" text="E / 按钮 B" class="skill-slot-key" />
+                            <ui:Label name="SlotKeyHint" text="E" class="skill-slot-key" />
                             <ui:Label name="SlotCooldown" text="CD 15s" class="skill-slot-cd" />
                             <ui:Label name="SlotMode" text="即时" class="skill-slot-mode" />
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:Label text="技能库 · 拖到上方装备" class="column-subtitle" />
-                    <ui:ScrollView name="SkillLibraryScroll" horizontal-scroller-visibility="Hidden" class="skill-library-scroll">
-                        <ui:VisualElement name="SkillLibrary" class="skill-library" />
-                    </ui:ScrollView>
-                    <ui:VisualElement name="SkillDetailCard" class="skill-detail-card" style="display: none;">
-                        <ui:Label name="SkillDetailTitle" class="skill-detail-title" />
-                        <ui:Label name="SkillDetailBody" class="skill-detail-body" />
-                    </ui:VisualElement>
+                    <ui:Label text="技能由所选弹珠决定，不可自由更换。" class="loadout-skill-note" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement name="LoadoutDragOverlay" class="loadout-drag-overlay" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <!-- 协议商店 -->
+        <ui:VisualElement name="ShopPanel" class="panel shop-panel" style="display: none;">
+            <ui:VisualElement class="shop-header">
+                <ui:Button name="BtnShopBack" text="◀ 返回" class="back-btn" />
+                <ui:Label text="协 议 商 店" class="shop-title" />
+                <ui:Label name="ShopCreditsLabel" text="协议币 999999" class="shop-credits-label" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="shop-tabs">
+                <ui:Button name="BtnTabDirect" text="直购弹珠" class="shop-tab shop-tab-active" />
+                <ui:Button name="BtnTabCrate" text="协议宝箱" class="shop-tab" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="ShopDirectTab" class="shop-tab-content">
+                <ui:ScrollView name="DirectOffersScroll" horizontal-scroller-visibility="Hidden" class="shop-scroll">
+                    <ui:VisualElement name="DirectOffersList" class="shop-offer-list" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="ShopCrateTab" class="shop-tab-content" style="display: none;">
+                <ui:VisualElement class="crate-card neon-panel">
+                    <ui:Label text="PROTOCOL CRATE" class="crate-eyebrow" />
+                    <ui:Label text="协议宝箱" class="crate-title" />
+                    <ui:Label text="消耗协议币随机解锁弹珠。重复弹珠折算为协议币。" class="crate-desc" />
+
+                    <ui:VisualElement class="crate-preview" picking-mode="Ignore">
+                        <ui:VisualElement class="crate-glow-ring" picking-mode="Ignore" />
+                        <ui:VisualElement class="crate-body-idle" picking-mode="Ignore">
+                            <ui:VisualElement class="crate-lid-idle" picking-mode="Ignore" />
+                            <ui:VisualElement class="crate-seal-idle" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:Label name="CrateCostLabel" text="单次开启 · 150 协议币" class="crate-cost" />
+                    <ui:Label name="CratePityLabel" text="" class="crate-pity" />
+                    <ui:Button name="BtnOpenCrate" text="开启宝箱" class="crate-open-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="CrateResultPopup" class="crate-result-popup" style="display: none;">
+                <ui:VisualElement name="CrateVignette" class="crate-vignette-host" picking-mode="Ignore" />
+                <ui:VisualElement name="CrateRayHost" class="crate-ray-host" picking-mode="Ignore" />
+                <ui:VisualElement name="CrateScreenFlash" class="crate-screen-flash" picking-mode="Ignore" />
+                <ui:VisualElement name="CrateLightPillar" class="crate-light-pillar" picking-mode="Ignore" />
+                <ui:VisualElement name="CrateSparkLayer" class="crate-spark-layer" picking-mode="Ignore" />
+
+                <ui:VisualElement name="CrateRitualStage" class="crate-ritual-stage">
+                    <ui:Label name="CrateRitualStatus" text="" class="crate-ritual-status" />
+
+                    <ui:VisualElement name="CrateAssembly" class="crate-assembly">
+                        <ui:VisualElement class="crate-ground-shadow" picking-mode="Ignore" />
+                        <ui:VisualElement name="CrateGlow" class="crate-glow" picking-mode="Ignore" />
+                        <ui:VisualElement name="CrateStack" class="crate-stack">
+                            <ui:VisualElement name="CrateLid" class="crate-lid" picking-mode="Ignore">
+                                <ui:VisualElement class="crate-lid-face" picking-mode="Ignore" />
+                                <ui:VisualElement class="crate-lid-band" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="CrateBody" class="crate-body" picking-mode="Ignore">
+                                <ui:VisualElement class="crate-body-face" picking-mode="Ignore" />
+                                <ui:VisualElement class="crate-body-band" picking-mode="Ignore" />
+                                <ui:VisualElement name="CrateSeal" class="crate-seal" picking-mode="Ignore" />
+                                <ui:VisualElement name="CrateCore" class="crate-core" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="CrateRevealBlock" class="crate-reveal-block" style="display: none;">
+                        <ui:VisualElement class="crate-reveal-card neon-panel">
+                            <ui:Label name="CrateRarityLabel" text="RARE" class="crate-rarity-label" />
+                            <ui:VisualElement name="CrateRevealOrb" class="crate-reveal-orb" />
+                            <ui:Label name="CrateResultTitle" text="获得弹珠" class="crate-result-title" />
+                            <ui:Label name="CrateResultBody" text="" class="crate-result-body" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:Button name="BtnCrateResultOk" text="收 下" class="crate-result-ok" style="display: none;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 设置 -->
+        <ui:VisualElement name="SettingsPanel" class="panel settings-panel neon-panel" style="display: none;">
+            <ui:VisualElement class="settings-header">
+                <ui:Button name="BtnSettingsBack" text="◀ 返回" class="back-btn" />
+                <ui:Label text="设  置" class="settings-title" />
+            </ui:VisualElement>
+            <ui:ScrollView class="settings-scroll">
+                <ui:Label text="音频" class="section-title settings-section" />
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="主音量" class="settings-label" />
+                    <ui:Slider name="SliderMaster" low-value="0" high-value="1" value="0.8" class="settings-slider" />
+                </ui:VisualElement>
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="音效" class="settings-label" />
+                    <ui:Slider name="SliderSfx" low-value="0" high-value="1" value="0.8" class="settings-slider" />
+                </ui:VisualElement>
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="音乐" class="settings-label" />
+                    <ui:Slider name="SliderMusic" low-value="0" high-value="1" value="0.8" class="settings-slider" />
+                </ui:VisualElement>
+                <ui:Label text="操作说明" class="section-title settings-section" />
+                <ui:Label name="SettingsHintPc" class="settings-hint" text="PC：Esc 暂停 · 右键斩击瞄准 · Q/E 技能" />
+                <ui:Label name="SettingsHintMobile" class="settings-hint" text="移动端：右上角暂停 · 技能按钮松手确认瞄准" />
+                <ui:Label text="音量滑条等功能即将推出" class="settings-stub-note" />
+            </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

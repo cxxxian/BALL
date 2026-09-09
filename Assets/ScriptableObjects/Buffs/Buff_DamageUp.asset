@@ -17,5 +17,5 @@ MonoBehaviour:
   rarity: 0
   effectType: 0
   effectValue: 1
-  maxStacks: 4
+  maxStacks: 3
   minWave: 1

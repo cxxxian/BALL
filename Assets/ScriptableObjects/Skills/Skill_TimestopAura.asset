@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skillId: timestop_aura
   displayName: "\u65F6\u95F4\u51CF\u901F"
-  description: "\u4EC5\u654C\u4EBA\u51CF\u901F 4 \u79D2\uFF08\u5C0F\u5175 \u00D70.35\uFF0CBoss \u00D70.6\uFF09\uFF0C\u7403\u4E0E\u6321\u677F\u4E0D\u53D8\u3002Combo \u53EF\u7F29\u77ED\u51B7\u5374\u3002"
+  description: "\u4EC5\u654C\u4EBA\u51CF\u901F\uFF08\u4E0D\u6539\u5168\u5C40 timeScale\uFF09\uFF1B\u4E0E\u534F\u8BAE\u6539\u5411\u7684\u5168\u5C40\u65F6\u7F13\u4E0D\u540C\u3002\u5C0F\u5175 \u00D70.45\uFF0CBoss \u00D70.6\u3002"
   category: 2
   activationMode: 0
   implementationType: 2

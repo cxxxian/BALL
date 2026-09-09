@@ -7,6 +7,12 @@ public class LaunchGuide : MonoBehaviour
 
     private LineRenderer _lr;
     private bool _visible;
+    private bool _urgent;
+
+    private static readonly Color NormalStart = Color.white;
+    private static readonly Color NormalEnd   = new Color(0.5f, 0.8f, 1f);
+    private static readonly Color UrgentStart = new Color(1f, 0.75f, 0.2f);
+    private static readonly Color UrgentEnd   = new Color(1f, 0.35f, 0.15f);
 
     private void Awake()
     {
@@ -39,11 +45,27 @@ public class LaunchGuide : MonoBehaviour
         _lr.material = mat;
         _lr.textureMode = LineTextureMode.Tile;
 
-        // 从亮到透明渐变
+        ApplyGradient(false);
+    }
+
+    /// <summary>决定窗末段：瞄准线切到暖色紧迫态。</summary>
+    public void SetUrgency(bool urgent)
+    {
+        if (_urgent == urgent) return;
+        _urgent = urgent;
+        ApplyGradient(urgent);
+    }
+
+    private void ApplyGradient(bool urgent)
+    {
+        var start = urgent ? UrgentStart : NormalStart;
+        var end   = urgent ? UrgentEnd   : NormalEnd;
+        float a0  = urgent ? 1f : 0.9f;
+
         var grad = new Gradient();
         grad.SetKeys(
-            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(0.5f, 0.8f, 1f), 1f) },
-            new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0f, 1f) }
+            new[] { new GradientColorKey(start, 0f), new GradientColorKey(end, 1f) },
+            new[] { new GradientAlphaKey(a0, 0f), new GradientAlphaKey(0f, 1f) }
         );
         _lr.colorGradient = grad;
     }
@@ -64,6 +86,7 @@ public class LaunchGuide : MonoBehaviour
     {
         _visible = false;
         _lr.enabled = false;
+        SetUrgency(false);
     }
 
     private void Rebuild(Vector2 origin, Vector2 dir)

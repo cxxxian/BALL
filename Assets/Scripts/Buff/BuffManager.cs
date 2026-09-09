@@ -232,6 +232,7 @@ public class BuffManager : MonoBehaviour
 
     /// <summary>
     /// 小兵触底、BlockShield 未吸收时尝试消耗护心。返回 true 表示本次伤害被抵消。
+    /// 仅免伤，不回血（Balance 04）。
     /// </summary>
     public bool TryConsumeHeartGuard(out bool showShieldVfx)
     {
@@ -239,14 +240,7 @@ public class BuffManager : MonoBehaviour
         if (HeartGuardCharges <= 0) return false;
 
         HeartGuardCharges--;
-        var gm = GameManager.Instance;
-        if (gm == null) return true;
-
-        if (gm.Lives < gm.MaxLives)
-            gm.Heal(1);
-        else
-            showShieldVfx = true;
-
+        showShieldVfx = true;
         return true;
     }
 

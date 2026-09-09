@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Skill_ExecuteChain
   m_EditorClassIdentifier: 
   skillId: execute_chain
-  displayName: "\u65A9\u6740\u8FDE\u9501"
-  description: "\u53F3\u952E\u65F6\u7F13\u76EE\u6807 \u00B7 \u5DE6\u952E\u53D1\u5C04\u5E76\u5F00\u542F\u65A9\u6740\u8FDE\u9501\u6700\u591A 3 \u6B21 \u00B7 Boss \u4E0D\u65A9\u6740"
+  displayName: "\u65A9\u6740\u534F\u8BAE"
+  description: "E \u6B66\u88C5\u540E\uFF0C\u518D\u5F00\u534F\u8BAE\u6539\u5411\u5E76\u786E\u8BA4\uFF0C\u5F00\u542F\u65A9\u6740\u8FDE\u9501\u6700\u591A 3 \u6B21\u3002\u53D6\u6D88\u6B66\u88C5\u4E0D\u6263\u5B8C\u6574 CD\u3002Boss \u4E0D\u65A9\u6740\u3002"
   category: 0
-  activationMode: 1
+  activationMode: 0
   implementationType: 0
-  baseCooldown: 12
+  baseCooldown: 14
   isAvailable: 1

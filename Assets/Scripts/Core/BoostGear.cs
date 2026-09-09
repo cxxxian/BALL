@@ -10,8 +10,8 @@ using UnityEngine;
 public class BoostGear : MonoBehaviour
 {
     [Header("Boost Settings")]
-    [Tooltip("速度提升百分比（0.5 = +50%）")]
-    public float speedBoostPercent = 0.5f;
+    [Tooltip("速度提升百分比（0.28 = +28%；再受 ballHardMaxSpeed 硬顶）")]
+    public float speedBoostPercent = 0.28f;
     [Tooltip("加速持续秒数")]
     public float duration = 2.0f;
 
@@ -72,10 +72,14 @@ public class BoostGear : MonoBehaviour
         _isBoosting = true;
         ball.SetOverrideTrailColor(boostTrailColor, new Color(boostTrailColor.r, boostTrailColor.g, boostTrailColor.b, 0.05f));
 
-        // 立即提速：先设倍率，再推一把当前速度
+        // 立即提速：先设倍率，再推一把，并钳到有效硬顶
         ball.SpeedMultiplier = multiplier;
-        if (ball.Rb.velocity.sqrMagnitude > 0.01f)
-            ball.Rb.velocity = ball.Rb.velocity.normalized * (ball.Rb.velocity.magnitude * multiplier);
+        if (ball.Rb != null && ball.Rb.velocity.sqrMagnitude > 0.01f)
+        {
+            float boosted = ball.Rb.velocity.magnitude * multiplier;
+            float cap = ball.EffectiveMaxSpeed;
+            ball.Rb.velocity = ball.Rb.velocity.normalized * Mathf.Min(boosted, cap);
+        }
 
         AudioManager.Instance?.PlayBounce();
         CameraShake.Instance?.Shake(CameraShake.Preset.Light);
@@ -96,6 +100,8 @@ public class BoostGear : MonoBehaviour
             {
                 ball.SpeedMultiplier = 1f;
                 ball.ResetTrailColor();
+                if (ball.Rb != null && ball.Rb.velocity.magnitude > ball.EffectiveMaxSpeed)
+                    ball.Rb.velocity = ball.Rb.velocity.normalized * ball.EffectiveMaxSpeed;
             }
         }
 

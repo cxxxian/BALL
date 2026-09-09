@@ -40,7 +40,7 @@ public static class SlotMachineBuffRoller
         SlotCombo.TripleRare   => "中轮全额生效 · 左右轮折现",
         SlotCombo.DoubleEpic   => "史诗轮 Buff 全部生效 · 赠送 1 次免费重转",
         SlotCombo.DoubleRare   => "免费重转 ×1 · 生效稀有度最高轮",
-        SlotCombo.TripleCommon => "左轮生效 · 额外 +1 叠层",
+        SlotCombo.TripleCommon => "左轮生效",
         SlotCombo.Mixed        => "中轮生效 · 下波史诗权重 +5%",
         SlotCombo.Omen         => "? 轮已结算 · 余轮按降级组合生效",
         SlotCombo.Smooth       => "中轮生效",
@@ -199,7 +199,7 @@ public static class SlotMachineBuffRoller
                 break;
 
             case SlotCombo.TripleCommon:
-                TryAddFullBuff(actions, reels, 0, extraStacks: 1);
+                TryAddFullBuff(actions, reels, 0);
                 break;
 
             case SlotCombo.Mixed:

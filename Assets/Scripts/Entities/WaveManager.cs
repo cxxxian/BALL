@@ -20,6 +20,8 @@ public class WaveManager : MonoBehaviour
     public float firstSpawnDelay  = 2f;
     [Tooltip("每波结束到下一波开始的等待时间")]
     public float postWaveDelay    = 3f;
+    [Tooltip("Boss 击杀后小兵冲线解体播完，再出老虎机的额外等待（真实秒）")]
+    public float breachClearSettleSeconds = 1.15f;
     [Tooltip("自动跳过 Buff 选择的超时时间（无 Buff UI 时生效）")]
     public float buffSkipTimeout  = 120f;
 
@@ -39,6 +41,9 @@ public class WaveManager : MonoBehaviour
     private readonly List<EnemyBase> _activeMinions = new List<EnemyBase>();
     private Boss    _currentBoss;
     private int     _currentWave = 0;
+    private int     _lastBreachClearCount;
+    private bool    _breachClearArmed;
+    private Coroutine _breachClearRoutine;
     private Coroutine _speedBoostCoroutine;
     private Coroutine _bomberCoroutine;
     private float     _bumperDisabledUntil = 0f;
@@ -71,6 +76,8 @@ public class WaveManager : MonoBehaviour
         ClearAll();
         _currentWave = 0;
         MinionSpeedMultiplier = 1f;
+        if (RunSession.IsTutorial)
+            return;
         StartCoroutine(WaveLoop());
     }
 
@@ -122,6 +129,9 @@ public class WaveManager : MonoBehaviour
     private IEnumerator RunWave(int waveIndex)
     {
         onWaveStart.Invoke(waveIndex);   // 通知所有机关：新波次开始，重置状态
+        _breachClearArmed = false;
+        _breachClearRoutine = null;
+        _lastBreachClearCount = 0;
         _currentBoss = SpawnBoss(waveIndex);
 
         yield return new WaitForSeconds(firstSpawnDelay);
@@ -133,20 +143,67 @@ public class WaveManager : MonoBehaviour
             GameManager.Instance == null ||
             GameManager.Instance.State == GameState.GameOver);
 
-        // Boss 击杀特效播完后再进入 Buff 选择，避免界面立刻打断反馈
-        if (VFXDirector.Instance != null)
-            yield return VFXDirector.Instance.WaitForEffectComplete();
+        // onDeath 会先把 _currentBoss 置空；非 GameOver 退出视为击杀清场
+        bool endedByGameOver = GameManager.Instance != null
+            && GameManager.Instance.State == GameState.GameOver;
 
-        // 清理残余小兵；若 Boss 因 GameOver 退出（未被球击杀），显式销毁
-        ClearMinions();
+        if (!endedByGameOver)
+        {
+            // 正常由 Boss.Die → NotifyBossKilledClearField 同帧启动；此处兜底
+            if (!_breachClearArmed)
+                NotifyBossKilledClearField();
+
+            if (VFXDirector.Instance != null)
+                yield return VFXDirector.Instance.WaitForEffectComplete();
+
+            if (_breachClearRoutine != null)
+                yield return _breachClearRoutine;
+
+            float settle = Mathf.Max(0f, breachClearSettleSeconds);
+            if (settle > 0f && _lastBreachClearCount > 0)
+                yield return new WaitForSecondsRealtime(settle);
+        }
+        else
+            ClearMinions();
+
         if (_currentBoss != null)
         {
             Destroy(_currentBoss.gameObject);
             _currentBoss = null;
         }
+
+        _breachClearArmed = false;
+        _breachClearRoutine = null;
+    }
+
+    /// <summary>Boss 击杀当帧：冻结小兵并开始冲线解体（与 Boss 爆开并行）。</summary>
+    public void NotifyBossKilledClearField()
+    {
+        if (_breachClearArmed) return;
+        _breachClearArmed = true;
+        FreezeActiveMinions();
+        _breachClearRoutine = StartCoroutine(ClearMinionsWithBreachFx());
     }
 
     // ── Boss 生成 ─────────────────────────────────────────────────────────
+    public Boss SpawnTutorialBoss(int waveIndex = 0) => SpawnBoss(waveIndex);
+
+    public void ClearTutorialField() => ClearAll();
+
+    public MinionDefinition GetTutorialMinionDefinition()
+    {
+        if (bossDefinitions == null) return null;
+        foreach (var boss in bossDefinitions)
+        {
+            if (boss?.spawnTypes == null) continue;
+            foreach (var m in boss.spawnTypes)
+            {
+                if (m != null) return m;
+            }
+        }
+        return null;
+    }
+
     private Boss SpawnBoss(int waveIndex)
     {
         BossDefinition def = GetBossDefinition(waveIndex);
@@ -197,10 +254,10 @@ public class WaveManager : MonoBehaviour
     }
 
     // ── 小兵生成（由 Boss 调用）──────────────────────────────────────────
-    public void SpawnMinion(MinionDefinition def, Vector3 position, int waveIndex = 0)
+    public Minion SpawnMinion(MinionDefinition def, Vector3 position, int waveIndex = 0)
     {
-        if (def == null) return;
-        if (GameManager.Instance == null || GameManager.Instance.State == GameState.GameOver) return;
+        if (def == null) return null;
+        if (GameManager.Instance == null || GameManager.Instance.State == GameState.GameOver) return null;
 
         var go = new GameObject($"Minion_{def.minionName}");
         go.transform.position = position;
@@ -227,6 +284,8 @@ public class WaveManager : MonoBehaviour
             var bossCol = _currentBoss.GetComponent<Collider2D>();
             if (bossCol != null) Physics2D.IgnoreCollision(col, bossCol);
         }
+
+        return minion;
     }
 
     // ── 小兵注册管理 ─────────────────────────────────────────────────────
@@ -281,12 +340,40 @@ public class WaveManager : MonoBehaviour
     }
 
     // ── 清理 ─────────────────────────────────────────────────────────────
+    private void FreezeActiveMinions()
+    {
+        _activeMinions.RemoveAll(e => e == null);
+        foreach (var m in _activeMinions)
+        {
+            if (m == null || m.IsDead) continue;
+            m.FreezeForWaveClear();
+        }
+    }
+
     private void ClearMinions()
     {
         _activeMinions.RemoveAll(e => e == null);
         foreach (var m in new List<EnemyBase>(_activeMinions))
             if (m != null) Destroy(m.gameObject);
         _activeMinions.Clear();
+    }
+
+    /// <summary>Boss 击杀后：残余小兵错开播放冲线底部解体（与 Boss 爆开并行，非 Boss 同款特效）。</summary>
+    private IEnumerator ClearMinionsWithBreachFx()
+    {
+        _activeMinions.RemoveAll(e => e == null);
+        var snapshot = new List<EnemyBase>(_activeMinions);
+        _activeMinions.Clear();
+        _lastBreachClearCount = 0;
+
+        // 与 Boss 爆开同帧感：首只几乎立即炸，其余极短错峰
+        foreach (var m in snapshot)
+        {
+            if (m == null || m.IsDead) continue;
+            EnemyJuice.BreachClearDissolve(m);
+            _lastBreachClearCount++;
+            yield return new WaitForSecondsRealtime(Random.Range(0.01f, 0.03f));
+        }
     }
 
     private void ClearAll()

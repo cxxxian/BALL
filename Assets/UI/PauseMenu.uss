@@ -1,8 +1,8 @@
-/* 暂停菜单：对比度略低于战斗 HUD / Buff 界面 */
+/* StyleKit · Cyberpunk Neon (aligned with MainMenu.uss) */
 .pause-overlay {
     position: absolute;
     left: 0; top: 0; right: 0; bottom: 0;
-    background-color: rgba(2, 6, 16, 0.72);
+    background-color: rgba(10, 10, 15, 0.88);
     align-items: center;
     justify-content: center;
     padding: 12px;
@@ -12,9 +12,9 @@
     width: 100%;
     max-width: 520px;
     max-height: 92%;
-    background-color: rgba(8, 12, 26, 0.94);
-    border-width: 2px;
-    border-color: rgba(0, 200, 220, 0.55);
+    background-color: rgb(3, 7, 18);
+    border-width: 1px;
+    border-color: rgba(0, 255, 255, 0.4);
     border-radius: 8px;
     padding: 10px 14px 12px;
     flex-shrink: 0;
@@ -28,10 +28,11 @@
 }
 
 .header-title {
-    color: rgba(0, 210, 230, 0.85);
+    color: rgb(0, 255, 255);
     font-size: 16px;
     -unity-font-style: bold;
     letter-spacing: 4px;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.45);
 }
 
 .tab-bar {
@@ -55,9 +56,9 @@
 }
 
 .tab-btn.tab-active {
-    color: rgba(0, 220, 240, 0.95);
-    border-color: rgba(0, 200, 220, 0.7);
-    background-color: rgba(20, 40, 60, 0.9);
+    color: rgb(0, 255, 255);
+    border-color: rgba(0, 255, 255, 0.7);
+    background-color: rgba(0, 255, 255, 0.08);
 }
 
 .tab-content {

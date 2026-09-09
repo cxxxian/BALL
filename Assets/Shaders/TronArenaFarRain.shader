@@ -96,7 +96,7 @@ Shader "Custom/TronArenaFarRain"
                     _FallSpeedMin, _FallSpeedMax,
                     _HeadBright, _TrailBright, _GlyphChangeRate, _RainStrength,
                     _HeadColor, _TrailColor,
-                    0.0, 0.0);
+                    0.0, 0.0, 2.4);
                 col = saturate(col + rain);
 
                 col *= _Brightness;
