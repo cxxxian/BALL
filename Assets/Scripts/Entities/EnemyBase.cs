@@ -221,6 +221,8 @@ public abstract class EnemyBase : MonoBehaviour
         float dmg = 1f;
         if (BuffManager.Instance != null)
             dmg += BuffManager.Instance.BallDamageBonus;
+        if (ProtocolFieldDirector.Instance != null)
+            dmg += ProtocolFieldDirector.Instance.TempBallDamageBonus;
         dmg *= Mathf.Max(0f, scale);
         _ballHitCredit += dmg;
         int whole = Mathf.FloorToInt(_ballHitCredit + 1e-4f);
@@ -265,6 +267,8 @@ public abstract class EnemyBase : MonoBehaviour
         if (IsDead) return;
         if (isFromBall && BuffManager.Instance != null)
             damage += BuffManager.Instance.BallDamageBonus;
+        if (isFromBall && ProtocolFieldDirector.Instance != null)
+            damage += ProtocolFieldDirector.Instance.TempBallDamageBonus;
         CurrentHits += damage;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit * damage);

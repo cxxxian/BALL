@@ -102,7 +102,10 @@ public class Bumper : MonoBehaviour
         if (rb != null)
         {
             Vector2 dir = (col.transform.position - transform.position).normalized;
-            rb.velocity = dir * pushForce;
+            float force = pushForce;
+            if (ProtocolFieldDirector.Instance != null)
+                force *= ProtocolFieldDirector.Instance.OverloadBumperForceMult;
+            rb.velocity = dir * force;
         }
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit);

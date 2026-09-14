@@ -357,6 +357,19 @@ public class SkillManager : MonoBehaviour
         onSlotCooldownChanged.Invoke(slotIndex, slot.CooldownRatio);
     }
 
+    /// <summary>全体技能 CD 回退（协议缓存盘等台面奖励）。</summary>
+    public void ReduceAllCooldowns(float seconds)
+    {
+        if (slots == null || seconds <= 0f) return;
+        for (int i = 0; i < slots.Length; i++)
+        {
+            var slot = slots[i];
+            if (slot == null || slot.IsReady) continue;
+            slot.currentCD = Mathf.Max(0f, slot.currentCD - seconds);
+            onSlotCooldownChanged.Invoke(i, slot.CooldownRatio);
+        }
+    }
+
     public bool TryActivate() => TryActivate(0);
 
     private void OnGameStart()
