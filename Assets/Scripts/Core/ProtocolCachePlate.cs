@@ -1,22 +1,11 @@
 using UnityEngine;
 
 /// <summary>
-/// 协议缓存盘（Death Race 井盖思路）：
-/// 第一次压过 → 开始转圈充能；转满 → 武装就绪（奖励尚未发放）；
-/// 再次压过 → 领取奖励。也可切到「一压即武装 / 充满自动领」模式。
+/// 协议缓存盘（井盖）：纯 Trigger，不改球物理。
+/// 第一次压过 → 进入 CD；CD 结束 → 就绪；再次压过 → 扩散波。
 /// </summary>
 public class ProtocolCachePlate : MonoBehaviour
 {
-    public enum ArmMode
-    {
-        /// <summary>压过开充能 → 转满武装 → 再压领取（默认，兼顾死亡飞车 + 转圈）。</summary>
-        ChargeThenClaim = 0,
-        /// <summary>第一次压过立刻武装，第二次领取（经典死亡飞车）。</summary>
-        ArmThenClaim = 1,
-        /// <summary>压过开充能，转满自动发奖（少一次决策）。</summary>
-        ChargeAutoClaim = 2,
-    }
-
     public enum PlateState
     {
         Idle = 0,
@@ -26,21 +15,14 @@ public class ProtocolCachePlate : MonoBehaviour
     }
 
     [Header("Rules")]
-    public ArmMode armMode = ArmMode.ChargeThenClaim;
-    public ProtocolRewardType rewardType = ProtocolRewardType.ScoreBurst;
-    [Tooltip("充能所需秒数（Charge 模式）")]
+    [Tooltip("第一次压过后，需等待的充能秒数")]
     public float chargeDuration = 6f;
-    [Tooltip("充能期间再次压过额外进度（0-1）")]
-    [Range(0f, 1f)] public float passChargeBoost = 0.18f;
     [Tooltip("武装后多久未领取则退回 Idle；0=永不超时")]
     public float readyTimeout = 18f;
+    [Tooltip("领取奖励后的冷却")]
     public float claimCooldown = 2.5f;
+    [Tooltip("同一次穿过的重复触发间隔")]
     public float reentryIgnore = 0.35f;
-
-    [Header("Physics Feel")]
-    [Tooltip("触发时是否给球一点弹开（避免粘在盘上）")]
-    public bool nudgeBall = true;
-    public float nudgeForce = 3.5f;
 
     [Header("Visual")]
     public float radius = 0.85f;
@@ -59,6 +41,9 @@ public class ProtocolCachePlate : MonoBehaviour
     private float _readyLeft;
     private float _cooldownLeft;
     private float _ignoreUntil;
+    private bool _ballInside;
+    /// <summary>就绪时球仍在盘上，须先离开再压一次才能领取。</summary>
+    private bool _requireExitBeforeClaim;
     private LineRenderer _track;
     private LineRenderer _fill;
     private SpriteRenderer _core;
@@ -79,8 +64,6 @@ public class ProtocolCachePlate : MonoBehaviour
         ProtocolFieldDirector.EnsureExists();
         if (GameManager.Instance != null)
             GameManager.Instance.onGameStart.AddListener(ResetPlate);
-        if (WaveManager.Instance != null)
-            WaveManager.Instance.onWaveStart.AddListener(_ => { /* 跨波保留充能，更有「下一圈再领」感 */ });
     }
 
     private void Update()
@@ -92,7 +75,7 @@ public class ProtocolCachePlate : MonoBehaviour
             if (chargeDuration > 0.01f)
                 Charge01 = Mathf.Clamp01(Charge01 + Time.deltaTime / chargeDuration);
             if (Charge01 >= 1f)
-                OnChargeComplete();
+                EnterReady();
         }
         else if (State == PlateState.Ready)
         {
@@ -128,31 +111,32 @@ public class ProtocolCachePlate : MonoBehaviour
         if (ball == null || ball.IsWaitingForLaunch) return;
         if (GameManager.Instance != null && !GameManager.Instance.IsWaveSimActive()) return;
 
+        _ballInside = true;
         _ignoreUntil = Time.time + reentryIgnore;
         HandleBallPass(ball);
     }
 
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (!other.CompareTag("Ball")) return;
+        _ballInside = false;
+        if (State == PlateState.Charging || State == PlateState.Ready)
+            _requireExitBeforeClaim = false;
+    }
+
     private void HandleBallPass(BallController ball)
     {
-        Nudge(ball);
-        ComboSystem.Instance?.RegisterAirtimeHit(transform.position);
-        AudioManager.Instance?.PlayBounce();
-
         switch (State)
         {
             case PlateState.Idle:
-                BeginArmFromIdle();
+                BeginCharge();
                 break;
             case PlateState.Charging:
-                Charge01 = Mathf.Clamp01(Charge01 + passChargeBoost);
-                ImpactFX.Instance?.SpawnHit(transform.position, chargingColor, 0.85f);
-                if (Charge01 >= 1f)
-                    OnChargeComplete();
-                else
-                    ApplyVisualState();
+                // CD 期间忽略再次压过，必须等转满
                 break;
             case PlateState.Ready:
-                Claim(ball);
+                if (!_requireExitBeforeClaim)
+                    Claim();
                 break;
             case PlateState.Cooldown:
                 ImpactFX.Instance?.SpawnHit(transform.position, cooldownColor, 0.5f);
@@ -160,32 +144,13 @@ public class ProtocolCachePlate : MonoBehaviour
         }
     }
 
-    private void BeginArmFromIdle()
+    private void BeginCharge()
     {
-        switch (armMode)
-        {
-            case ArmMode.ArmThenClaim:
-                EnterReady();
-                break;
-            case ArmMode.ChargeThenClaim:
-            case ArmMode.ChargeAutoClaim:
-                State = PlateState.Charging;
-                Charge01 = Mathf.Max(Charge01, 0.05f);
-                ApplyVisualState();
-                ImpactFX.Instance?.SpawnHit(transform.position, chargingColor, 1.0f);
-                break;
-        }
-    }
-
-    private void OnChargeComplete()
-    {
-        Charge01 = 1f;
-        if (armMode == ArmMode.ChargeAutoClaim)
-        {
-            Claim(BallController.Instance);
-            return;
-        }
-        EnterReady();
+        State = PlateState.Charging;
+        Charge01 = 0f;
+        _requireExitBeforeClaim = false;
+        ApplyVisualState();
+        ImpactFX.Instance?.SpawnHit(transform.position, chargingColor, 1.0f);
     }
 
     private void EnterReady()
@@ -193,25 +158,26 @@ public class ProtocolCachePlate : MonoBehaviour
         State = PlateState.Ready;
         Charge01 = 1f;
         _readyLeft = readyTimeout > 0f ? readyTimeout : 9999f;
+        _requireExitBeforeClaim = _ballInside;
         ApplyVisualState();
         ImpactFX.Instance?.SpawnHit(transform.position, readyColor, 1.25f);
         CameraShake.Instance?.Shake(CameraShake.Preset.Light);
     }
 
-    private void Claim(BallController ball)
+    private void Claim()
     {
-        var director = ProtocolFieldDirector.EnsureExists();
         Vector2 pos = transform.position;
-        director.GrantReward(rewardType, pos, this);
-
-        // 过载时撞盘额外脉冲
-        if (director.IsOverloading && rewardType != ProtocolRewardType.BumperPulse)
-            BumperPulse.ReleaseAt(pos, readyColor);
+        BumperPulse.ReleaseAt(pos, readyColor);
 
         State = PlateState.Cooldown;
         Charge01 = 0f;
         _cooldownLeft = claimCooldown;
+        _requireExitBeforeClaim = false;
         ApplyVisualState();
+
+        ImpactFX.Instance?.SpawnHit(pos, readyColor, 1.4f);
+        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
+        ProtocolFieldDirector.Instance?.onRewardGranted.Invoke(ProtocolRewardType.BumperPulse, pos);
     }
 
     public void ResetPlate()
@@ -220,16 +186,8 @@ public class ProtocolCachePlate : MonoBehaviour
         Charge01 = 0f;
         _readyLeft = 0f;
         _cooldownLeft = 0f;
+        _requireExitBeforeClaim = false;
         ApplyVisualState();
-    }
-
-    private void Nudge(BallController ball)
-    {
-        if (!nudgeBall || ball == null || ball.Rb == null) return;
-        Vector2 away = ((Vector2)ball.transform.position - (Vector2)transform.position).normalized;
-        if (away.sqrMagnitude < 0.01f)
-            away = ball.Rb.velocity.sqrMagnitude > 0.01f ? ball.Rb.velocity.normalized : Vector2.up;
-        ball.Rb.velocity += away * nudgeForce;
     }
 
     private void EnsureTrigger()

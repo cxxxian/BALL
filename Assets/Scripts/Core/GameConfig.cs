@@ -5,7 +5,7 @@ public class GameConfig : ScriptableObject
 {
     [Header("Ball Physics")]
     public float ballLaunchSpeed = 8f;
-    public float ballMinSpeed = 5f;
+    public float ballMinSpeed = 6f;
     public float ballMaxSpeed = 15f;
     [Tooltip("齿轮/冲量叠加后的绝对速度硬顶（弹刀可读性）")]
     public float ballHardMaxSpeed = 19f;

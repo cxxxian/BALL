@@ -157,9 +157,8 @@ public static class BuildMechanismMaps
         MakeBumper("Bumper_BR", new Vector2(2.0f, -0.6f));
 
         // 环轨旁缓存盘：压过充能 → 再压领脉冲；另一盘一压武装领锁
-        MakeCachePlate("Cache_Pulse", new Vector2(0f, -1.8f), ProtocolRewardType.BumperPulse);
-        MakeCachePlate("Cache_Lock", new Vector2(3.0f, 4.0f), ProtocolRewardType.ProtocolLock,
-            ProtocolCachePlate.ArmMode.ArmThenClaim);
+        MakeCachePlate("Cache_Pulse", new Vector2(0f, -1.8f));
+        MakeCachePlate("Cache_Lock", new Vector2(3.0f, 4.0f));
 
         MakeSpringBoard("SpringBoard_Left", new Vector2(-3.88f, -8.35f), new Vector2(0.55f, 1f));
         MakeSpringBoard("SpringBoard_Right", new Vector2(3.88f, -8.35f), new Vector2(-0.55f, 1f));
@@ -192,8 +191,7 @@ public static class BuildMechanismMaps
         MakeBumper("Bumper_L", new Vector2(-2.0f, 1.8f));
         MakeBumper("Bumper_R", new Vector2(2.0f, 1.8f));
 
-        MakeCachePlate("Cache_DivertorCD", new Vector2(0f, -1.6f), ProtocolRewardType.SkillCooldown,
-            ProtocolCachePlate.ArmMode.ChargeThenClaim, chargeDuration: 5.5f);
+        MakeCachePlate("Cache_DivertorCD", new Vector2(0f, -1.6f), chargeDuration: 5.5f);
 
         MakeSpringBoard("SpringBoard_Left", new Vector2(-3.88f, -8.35f), new Vector2(0.55f, 1f));
         MakeSpringBoard("SpringBoard_Right", new Vector2(3.88f, -8.35f), new Vector2(-0.55f, 1f));
@@ -225,10 +223,9 @@ public static class BuildMechanismMaps
         MakeBoostGear("Boost_L", new Vector2(-3.4f, 0.6f));
         MakeBumper("Bumper_Soft", new Vector2(2.2f, 0.4f));
 
-        MakeCachePlate("Cache_Score", new Vector2(-1.6f, -0.2f), ProtocolRewardType.ScoreBurst);
-        MakeCachePlate("Cache_Skill", new Vector2(1.8f, 2.8f), ProtocolRewardType.SkillCooldown);
-        MakeCachePlate("Cache_Lock", new Vector2(0f, 5.6f), ProtocolRewardType.ProtocolLock,
-            ProtocolCachePlate.ArmMode.ChargeThenClaim, chargeDuration: 5f);
+        MakeCachePlate("Cache_Score", new Vector2(-1.6f, -0.2f));
+        MakeCachePlate("Cache_Skill", new Vector2(1.8f, 2.8f));
+        MakeCachePlate("Cache_Lock", new Vector2(0f, 5.6f), chargeDuration: 5f);
 
         MakeSpringBoard("SpringBoard_Left", new Vector2(-3.88f, -8.35f), new Vector2(0.55f, 1f));
         MakeSpringBoard("SpringBoard_Right", new Vector2(3.88f, -8.35f), new Vector2(-0.55f, 1f));
@@ -424,8 +421,6 @@ public static class BuildMechanismMaps
     static GameObject MakeCachePlate(
         string name,
         Vector2 pos,
-        ProtocolRewardType reward,
-        ProtocolCachePlate.ArmMode mode = ProtocolCachePlate.ArmMode.ChargeThenClaim,
         float chargeDuration = 6f)
     {
         var go = new GameObject(name);
@@ -436,8 +431,6 @@ public static class BuildMechanismMaps
         col.radius = 0.85f;
 
         var plate = go.AddComponent<ProtocolCachePlate>();
-        plate.rewardType = reward;
-        plate.armMode = mode;
         plate.chargeDuration = chargeDuration;
         plate.radius = 0.85f;
         return go;

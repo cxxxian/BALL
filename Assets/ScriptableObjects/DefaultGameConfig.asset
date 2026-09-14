@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DefaultGameConfig
   m_EditorClassIdentifier: 
   ballLaunchSpeed: 8
-  ballMinSpeed: 5
+  ballMinSpeed: 6
   ballMaxSpeed: 15
   ballHardMaxSpeed: 19
   ballBounciness: 1
