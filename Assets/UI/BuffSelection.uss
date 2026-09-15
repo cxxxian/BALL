@@ -2,10 +2,11 @@
    干净实色 + 原版比例；去掉会弄脏画面的半透明叠层 */
 
 :root {
-    --neon-cyan: rgb(0, 242, 255);
-    --neon-fuchsia: rgb(255, 0, 200);
-    --neon-yellow: rgb(255, 200, 50);
-    --neon-muted: rgb(140, 170, 190);
+    --neon-cyan: rgb(0, 232, 255);
+    --neon-ice: rgb(200, 245, 255);
+    --neon-fuchsia: rgb(255, 64, 200);
+    --neon-yellow: rgb(255, 214, 96);
+    --neon-muted: rgb(110, 140, 158);
     --neon-fast: 0.12s;
 }
 
@@ -142,10 +143,11 @@
 }
 
 .title {
-    color: rgb(0, 242, 255);
+    color: rgb(200, 245, 255);
     font-size: 13px;
     -unity-font-style: bold;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 12px rgba(0, 232, 255, 0.5);
 }
 
 .wave-tag {

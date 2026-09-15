@@ -1,0 +1,47 @@
+/* Protocol Neon — 全工程 UITK 共享令牌
+   主轴：战场青白 Ice/Cyan · 点缀：品红 · 数值：琥珀
+   英文/数字展示字：Orbitron · 中文用默认字体 + 同色 glow */
+
+:root {
+    --neon-bg: rgb(6, 10, 18);
+    --neon-panel: rgb(3, 7, 18);
+    --neon-panel-elevated: rgb(8, 12, 24);
+    --neon-cyan: rgb(0, 232, 255);
+    --neon-ice: rgb(200, 245, 255);
+    --neon-white: rgb(236, 248, 255);
+    --neon-fuchsia: rgb(255, 64, 200);
+    --neon-yellow: rgb(255, 214, 96);
+    --neon-green: rgb(0, 232, 255);
+    --neon-red: rgb(255, 72, 96);
+    --neon-text: rgb(236, 248, 255);
+    --neon-muted: rgb(110, 140, 158);
+    --neon-border: rgba(0, 232, 255, 0.32);
+    --neon-border-strong: rgba(120, 240, 255, 0.55);
+    --neon-radius: 0;
+    --neon-fast: 0.12s;
+}
+
+/* 英文 / 数字 / 状态码 */
+.proto-font-display {
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.proto-glow-cyan {
+    text-shadow: 0 0 14px rgba(0, 232, 255, 0.55);
+}
+
+.proto-glow-ice {
+    text-shadow: 0 0 22px rgba(0, 232, 255, 0.7);
+}
+
+.proto-glow-magenta {
+    text-shadow: 0 0 14px rgba(255, 64, 200, 0.45);
+}
+
+.proto-glow-amber {
+    text-shadow: 0 0 12px rgba(255, 214, 96, 0.4);
+}
+
+.neon-glow-text {
+    text-shadow: 0 0 14px rgba(0, 232, 255, 0.5);
+}

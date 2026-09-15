@@ -26,30 +26,39 @@ MonoBehaviour:
   maxLives: 5
   flipperRestAngle: -30
   flipperActivatedAngle: 15
-  flipperAnimDuration: 0.08
+  flipperActivateDuration: 0.055
+  flipperReturnDuration: 0.18
+  flipperBodyLength: 1.9
+  flipperBoostFactor: 1.15
   scorePerGruntHit: 10
   scorePerGruntKill: 50
   missileMissFlipperZoneScorePenalty: 80
   scoreToCreditsRate: 0.1
   minCreditsPerRun: 10
-  worldWidth: 9
-  worldHeight: 16
-  minionAttackLineY: -4
-  ballFallLineY: -8.85
+  comboTimeout: 2
+  comboDisplayThreshold: 3
   comboRewardThreshold25: 25
   comboPulseInterval: 10
   bumperPulseMilestoneDamage: 1
   bumperPulseRadius: 3.2
   bumperPulseRingDuration: 1
-  skillCooldown: 12
-  skillComboCDReduce: 0.28
-  skillBottomZoneRatio: 0.22
-  skillSlowMoScale: 0.12
-  protocolAimMaxSeconds: 4
-  protocolAimWarnSeconds: 1
-  executeChainMaxSpeed: 26
-  comboTimeout: 2
-  comboDisplayThreshold: 3
+  shakeTraumaLight: 0.32
+  shakeTraumaMedium: 0.52
+  shakeTraumaHeavy: 0.82
+  shakeDecaySpeed: 7
+  shakeMaxOffset: 0.22
+  hitStopLightSeconds: 0.028
+  hitStopLightScale: 0.07
+  hitStopMediumSeconds: 0.045
+  hitStopMediumScale: 0.045
+  hitStopHeavySeconds: 0.08
+  hitStopHeavyScale: 0.03
+  hitStopSpeedRef: 15
+  launchGuideLength: 6
+  launchGuideDots: 20
+  guideSwingSpeed: 65
+  guideMinAngle: 45
+  guideMaxAngle: 135
   timestopDuration: 3
   timestopMinionSpeedScale: 0.45
   timestopBossSpeedScale: 0.6
@@ -66,4 +75,28 @@ MonoBehaviour:
   gravityWellOverflowPullMult: 0.3
   gravityWellMinPlaceOffset: 0.8
   gravityWellPlaceMarginX: 0.5
+  skillCooldown: 12
+  skillComboCDReduce: 0.28
+  skillBottomZoneRatio: 0.22
+  skillSlowMoScale: 0.12
+  protocolAimMaxSeconds: 4
+  protocolAimWarnSeconds: 1
+  executeChainMaxSpeed: 26
+  executeArmWindowSeconds: 5
+  executeChainMaxJumps: 3
+  corePulseRadius: 2.5
+  corePulseDamageMult: 2
+  corePulseKnockback: 2.5
+  corePulseWaveDuration: 0.4
+  splitDuration: 5
+  splitDamageScale: 0.5
+  splitSpawnAngleDeg: 28
+  splitPhantomAlpha: 0.92
+  worldWidth: 9
+  worldHeight: 16
+  minionAttackLineY: -4
+  ballFallLineY: -7.6500006
+  slotMachineShowConfirmButton: 0
   neonPalette: {fileID: 11400000, guid: 1a2de9d420a62ab41868e26fab8a0e51, type: 2}
+  bumperRoundSprite: {fileID: 21300000, guid: d2c827ef2342897448277c1cc100847c, type: 3}
+  bumperMaterial: {fileID: 2100000, guid: bcdf9474b2e38ad4b94a9dca08739056, type: 2}

@@ -8,23 +8,37 @@ public class ComboDisplay : MonoBehaviour
     public Text comboText;
     public Text labelText;
 
-    [Header("Colors")]
-    public Color normalColor = new Color(1f, 0.88f, 0.18f);
-    public Color flashColor  = Color.white;
-    public Color labelColor  = new Color(0.85f, 0.65f, 1f);
-
     private RectTransform _rt;
     private Coroutine _punchCoroutine;
     private int _threshold = 3;
     private bool _subscribed;
     private bool _visible;
 
+    private Color NormalFace => ProtocolUiStyle.IceFace;
+    private Color HotFace => ProtocolUiStyle.AmberFace;
+    private Color FlashFace => Color.white;
+    private Color LabelFace => ProtocolUiStyle.CyanFace;
+
     private void Awake()
     {
         _rt = GetComponent<RectTransform>();
         _rt.localScale = Vector3.one;
         RemoveLegacyBorder();
+        ApplyProtocolStyle();
         SetVisible(false);
+    }
+
+    private void ApplyProtocolStyle()
+    {
+        ProtocolUiStyle.ApplyDisplayFont(comboText, 42);
+        ProtocolUiStyle.ApplyDisplayFont(labelText, 14);
+        if (labelText != null)
+            labelText.text = "COMBO";
+
+        ProtocolUiStyle.ApplyValueFace(comboText, NormalFace, ProtocolUiStyle.CyanFace, 1.8f);
+        ProtocolUiStyle.ApplyKeyLabel(labelText, 0.85f);
+        CyberHudGlow.Ensure(comboText, CyberHudGlow.GlowStyle.WhiteScore);
+        CyberHudGlow.Ensure(labelText, CyberHudGlow.GlowStyle.KeyLabel);
     }
 
     private void RemoveLegacyBorder()
@@ -64,11 +78,11 @@ public class ComboDisplay : MonoBehaviour
     private void OnComboMilestone(int combo)
     {
         if (combo < _threshold) return;
-        if (comboText != null) comboText.text = "x" + combo;
+        SetComboText(combo);
         SetVisible(true);
 
         if (_punchCoroutine != null) StopCoroutine(_punchCoroutine);
-        _punchCoroutine = StartCoroutine(Punch(0.55f, 0.42f));
+        _punchCoroutine = StartCoroutine(Punch(0.48f, 0.36f, hot: true));
     }
 
     private void OnComboChanged(int combo)
@@ -89,11 +103,17 @@ public class ComboDisplay : MonoBehaviour
 
         if (IsMilestoneCombo(combo)) return;
 
-        if (comboText != null) comboText.text = "x" + combo;
+        SetComboText(combo);
         SetVisible(true);
 
         if (_punchCoroutine != null) StopCoroutine(_punchCoroutine);
-        _punchCoroutine = StartCoroutine(Punch(0.22f, 0.28f));
+        _punchCoroutine = StartCoroutine(Punch(0.22f, 0.24f, hot: false));
+    }
+
+    private void SetComboText(int combo)
+    {
+        if (comboText != null)
+            comboText.text = "x" + combo;
     }
 
     private static bool IsMilestoneCombo(int combo)
@@ -104,10 +124,16 @@ public class ComboDisplay : MonoBehaviour
         return combo > heavy && (combo - heavy) % 5 == 0;
     }
 
-    private IEnumerator Punch(float scaleAmp, float dur)
+    private IEnumerator Punch(float scaleAmp, float dur, bool hot)
     {
-        if (comboText != null) comboText.color = flashColor;
-        if (labelText != null) labelText.color = flashColor;
+        Color rest = hot ? HotFace : NormalFace;
+        if (hot)
+            CyberHudGlow.Ensure(comboText, CyberHudGlow.GlowStyle.ComboAmber);
+        else
+            CyberHudGlow.Ensure(comboText, CyberHudGlow.GlowStyle.WhiteScore);
+
+        if (comboText != null) comboText.color = FlashFace;
+        if (labelText != null) labelText.color = FlashFace;
 
         float t = 0f;
         while (t < dur)
@@ -117,23 +143,23 @@ public class ComboDisplay : MonoBehaviour
             float spring = Mathf.Sin(p * Mathf.PI) * (1f - p * p);
             _rt.localScale = Vector3.one * (1f + spring * scaleAmp);
 
-            float colorT = Mathf.Clamp01(p / 0.3f);
-            if (comboText != null) comboText.color = Color.Lerp(flashColor, normalColor, colorT);
-            if (labelText != null) labelText.color = Color.Lerp(flashColor, labelColor, colorT);
+            float colorT = Mathf.Clamp01(p / 0.35f);
+            if (comboText != null) comboText.color = Color.Lerp(FlashFace, rest, colorT);
+            if (labelText != null) labelText.color = Color.Lerp(FlashFace, LabelFace, colorT);
 
             yield return null;
         }
         _rt.localScale = Vector3.one;
-        if (comboText != null) comboText.color = normalColor;
-        if (labelText != null) labelText.color = labelColor;
+        if (comboText != null) comboText.color = rest;
+        if (labelText != null) labelText.color = LabelFace;
     }
 
     private IEnumerator FadeOut()
     {
-        float dur = 0.25f;
+        float dur = 0.22f;
         float t = 0f;
-        Color numStart = comboText != null ? comboText.color : normalColor;
-        Color lblStart = labelText != null ? labelText.color : labelColor;
+        Color numStart = comboText != null ? comboText.color : NormalFace;
+        Color lblStart = labelText != null ? labelText.color : LabelFace;
         Vector3 scStart = _rt.localScale;
 
         while (t < dur)
@@ -142,12 +168,13 @@ public class ComboDisplay : MonoBehaviour
             float p = Mathf.Clamp01(t / dur);
             if (comboText != null) comboText.color = Color.Lerp(numStart, new Color(numStart.r, numStart.g, numStart.b, 0f), p);
             if (labelText != null) labelText.color = Color.Lerp(lblStart, new Color(lblStart.r, lblStart.g, lblStart.b, 0f), p);
-            _rt.localScale = Vector3.Lerp(scStart, Vector3.one * 0.75f, p);
+            _rt.localScale = Vector3.Lerp(scStart, Vector3.one * 0.82f, p);
             yield return null;
         }
         SetVisible(false);
         _rt.localScale = Vector3.one;
-        if (comboText != null) comboText.color = normalColor;
-        if (labelText != null) labelText.color = labelColor;
+        if (comboText != null) comboText.color = NormalFace;
+        if (labelText != null) labelText.color = LabelFace;
+        CyberHudGlow.Ensure(comboText, CyberHudGlow.GlowStyle.WhiteScore);
     }
 }

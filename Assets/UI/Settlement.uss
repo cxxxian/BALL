@@ -1,15 +1,15 @@
-/* StyleKit · Cyberpunk Neon — Settlement
-   Align with MainMenu.uss: full-screen center stack, compact CTAs, no heavy card. */
+/* StyleKit · Cyberpunk Neon — Settlement · Protocol Neon */
 
 :root {
-    --neon-bg: rgb(10, 10, 15);
+    --neon-bg: rgb(6, 10, 18);
     --neon-panel: rgb(3, 7, 18);
-    --neon-cyan: rgb(0, 255, 255);
-    --neon-fuchsia: rgb(255, 0, 255);
-    --neon-yellow: rgb(255, 255, 0);
-    --neon-text: rgb(255, 255, 255);
-    --neon-muted: rgb(156, 163, 175);
-    --neon-border: rgba(0, 255, 255, 0.3);
+    --neon-cyan: rgb(0, 232, 255);
+    --neon-ice: rgb(200, 245, 255);
+    --neon-fuchsia: rgb(255, 64, 200);
+    --neon-yellow: rgb(255, 214, 96);
+    --neon-text: rgb(236, 248, 255);
+    --neon-muted: rgb(110, 140, 158);
+    --neon-border: rgba(0, 232, 255, 0.32);
     --neon-fast: 0.12s;
 }
 
@@ -32,7 +32,8 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 255, 255, 0.008);
+    background-color: rgba(0, 20, 40, 0.04);
+    opacity: 0.35;
 }
 
 .settle-layout {
@@ -70,14 +71,15 @@
     font-size: 11px;
     color: var(--neon-muted);
     letter-spacing: 2px;
-    -unity-font-style: bold;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
 
 .credits-label {
     font-size: 11px;
     color: var(--neon-yellow);
-    -unity-font-style: bold;
     letter-spacing: 2px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 10px rgba(255, 214, 96, 0.35);
     flex-shrink: 0;
     margin-left: 12px;
 }
@@ -100,12 +102,12 @@
 
 .title-line {
     font-size: 52px;
-    color: var(--neon-fuchsia);
+    color: var(--neon-ice);
     -unity-font-style: bold;
     letter-spacing: 6px;
     margin-bottom: 12px;
     -unity-text-align: middle-center;
-    text-shadow: 0 0 10px rgba(255, 0, 255, 0.45);
+    text-shadow: 0 0 22px rgba(0, 232, 255, 0.65);
 }
 
 .hero-desc {
@@ -118,7 +120,7 @@
 }
 
 .neon-glow-text {
-    text-shadow: 0 0 8px rgba(255, 0, 255, 0.4);
+    text-shadow: 0 0 18px rgba(0, 232, 255, 0.55);
 }
 
 .stat-strip {
@@ -148,17 +150,19 @@
     font-size: 11px;
     color: var(--neon-cyan);
     letter-spacing: 3px;
-    -unity-font-style: bold;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
     margin-bottom: 6px;
     -unity-text-align: middle-center;
+    text-shadow: 0 0 10px rgba(0, 232, 255, 0.4);
 }
 
 .stat-val {
     font-size: 28px;
-    color: var(--neon-text);
-    -unity-font-style: bold;
+    color: var(--neon-ice);
     letter-spacing: 2px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
     -unity-text-align: middle-center;
+    text-shadow: 0 0 14px rgba(0, 232, 255, 0.45);
 }
 
 .credit-hero {
@@ -172,7 +176,7 @@
     font-size: 11px;
     color: var(--neon-yellow);
     letter-spacing: 3px;
-    -unity-font-style: bold;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
     margin-bottom: 8px;
     -unity-text-align: middle-center;
 }
@@ -180,10 +184,10 @@
 .credit-earned {
     font-size: 36px;
     color: var(--neon-yellow);
-    -unity-font-style: bold;
     letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
     -unity-text-align: middle-center;
-    text-shadow: 0 0 8px rgba(255, 255, 0, 0.4);
+    text-shadow: 0 0 12px rgba(255, 214, 96, 0.45);
     margin-bottom: 6px;
 }
 

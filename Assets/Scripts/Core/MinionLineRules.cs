@@ -4,7 +4,7 @@ using UnityEngine;
 public static class MinionLineRules
 {
     private const float FallbackAttackLineY = -4.0f;
-    private const float FallbackBallFallY   = -8.85f;
+    private const float FallbackBallFallY   = -7.65f;
 
     public static float GetAttackLineY()
     {

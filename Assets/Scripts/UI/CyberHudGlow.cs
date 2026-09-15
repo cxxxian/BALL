@@ -9,7 +9,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Graphic))]
 public class CyberHudGlow : MonoBehaviour
 {
-    public enum GlowStyle { BumperCyan, WhiteScore, DangerRed }
+    public enum GlowStyle { BumperCyan, WhiteScore, DangerRed, ComboAmber, KeyLabel }
 
     [SerializeField] GlowStyle style = GlowStyle.BumperCyan;
     [SerializeField] float outlineSpread = 1.4f;
@@ -46,6 +46,14 @@ public class CyberHudGlow : MonoBehaviour
             case GlowStyle.WhiteScore:
                 face = NeonUiColors.ScoreUi();
                 glow = NeonUiColors.MenuCyanUi(0.7f);
+                break;
+            case GlowStyle.ComboAmber:
+                face = NeonUiColors.YellowUi(1.05f);
+                glow = NeonUiColors.MenuCyanUi(0.75f);
+                break;
+            case GlowStyle.KeyLabel:
+                face = NeonUiColors.MenuCyanUi(0.85f);
+                glow = NeonUiColors.MenuCyanUi(0.4f);
                 break;
             case GlowStyle.DangerRed:
                 face = NeonUiColors.DangerUi(1.1f);

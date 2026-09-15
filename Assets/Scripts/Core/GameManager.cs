@@ -50,9 +50,22 @@ public class GameManager : MonoBehaviour
             if (sr != null)
             {
                 var bumperColor = NeonColors.Active.GetBase(NeonRole.Bumper);
-                sr.sprite = CyberVisualFactory.CreateBumperSprite(bumperColor);
-                sr.color = bumperColor;
-                sr.material = CyberVisualFactory.UnlitMaterial;
+                if (config != null && config.bumperRoundSprite != null)
+                {
+                    sr.sprite = config.bumperRoundSprite;
+                    // 美术贴已含金属+霓虹；保持近白 tint，避免 HDR 调色盘染灰金属
+                    sr.color = Color.white;
+                    if (config.bumperMaterial != null)
+                        sr.sharedMaterial = config.bumperMaterial;
+                    else
+                        sr.material = CyberVisualFactory.UnlitMaterial;
+                }
+                else
+                {
+                    sr.sprite = CyberVisualFactory.CreateBumperSprite(bumperColor);
+                    sr.color = bumperColor;
+                    sr.material = CyberVisualFactory.UnlitMaterial;
+                }
                 b.RefreshFromPalette();
             }
         }

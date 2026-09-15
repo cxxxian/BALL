@@ -30,7 +30,7 @@ public class SplitPhantomBall : MonoBehaviour
         else if (speed > max)
             Rb.velocity = Rb.velocity.normalized * max;
 
-        float fallY = _config != null ? _config.ballFallLineY : -8.85f;
+        float fallY = _config != null ? _config.ballFallLineY : -7.65f;
         if (transform.position.y <= fallY)
             Despawn();
     }

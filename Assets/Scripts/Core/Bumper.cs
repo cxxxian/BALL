@@ -54,10 +54,10 @@ public class Bumper : MonoBehaviour
         _passthrough = passthrough;
         if (_col != null) _col.enabled = !passthrough;
 
-        Color dim = NeonPalette.Dim(_baseColor, 0.15f);
-        if (_sr != null) _sr.color = passthrough ? dim : (_disabled
-            ? NeonPalette.Dim(_baseColor, 0.25f)
-            : _baseColor);
+        if (_sr != null)
+            _sr.color = passthrough
+                ? (UsesTableArt ? new Color(0.2f, 0.2f, 0.2f, 1f) : NeonPalette.Dim(_baseColor, 0.15f))
+                : ResolveDisplayColor();
         if (_glowSR != null) _glowSR.color = passthrough
             ? new Color(_glowBaseColor.r, _glowBaseColor.g, _glowBaseColor.b, 0.08f)
             : _glowBaseColor;
@@ -76,14 +76,27 @@ public class Bumper : MonoBehaviour
                 _glowSR.color = _glowBaseColor;
             }
         }
-        if (_sr != null) _sr.color = disabled ? NeonPalette.Dim(_baseColor, 0.25f) : _baseColor;
+        if (_sr != null) _sr.color = ResolveDisplayColor();
     }
 
     public void RefreshFromPalette()
     {
         _baseColor = NeonColors.Active.GetBase(NeonRole.Bumper);
         if (_sr != null && !_flashing && !_passthrough)
-            _sr.color = _disabled ? NeonPalette.Dim(_baseColor, 0.25f) : _baseColor;
+            _sr.color = ResolveDisplayColor();
+    }
+
+    private bool UsesTableArt =>
+        _sr != null && _sr.sprite != null && _sr.sprite.name == "bumper_round";
+
+    private Color ResolveDisplayColor()
+    {
+        if (UsesTableArt)
+        {
+            // 贴图自带配色；禁用时压暗，正常保持白 tint 喂 SpriteNeonHDR
+            return _disabled ? new Color(0.28f, 0.28f, 0.28f, 1f) : Color.white;
+        }
+        return _disabled ? NeonPalette.Dim(_baseColor, 0.25f) : _baseColor;
     }
 
     private void OnCollisionEnter2D(Collision2D col)
@@ -127,7 +140,10 @@ public class Bumper : MonoBehaviour
     {
         _flashing = true;
         var palette = NeonColors.Active;
-        if (_sr != null) _sr.color = palette.GetFlash(NeonRole.Bumper);
+        if (_sr != null)
+            _sr.color = UsesTableArt
+                ? new Color(1.35f, 1.45f, 1.6f, 1f)
+                : palette.GetFlash(NeonRole.Bumper);
 
         if (_glowSR != null)
         {
@@ -137,9 +153,7 @@ public class Bumper : MonoBehaviour
 
         yield return new WaitForSeconds(flashDuration);
 
-        if (_sr != null) _sr.color = _disabled
-            ? NeonPalette.Dim(_baseColor, 0.25f)
-            : _baseColor;
+        if (_sr != null) _sr.color = ResolveDisplayColor();
         if (_glowSR != null)
         {
             _glowSR.transform.localScale = _glowBaseScale;

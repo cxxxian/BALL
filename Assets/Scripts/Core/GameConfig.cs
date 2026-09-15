@@ -145,7 +145,7 @@ public class GameConfig : ScriptableObject
     public float minionAttackLineY = -4.0f;
 
     [Tooltip("弹珠 Y ≤ 此线视为掉出界外扣命（挡板下方）")]
-    public float ballFallLineY = -8.85f;
+    public float ballFallLineY = -7.65f;
 
     [Header("Slot Machine UI")]
     [Tooltip("为 true 时在拉霸界面显示「确认领取」按钮；默认仅拉杆领取")]
@@ -154,4 +154,10 @@ public class GameConfig : ScriptableObject
     [Header("Neon Visuals")]
     [Tooltip("统一霓虹语法 Palette；改此资产即可全局换色")]
     public NeonPalette neonPalette;
+
+    [Header("Table Art")]
+    [Tooltip("圆形 Bumper 美术精灵；为空则回退程序化贴图")]
+    public Sprite bumperRoundSprite;
+    [Tooltip("Bumper 用 SpriteNeonHDR 材质；为空则用 Sprites/Default")]
+    public Material bumperMaterial;
 }

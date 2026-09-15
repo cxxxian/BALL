@@ -11,32 +11,35 @@ public class PlayfieldBottomLanes : MonoBehaviour
 {
     [Header("Lane Geometry")]
     public float wallInnerX = 4.25f;
-    public float dividerTopY = -5.85f;
-    public float dividerMidY = -7.55f;
-    public float dividerBottomY = -8.55f;
+    public float dividerTopY = -5.2f;
+    public float dividerMidY = -6.55f;
+    public float dividerBottomY = -7.45f;
     [Tooltip("分隔条顶部 X（绝对值），外道宽约 wallInner−此值")]
-    public float dividerTopX = 3.48f;
-    public float dividerMidX = 3.38f;
-    public float dividerBottomX = 3.52f;
-    public float laneThickness = 0.14f;
+    public float dividerTopX = 3.55f;
+    public float dividerMidX = 3.42f;
+    public float dividerBottomX = 3.58f;
+    public float laneThickness = 0.16f;
 
     [Header("Inlane Shelf")]
-    public float shelfOuterX = 3.28f;
-    public float shelfInnerX = 2.45f;
-    public float shelfY = -7.98f;
-    public float shelfTipY = -8.12f;
+    [Tooltip("外端近墙；内端指向挡板接球区（喂球）")]
+    public float shelfOuterX = 3.45f;
+    public float shelfInnerX = 1.85f;
+    public float shelfY = -6.5f;
+    public float shelfTipY = -6.95f;
 
     [Header("SpringBoard")]
-    public float springboardX = 3.88f;
-    public float springboardY = -8.35f;
+    public float springboardX = 3.9f;
+    public float springboardY = -7.2f;
     public Vector2 springboardSize = new Vector2(0.85f, 0.32f);
     public float springLaunchSpeed = 16f;
     public Vector2 springLaunchDirLeft = new Vector2(0.55f, 1f);
 
     [Header("Center Drain")]
-    [Tooltip("中央落球触发半宽（对齐挡板间隙）")]
+    [Tooltip("落球口视觉半宽（对齐挡板间隙）")]
     public float drainHalfWidth = 1.05f;
-    public float drainY = -9.3f;
+    [Tooltip("底部死亡触发半宽；外道漏球也要能接到，建议接近半台宽")]
+    public float drainCatchHalfWidth = 4.75f;
+    public float drainY = -8.1f;
     public Vector2 drainSize = new Vector2(2.1f, 0.4f);
 
     [Header("Refs / Style")]
@@ -184,11 +187,12 @@ public class PlayfieldBottomLanes : MonoBehaviour
         var box = drain.GetComponent<BoxCollider2D>();
         if (box == null) box = drain.AddComponent<BoxCollider2D>();
         box.isTrigger = true;
-        box.size = new Vector2(Mathf.Max(0.5f, drainHalfWidth * 2f), drainSize.y);
+        float catchHalf = Mathf.Max(drainHalfWidth, drainCatchHalfWidth);
+        box.size = new Vector2(Mathf.Max(0.5f, catchHalf * 2f), drainSize.y);
         if (drain.GetComponent<BottomBoundary>() == null)
             drain.AddComponent<BottomBoundary>();
 
-        // 视觉标记：落球口霓虹槽
+        // 视觉标记：落球口霓虹槽（只标中缝，不表示整条死亡触发）
         Transform marker = _root.Find("DrainMarker");
         GameObject markerGo;
         if (marker == null)

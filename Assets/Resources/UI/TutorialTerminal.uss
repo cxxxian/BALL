@@ -53,13 +53,13 @@
     min-width: 220px;
     max-width: 300px;
     min-height: 0;
-    background-color: rgba(3, 7, 18, 0.9);
+    background-color: rgba(3, 7, 18, 0.92);
     border-width: 1px;
-    border-color: rgb(0, 255, 255);
-    border-top-color: rgb(0, 255, 255);
-    border-bottom-color: rgba(255, 0, 255, 0.55);
-    border-left-color: rgba(0, 255, 255, 0.55);
-    border-right-color: rgba(0, 255, 255, 0.85);
+    border-color: rgb(0, 232, 255);
+    border-top-color: rgb(0, 232, 255);
+    border-bottom-color: rgba(255, 64, 200, 0.45);
+    border-left-color: rgba(0, 232, 255, 0.55);
+    border-right-color: rgba(120, 240, 255, 0.85);
     padding: 0;
     flex-direction: column;
     overflow: hidden;
@@ -171,24 +171,26 @@
     justify-content: space-between;
     align-items: center;
     padding: 5px 8px;
-    background-color: rgba(0, 255, 255, 0.12);
+    background-color: rgba(0, 232, 255, 0.1);
     border-bottom-width: 1px;
-    border-bottom-color: rgba(0, 255, 255, 0.45);
+    border-bottom-color: rgba(0, 232, 255, 0.4);
 }
 
 .terminal-title {
     font-size: 10px;
-    color: rgb(255, 255, 0);
-    -unity-font-style: bold;
-    letter-spacing: 0.5px;
+    color: var(--neon-ice, rgb(200, 245, 255));
+    letter-spacing: 1px;
     white-space: normal;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 10px rgba(0, 232, 255, 0.45);
 }
 
 .terminal-step {
     font-size: 11px;
-    color: rgb(0, 255, 255);
-    -unity-font-style: bold;
-    letter-spacing: 0.5px;
+    color: rgb(0, 232, 255);
+    letter-spacing: 1px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 8px rgba(0, 232, 255, 0.4);
 }
 
 .terminal-scanline {
@@ -197,7 +199,7 @@
     right: 0;
     top: 0;
     bottom: 0;
-    background-color: rgba(0, 255, 255, 0.03);
+    background-color: rgba(0, 232, 255, 0.025);
     picking-mode: ignore;
 }
 
@@ -209,14 +211,15 @@
 
 .terminal-prompt {
     font-size: 9px;
-    color: rgba(0, 255, 255, 0.5);
+    color: rgba(0, 232, 255, 0.55);
     margin-bottom: 4px;
     letter-spacing: 0.5px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
 
 .terminal-line {
     font-size: 13px;
-    color: rgb(255, 255, 255);
+    color: rgb(236, 248, 255);
     -unity-font-style: bold;
     white-space: normal;
     margin-bottom: 6px;
@@ -225,23 +228,25 @@
 
 .terminal-key {
     font-size: 12px;
-    color: rgb(0, 255, 255);
-    -unity-font-style: bold;
+    color: rgb(200, 245, 255);
     letter-spacing: 0.5px;
     margin-bottom: 6px;
     padding: 5px 8px;
-    background-color: rgba(0, 255, 255, 0.1);
+    background-color: rgba(0, 232, 255, 0.1);
     border-width: 1px;
-    border-color: rgba(0, 255, 255, 0.5);
+    border-color: rgba(0, 232, 255, 0.5);
     white-space: normal;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 8px rgba(0, 232, 255, 0.4);
 }
 
 .terminal-status {
     font-size: 10px;
-    color: rgb(156, 163, 175);
+    color: rgb(110, 140, 158);
     letter-spacing: 0.5px;
     margin-bottom: 2px;
     white-space: normal;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
 
 .terminal-actions {

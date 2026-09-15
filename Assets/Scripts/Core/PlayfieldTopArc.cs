@@ -32,6 +32,14 @@ public class PlayfieldTopArc : MonoBehaviour
     [Tooltip("关闭侧墙 Sprite，改由本网格绘制，风格才连续")]
     public bool hideSideWallSprites = true;
 
+    [Header("Table Art")]
+    [Tooltip("可 tile 侧墙中段；赋了以后整圈框（直段+顶弧）都铺这张贴图，弧靠网格弯曲")]
+    public Sprite wallSegmentSprite;
+    [Tooltip("贴图沿墙长方向的重复周期（世界单位）；0=按精灵高度/PPU 自动")]
+    public float tileWorldLength = 0f;
+    [Tooltip("贴图里墙带左右裁切（归一化 U）；默认按 wall_segment 中间条带")]
+    public Vector2 textureURange = new Vector2(0.418f, 0.581f);
+
     [Header("Physics")]
     public PhysicsMaterial2D physicsMaterial;
     public float edgeRadius = 0.08f;
@@ -40,6 +48,7 @@ public class PlayfieldTopArc : MonoBehaviour
     private MeshRenderer _renderer;
     private EdgeCollider2D _edge;
     private Mesh _mesh;
+    private Material _runtimeArtMat;
 
     private void Awake() => Rebuild();
     private void OnEnable() => Rebuild();
@@ -67,7 +76,7 @@ public class PlayfieldTopArc : MonoBehaviour
         var center = BuildFrameCenterline();
         if (center.Count < 3) return;
 
-        BuildRibbonMesh(center, halfThick);
+        BuildRibbonMesh(center, halfThick, ResolveTileLength());
         BuildInnerEdgeCollider(center, halfThick);
     }
 
@@ -105,18 +114,61 @@ public class PlayfieldTopArc : MonoBehaviour
 
     private void ResolveMaterial()
     {
-        if (wallMaterial == null)
-            wallMaterial = Resources.Load<Material>("TronWall");
+        if (wallSegmentSprite != null && wallSegmentSprite.texture != null)
+        {
+            EnsureArtMaterial();
+            _renderer.sharedMaterial = _runtimeArtMat;
+        }
+        else
+        {
+            if (wallMaterial == null)
+                wallMaterial = Resources.Load<Material>("TronWall");
 
 #if UNITY_EDITOR
-        if (wallMaterial == null)
-            wallMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TronWall.mat");
+            if (wallMaterial == null)
+                wallMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/TronWall.mat");
 #endif
 
-        if (wallMaterial != null)
-            _renderer.sharedMaterial = wallMaterial;
+            if (wallMaterial != null)
+                _renderer.sharedMaterial = wallMaterial;
+        }
 
         _renderer.sortingOrder = sortingOrder;
+    }
+
+    private void EnsureArtMaterial()
+    {
+        if (_runtimeArtMat == null)
+        {
+#if UNITY_EDITOR
+            var shared = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteNeonHDR_Wall.mat");
+            if (shared != null)
+            {
+                _runtimeArtMat = shared;
+            }
+            else
+#endif
+            {
+                var shader = Shader.Find("Custom/SpriteNeonHDR");
+                _runtimeArtMat = shader != null
+                    ? new Material(shader) { name = "WallSegment_Runtime" }
+                    : new Material(Shader.Find("Sprites/Default")) { name = "WallSegment_Runtime" };
+            }
+        }
+
+        var tex = wallSegmentSprite.texture;
+        _runtimeArtMat.mainTexture = tex;
+        if (_runtimeArtMat.HasProperty("_Color"))
+            _runtimeArtMat.SetColor("_Color", Color.white);
+    }
+
+    private float ResolveTileLength()
+    {
+        if (tileWorldLength > 0.05f)
+            return tileWorldLength;
+        if (wallSegmentSprite != null && wallSegmentSprite.pixelsPerUnit > 1f)
+            return Mathf.Max(0.5f, wallSegmentSprite.rect.height / wallSegmentSprite.pixelsPerUnit);
+        return 3f;
     }
 
     private void ApplySideWallSpriteVisibility()
@@ -169,7 +221,7 @@ public class PlayfieldTopArc : MonoBehaviour
         return pts;
     }
 
-    private void BuildRibbonMesh(List<Vector2> center, float halfThick)
+    private void BuildRibbonMesh(List<Vector2> center, float halfThick, float tileLen)
     {
         int n = center.Count;
         var verts = new Vector3[n * 2];
@@ -185,6 +237,13 @@ public class PlayfieldTopArc : MonoBehaviour
             dist[i] = totalLen;
         }
         if (totalLen < 0.001f) totalLen = 1f;
+        if (tileLen < 0.05f) tileLen = totalLen;
+
+        // 有美术贴图时沿长度 tile；否则整圈 0..1（旧 TronWall 程序化 UV）
+        bool artUv = wallSegmentSprite != null;
+        float u0 = artUv ? Mathf.Clamp01(textureURange.x) : 0f;
+        float u1 = artUv ? Mathf.Clamp01(textureURange.y) : 1f;
+        if (u1 <= u0 + 0.01f) { u0 = 0f; u1 = 1f; }
 
         for (int i = 0; i < n; i++)
         {
@@ -197,9 +256,9 @@ public class PlayfieldTopArc : MonoBehaviour
             verts[i * 2] = outer;
             verts[i * 2 + 1] = inner;
 
-            float v = dist[i] / totalLen;
-            uvs[i * 2] = new Vector2(0f, v);
-            uvs[i * 2 + 1] = new Vector2(1f, v);
+            float v = artUv ? (dist[i] / tileLen) : (dist[i] / totalLen);
+            uvs[i * 2] = new Vector2(u0, v);
+            uvs[i * 2 + 1] = new Vector2(u1, v);
         }
 
         int ti = 0;

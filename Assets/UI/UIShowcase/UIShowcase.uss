@@ -1,10 +1,11 @@
 /* UIShowcase dock — Cyberpunk Neon chrome over panel previews */
 
 :root {
-    --neon-cyan: rgb(0, 255, 255);
-    --neon-fuchsia: rgb(255, 0, 255);
-    --neon-yellow: rgb(255, 255, 0);
-    --neon-muted: rgb(156, 163, 175);
+    --neon-cyan: rgb(0, 232, 255);
+    --neon-ice: rgb(200, 245, 255);
+    --neon-fuchsia: rgb(255, 64, 200);
+    --neon-yellow: rgb(255, 214, 96);
+    --neon-muted: rgb(110, 140, 158);
     --neon-panel: rgba(3, 7, 18, 0.92);
 }
 
@@ -27,16 +28,17 @@
     padding: 10px 12px;
     background-color: var(--neon-panel);
     border-bottom-width: 1px;
-    border-bottom-color: rgba(0, 255, 255, 0.45);
+    border-bottom-color: rgba(0, 232, 255, 0.4);
 }
 
 .dock-title {
     font-size: 11px;
-    color: var(--neon-cyan);
-    -unity-font-style: bold;
+    color: var(--neon-ice);
     letter-spacing: 2px;
     margin-right: 14px;
     flex-shrink: 0;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 10px rgba(0, 232, 255, 0.45);
 }
 
 .dock-group {

@@ -1,8 +1,20 @@
-/* StyleKit · Cyberpunk Neon (aligned with MainMenu.uss) */
+/* StyleKit · Cyberpunk Neon · Protocol Neon (aligned with MainMenu) */
+:root {
+    --neon-cyan: rgb(0, 232, 255);
+    --neon-ice: rgb(200, 245, 255);
+    --neon-fuchsia: rgb(255, 64, 200);
+    --neon-yellow: rgb(255, 214, 96);
+    --neon-muted: rgb(110, 140, 158);
+    --neon-text: rgb(236, 248, 255);
+    --neon-panel: rgb(3, 7, 18);
+    --neon-border: rgba(0, 232, 255, 0.32);
+    --neon-fast: 0.12s;
+}
+
 .pause-overlay {
     position: absolute;
     left: 0; top: 0; right: 0; bottom: 0;
-    background-color: rgba(10, 10, 15, 0.88);
+    background-color: rgba(4, 8, 16, 0.88);
     align-items: center;
     justify-content: center;
     padding: 12px;
@@ -14,8 +26,8 @@
     max-height: 92%;
     background-color: rgb(3, 7, 18);
     border-width: 1px;
-    border-color: rgba(0, 255, 255, 0.4);
-    border-radius: 8px;
+    border-color: rgba(0, 232, 255, 0.4);
+    border-radius: 0;
     padding: 10px 14px 12px;
     flex-shrink: 0;
 }
@@ -28,11 +40,11 @@
 }
 
 .header-title {
-    color: rgb(0, 255, 255);
-    font-size: 16px;
+    color: var(--neon-ice);
+    font-size: 18px;
     -unity-font-style: bold;
     letter-spacing: 4px;
-    text-shadow: 0 0 8px rgba(0, 255, 255, 0.45);
+    text-shadow: 0 0 16px rgba(0, 232, 255, 0.55);
 }
 
 .tab-bar {
@@ -48,17 +60,19 @@
     padding-left: 8px;
     padding-right: 8px;
     font-size: 10px;
-    background-color: rgba(16, 22, 38, 0.85);
-    color: rgba(140, 160, 185, 0.9);
+    letter-spacing: 1px;
+    color: var(--neon-muted);
+    background-color: rgba(0, 232, 255, 0.06);
     border-width: 1px;
-    border-color: rgba(80, 100, 130, 0.6);
-    border-radius: 4px;
+    border-color: rgba(0, 232, 255, 0.28);
+    border-radius: 0;
 }
 
 .tab-btn.tab-active {
-    color: rgb(0, 255, 255);
-    border-color: rgba(0, 255, 255, 0.7);
-    background-color: rgba(0, 255, 255, 0.08);
+    color: var(--neon-cyan);
+    border-color: rgba(0, 232, 255, 0.7);
+    background-color: rgba(0, 232, 255, 0.1);
+    text-shadow: 0 0 8px rgba(0, 232, 255, 0.35);
 }
 
 .tab-content {

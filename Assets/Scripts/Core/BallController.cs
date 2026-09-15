@@ -806,7 +806,7 @@ public class BallController : MonoBehaviour
         if (!CanLoseLifeFromBottom()) return;
         if (GameManager.Instance == null || GameManager.Instance.State != GameState.Playing) return;
 
-        float limitY = config != null ? MinionLineRules.GetBallFallLineY() : -8.85f;
+        float limitY = config != null ? MinionLineRules.GetBallFallLineY() : -7.65f;
         if (transform.position.y > limitY) return;
 
         GameManager.Instance.BallFellDown();

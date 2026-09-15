@@ -1,131 +1,60 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="ProtocolNeonTheme.uss" />
     <Style src="MainMenu.uss" />
     <ui:VisualElement name="MainContainer" class="main-container">
+        <ui:VisualElement class="vignette-overlay" picking-mode="Ignore" />
         <ui:VisualElement class="scanline-overlay" picking-mode="Ignore" />
 
-                        <!-- 主菜单 · home landing（对齐 HTML demos/main-menu） -->
-        <ui:VisualElement name="MainMenuPanel" class="menu-panel home-panel">
-            <ui:VisualElement class="home-topbar">
-                <ui:VisualElement class="home-status-chip">
-                    <ui:VisualElement class="home-live-dot" picking-mode="Ignore" />
-                    <ui:Label text="SYSTEM ONLINE" class="home-status-text" />
-                </ui:VisualElement>
+        <!-- 主菜单 · Protocol Terminal（ASCII CRT 风格） -->
+        <ui:VisualElement name="MainMenuPanel" class="menu-panel home-panel terminal-home">
+            <ui:VisualElement class="home-topbar terminal-topbar">
+                <ui:Label text="SYS:ONLINE" class="term-status" />
                 <ui:VisualElement class="home-topbar-spacer" />
-                <ui:VisualElement class="home-top-nav">
-                    <ui:Button text="DOCS" class="home-nav-link" />
-                    <ui:Button text="TELEMETRY" class="home-nav-link" />
-                    <ui:Button name="BtnSettings" text="SETTINGS" class="home-nav-link" />
+                <ui:Button name="BtnSettings" text="SETTINGS" class="term-nav" />
+                <ui:Label text="CR" class="home-credits-key" />
+                <ui:Label name="MainCreditsLabel" text="999,999" class="home-credits-label" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="term-stage">
+                <ui:Label text="回弹协议" class="term-title-cn" />
+                <ui:Label text="REBOUND" class="term-title-en" />
+                <ui:Label name="TermSubtitle" text="PROTOCOL" class="term-subtitle" />
+
+                <ui:Button name="BtnEndless" text="" class="term-cta endless-btn">
+                    <ui:Label name="TermCtaLabel" text="[  SPACE / CLICK TO RUN  ]" class="term-cta-label" picking-mode="Ignore" />
+                </ui:Button>
+
+                <ui:VisualElement class="term-secondary-row">
+                    <ui:Button name="BtnCampaign" text="战役" class="term-link campaign-btn" />
+                    <ui:Label text="/" class="term-sep" picking-mode="Ignore" />
+                    <ui:Button name="BtnTutorial" text="协议校准" class="term-link" />
+                    <ui:Label text="/" class="term-sep" picking-mode="Ignore" />
+                    <ui:Button name="BtnLoadout" text="战前配置" class="term-link" />
+                    <ui:Label text="/" class="term-sep" picking-mode="Ignore" />
+                    <ui:Button name="BtnShop" text="商店" class="term-link" />
                 </ui:VisualElement>
-                <ui:VisualElement class="home-credits-chip">
-                    <ui:Label text="CR" class="home-credits-key" />
-                    <ui:Label name="MainCreditsLabel" text="999,999" class="home-credits-label" />
+
+                <ui:VisualElement class="term-meta-block">
+                    <ui:Label name="HomeLoadoutLine" text="LOADOUT  标准弹珠  |  Q:斩杀连锁  E:护盾格挡" class="term-meta-line" />
+                    <ui:Button name="BtnHomeEditLoadout" text="[ EDIT ]" class="term-edit-link" />
+                    <ui:Label name="HomeTelemetryLine" text="WAVE —  ·  COMBO —  ·  BOSS —  ·  PROTO 1" class="term-meta-line term-meta-dim" />
+                </ui:VisualElement>
+
+                <!-- 兼容旧刷新逻辑：隐藏字段仍由 MainMenuController 写入 -->
+                <ui:VisualElement class="term-compat-hidden" picking-mode="Ignore">
+                    <ui:Label name="HomeBallName" text="标准弹珠" />
+                    <ui:Label name="HomeBallDesc" text="均衡核心 · 适合全模式" />
+                    <ui:Label name="HomeSkill0Name" text="斩杀连锁" />
+                    <ui:Label name="HomeSkill1Name" text="护盾格挡" />
+                    <ui:Label name="HomeStatWave" text="—" />
+                    <ui:Label name="HomeStatCombo" text="—" />
+                    <ui:Label name="HomeStatBosses" text="—" />
+                    <ui:Label name="HomeStatProtocols" text="1" />
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <ui:VisualElement class="home-hero-row">
-                <ui:VisualElement class="home-hero-stage">
-                <ui:VisualElement class="home-hero-copy">
-                    <ui:Label text="NEURAL COMBAT INTERFACE // BUILD 0.9" class="home-eyebrow" />
-                    <ui:VisualElement class="home-brand-title">
-                        <ui:Label text="回弹协议" class="home-brand-cn" />
-                        <ui:Label text="REBOUND PROTOCOL" class="home-brand-en" />
-                    </ui:VisualElement>
-                    <ui:Label text="弹珠即武器。在霓虹竞技场中连击、斩杀、构筑协议 —— 把每一次反弹写成你的运行记录。" class="home-lede" />
-
-                    <ui:VisualElement class="home-cta-stack">
-                        <ui:Button name="BtnEndless" text="" class="menu-btn home-cta home-cta-primary btn-jack endless-btn">
-                            <ui:VisualElement class="home-cta-row" picking-mode="Ignore">
-                                <ui:Label text="PRIMARY RUN" class="home-cta-kicker" picking-mode="Ignore" />
-                                <ui:Label text="无尽挑战" class="home-cta-label" picking-mode="Ignore" />
-                                <ui:Label text="→" class="home-cta-arrow" picking-mode="Ignore" />
-                            </ui:VisualElement>
-                        </ui:Button>
-                        <ui:Button name="BtnCampaign" text="" class="menu-btn home-cta home-cta-magenta btn-outline-magenta campaign-btn">
-                            <ui:VisualElement class="home-cta-row" picking-mode="Ignore">
-                                <ui:Label text="STORY ARC" class="home-cta-kicker" picking-mode="Ignore" />
-                                <ui:Label text="战役模式" class="home-cta-label" picking-mode="Ignore" />
-                                <ui:Label text="→" class="home-cta-arrow" picking-mode="Ignore" />
-                            </ui:VisualElement>
-                        </ui:Button>
-                    </ui:VisualElement>
-
-                    <ui:VisualElement class="home-secondary-row">
-                        <ui:Button name="BtnTutorial" text="协议校准" class="menu-btn home-ghost" />
-                        <ui:Button name="BtnLoadout" text="战前配置" class="menu-btn home-ghost" />
-                        <ui:Button name="BtnShop" text="协议商店" class="menu-btn home-ghost" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-
-                <ui:VisualElement class="home-hero-side">
-                    <ui:VisualElement class="home-side-card">
-                        <ui:VisualElement class="home-card-head">
-                            <ui:Label text="ACTIVE LOADOUT" class="home-card-head-label" />
-                            <ui:Label text="SYNCED" class="home-pill" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="home-ball-preview">
-                            <ui:VisualElement class="home-ball-orb" picking-mode="Ignore" />
-                            <ui:VisualElement class="home-ball-meta">
-                                <ui:Label name="HomeBallName" text="标准弹珠" class="home-ball-name" />
-                                <ui:Label name="HomeBallDesc" text="均衡核心 · 适合全模式" class="home-ball-desc" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-                        <ui:VisualElement class="home-skill-row">
-                            <ui:VisualElement class="home-skill-chip">
-                                <ui:Label text="Q" class="home-skill-key" />
-                                <ui:Label name="HomeSkill0Name" text="斩杀连锁" class="home-skill-name" />
-                            </ui:VisualElement>
-                            <ui:VisualElement class="home-skill-chip home-stat-end">
-                                <ui:Label text="E" class="home-skill-key" />
-                                <ui:Label name="HomeSkill1Name" text="护盾格挡" class="home-skill-name" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-                        <ui:Button name="BtnHomeEditLoadout" text="修改配置 →" class="home-link-edit" />
-                    </ui:VisualElement>
-
-                    <ui:VisualElement class="home-side-card">
-                        <ui:VisualElement class="home-card-head">
-                            <ui:Label text="RUN TELEMETRY" class="home-card-head-label" />
-                            <ui:Label text="LIVE" class="home-pill home-pill-dim" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="home-stat-grid">
-                            <ui:VisualElement class="home-stat-row">
-                                <ui:VisualElement class="home-stat">
-                                    <ui:Label text="BEST WAVE" class="home-stat-label" />
-                                    <ui:Label name="HomeStatWave" text="47" class="home-stat-value" />
-                                </ui:VisualElement>
-                                <ui:VisualElement class="home-stat home-stat-end">
-                                    <ui:Label text="MAX COMBO" class="home-stat-label" />
-                                    <ui:Label name="HomeStatCombo" text="128" class="home-stat-value" />
-                                </ui:VisualElement>
-                            </ui:VisualElement>
-                            <ui:VisualElement class="home-stat-row">
-                                <ui:VisualElement class="home-stat">
-                                    <ui:Label text="BOSSES" class="home-stat-label" />
-                                    <ui:Label name="HomeStatBosses" text="12" class="home-stat-value" />
-                                </ui:VisualElement>
-                                <ui:VisualElement class="home-stat home-stat-end">
-                                    <ui:Label text="PROTOCOLS" class="home-stat-label" />
-                                    <ui:Label name="HomeStatProtocols" text="36" class="home-stat-value" />
-                                </ui:VisualElement>
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-
-                    <ui:VisualElement class="home-side-card home-log-card">
-                        <ui:VisualElement class="home-card-head">
-                            <ui:Label text="BOOT LOG" class="home-card-head-label" />
-                        </ui:VisualElement>
-                        <ui:Label text="> matrix rain uplink … OK" class="home-boot-line" picking-mode="Ignore" />
-                        <ui:Label text="> flipper actuators … ARMED" class="home-boot-line" picking-mode="Ignore" />
-                        <ui:Label text="> buff slot machine … READY" class="home-boot-line" picking-mode="Ignore" />
-                        <ui:Label text="> awaiting operator input_" class="home-boot-line" picking-mode="Ignore" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                </ui:VisualElement>
-            </ui:VisualElement>
-
-            <ui:VisualElement class="home-footer">
-                <ui:Label text="> SELECT MODE TO INITIALIZE RUN" class="home-footer-hint" picking-mode="Ignore" />
+            <ui:VisualElement class="home-footer terminal-footer">
+                <ui:Label text="> AWAITING OPERATOR INPUT_" class="home-footer-hint" picking-mode="Ignore" />
                 <ui:VisualElement class="home-footer-actions">
                     <ui:Button name="BtnFooterSettings" text="设置" class="menu-btn home-quiet btn-outline-muted" />
                     <ui:Button name="BtnQuit" text="退出" class="menu-btn home-quiet btn-outline-muted quit-btn" />

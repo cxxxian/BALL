@@ -132,8 +132,13 @@ public class HUDController : MonoBehaviour
 
     private void ApplyHudGlowStyles()
     {
-        CyberHudGlow.Ensure(waveText, CyberHudGlow.GlowStyle.BumperCyan);
-        CyberHudGlow.Ensure(scoreText, CyberHudGlow.GlowStyle.WhiteScore);
+        ProtocolUiStyle.ApplyHudValue(waveText, CyberHudGlow.GlowStyle.BumperCyan);
+        ProtocolUiStyle.ApplyHudValue(scoreText, CyberHudGlow.GlowStyle.WhiteScore);
+        ProtocolUiStyle.ApplyDisplayFont(finalScoreText);
+        ProtocolUiStyle.ApplyDisplayFont(creditsEarnedText);
+        ProtocolUiStyle.ApplyDisplayFont(totalCreditsText);
+        ProtocolUiStyle.ApplyDisplayFont(waveReachedText);
+
         if (lifeIcons == null) return;
         foreach (var icon in lifeIcons)
         {

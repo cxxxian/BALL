@@ -1,9 +1,10 @@
 using UnityEngine;
 
-/// <summary>战场霓虹 Palette → UI/HUD 可读色（保留色相，与 Bumper cyan 等语义对齐）。</summary>
+/// <summary>战场霓虹 Palette → UI/HUD 可读色（Protocol Neon：青白主轴）。</summary>
 public static class NeonUiColors
 {
-    private static readonly Color MenuCyan = new Color(0f, 0.949f, 1f, 1f);
+    private static readonly Color MenuCyan = new Color(0f, 0.91f, 1f, 1f);
+    private static readonly Color IceWhite = new Color(0.85f, 0.96f, 1f, 1f);
 
     public static Color BumperCyanUi(float intensity = 1f)
     {
@@ -19,8 +20,12 @@ public static class NeonUiColors
         return MapHdrToUi(hdr, intensity);
     }
 
-    public static Color ScoreUi(float intensity = 1.15f) =>
-        new Color(1f * intensity, 1f * intensity, 1.05f * intensity, 1f);
+    public static Color ScoreUi(float intensity = 1.05f)
+    {
+        var c = IceWhite * intensity;
+        c.a = 1f;
+        return c;
+    }
 
     /// <summary>StyleKit --neon-yellow / Combo 语义，Boss 血格等 HUD 用。</summary>
     public static Color YellowUi(float intensity = 1f)
@@ -29,7 +34,7 @@ public static class NeonUiColors
         return MapHdrToUi(hdr, intensity);
     }
 
-    /// <summary>与主菜单 / Buff 选卡 wave-tag 一致的赛博青。</summary>
+    /// <summary>与主菜单 / Buff 选卡一致的赛博青。</summary>
     public static Color MenuCyanUi(float intensity = 1f)
     {
         var c = MenuCyan * intensity;

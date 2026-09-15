@@ -1,4 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Style src="ProtocolNeonTheme.uss" />
     <ui:Style src="PauseMenu.uss" />
 
     <ui:VisualElement name="overlay" class="pause-overlay">

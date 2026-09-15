@@ -249,9 +249,20 @@ public static class BuildMechanismMaps
         var color = NeonColors.Active != null
             ? NeonColors.Active.GetBase(NeonRole.Bumper)
             : new Color(0f, 1.8f, 2.5f, 1f);
-        sr.sprite = CyberVisualFactory.CreateBumperSprite(color);
-        sr.color = color;
-        sr.material = CyberVisualFactory.UnlitMaterial;
+        var art = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Table/bumper_round.png");
+        var artMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteNeonHDR_Bumper.mat");
+        if (art != null)
+        {
+            sr.sprite = art;
+            sr.color = Color.white;
+            sr.sharedMaterial = artMat != null ? artMat : CyberVisualFactory.UnlitMaterial;
+        }
+        else
+        {
+            sr.sprite = CyberVisualFactory.CreateBumperSprite(color);
+            sr.color = color;
+            sr.material = CyberVisualFactory.UnlitMaterial;
+        }
         sr.sortingOrder = 5;
 
         go.AddComponent<Bumper>();

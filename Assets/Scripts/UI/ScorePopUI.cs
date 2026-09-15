@@ -4,8 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 击杀得分弹出：世界坐标出现 +N，短暂停留后吸入左上 Score。
-/// Combo ≥ 显示阈值时用黄色，否则青色。
+/// 击杀得分弹出：世界坐标出现 +N，短暂停留后吸入右上 Score。
+/// Combo 热时琥珀，否则青白。
 /// </summary>
 [DisallowMultipleComponent]
 public class ScorePopUI : MonoBehaviour
@@ -18,13 +18,13 @@ public class ScorePopUI : MonoBehaviour
     [SerializeField] Canvas rootCanvas;
 
     [Header("Motion")]
-    [SerializeField] float holdSeconds = 0.35f;
-    [SerializeField] float flySeconds = 0.55f;
-    [SerializeField] float risePixels = 56f;
-    [SerializeField] float startScale = 1.4f;
-    [SerializeField] float endScale = 0.55f;
+    [SerializeField] float holdSeconds = 0.32f;
+    [SerializeField] float flySeconds = 0.5f;
+    [SerializeField] float risePixels = 48f;
+    [SerializeField] float startScale = 1.18f;
+    [SerializeField] float endScale = 0.5f;
     [SerializeField] int poolSize = 12;
-    [SerializeField] int fontSize = 32;
+    [SerializeField] int fontSize = 28;
 
     private readonly Queue<Text> _pool = new Queue<Text>(16);
     private RectTransform _rt;
@@ -65,7 +65,6 @@ public class ScorePopUI : MonoBehaviour
         if (rootCanvas == null)
             rootCanvas = GetComponentInParent<Canvas>();
 
-        // 去掉可能干扰的嵌套 Canvas，靠最上层 sibling 保证绘制在前
         var nested = GetComponent<Canvas>();
         if (nested != null && nested != rootCanvas)
             Destroy(nested);
@@ -82,31 +81,10 @@ public class ScorePopUI : MonoBehaviour
             rootCanvas = GetComponentInParent<Canvas>();
 
         var hud = HUDController.Instance;
-        if (hud != null)
-        {
-            if (scoreTarget == null && hud.scoreText != null)
-                scoreTarget = hud.scoreText.rectTransform;
-        }
+        if (hud != null && scoreTarget == null && hud.scoreText != null)
+            scoreTarget = hud.scoreText.rectTransform;
 
-        // Unity 2022+：Arial.ttf 会抛异常，只能用 LegacyRuntime.ttf
-        // Orbitron 等展示字体常缺 '+'，优先内置字体保证可见
-        bool needBuiltin = font == null
-            || font.name.IndexOf("Orbitron", System.StringComparison.OrdinalIgnoreCase) >= 0;
-        if (needBuiltin)
-        {
-            Font builtin = null;
-            try
-            {
-                builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            }
-            catch (System.Exception)
-            {
-                builtin = null;
-            }
-            if (builtin != null)
-                font = builtin;
-        }
-
+        font = ProtocolUiStyle.ResolvePopFont();
         if (font == null && hud != null && hud.scoreText != null)
             font = hud.scoreText.font;
     }
@@ -157,16 +135,13 @@ public class ScorePopUI : MonoBehaviour
         }
 
         bool comboHot = IsComboHot();
-        Color color = comboHot
-            ? new Color(1f, 0.92f, 0.15f, 1f)
-            : new Color(0.2f, 1f, 1f, 1f);
+        Color face = comboHot ? ProtocolUiStyle.AmberFace : ProtocolUiStyle.IceFace;
+        Color glow = comboHot ? ProtocolUiStyle.AmberFace : ProtocolUiStyle.CyanFace;
 
-        label.text = "+" + points.ToString();
-        // 若 '+' 仍缺失，退成纯数字
-        if (font != null && !font.HasCharacter('+'))
-            label.text = points.ToString();
+        label.text = ProtocolUiStyle.FormatScorePop(points, font);
         label.fontSize = fontSize;
-        label.color = color;
+        label.color = face;
+        ProtocolUiStyle.ApplyNeonOutline(label, glow, spread: 1.6f, glowAlpha: 0.7f);
         label.gameObject.SetActive(true);
         label.transform.SetAsLastSibling();
 
@@ -176,7 +151,7 @@ public class ScorePopUI : MonoBehaviour
         rt.localScale = Vector3.one * startScale;
         rt.localRotation = Quaternion.identity;
 
-        StartCoroutine(FlyRoutine(label, startLocal, color));
+        StartCoroutine(FlyRoutine(label, startLocal, face));
     }
 
     private IEnumerator FlyRoutine(Text label, Vector2 startLocal, Color face)
@@ -190,7 +165,7 @@ public class ScorePopUI : MonoBehaviour
             float u = Mathf.Clamp01(t / holdSeconds);
             float ease = 1f - (1f - u) * (1f - u);
             rt.anchoredPosition = startLocal + Vector2.up * (risePixels * ease);
-            rt.localScale = Vector3.one * Mathf.Lerp(startScale, 1.05f, ease);
+            rt.localScale = Vector3.one * Mathf.Lerp(startScale, 1.02f, ease);
             label.color = face;
             yield return null;
         }
@@ -204,9 +179,9 @@ public class ScorePopUI : MonoBehaviour
             float u = Mathf.Clamp01(t / flySeconds);
             float ease = u * u;
             rt.anchoredPosition = Vector2.LerpUnclamped(from, to, ease);
-            rt.localScale = Vector3.one * Mathf.Lerp(1.05f, endScale, ease);
+            rt.localScale = Vector3.one * Mathf.Lerp(1.02f, endScale, ease);
             Color c = face;
-            c.a = Mathf.Lerp(1f, 0.25f, ease);
+            c.a = Mathf.Lerp(1f, 0.2f, ease);
             label.color = c;
             yield return null;
         }
@@ -227,7 +202,7 @@ public class ScorePopUI : MonoBehaviour
     private Vector2 GetScoreTargetLocal()
     {
         if (scoreTarget == null)
-            return new Vector2(-_rt.rect.width * 0.35f, _rt.rect.height * 0.4f);
+            return new Vector2(_rt.rect.width * 0.35f, _rt.rect.height * 0.4f);
 
         Vector3 screen = RectTransformUtility.WorldToScreenPoint(null, scoreTarget.position);
         return ScreenToLocal(screen);
@@ -293,7 +268,7 @@ public class ScorePopUI : MonoBehaviour
         var go = new GameObject("ScorePop", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
         var rt = go.GetComponent<RectTransform>();
         rt.SetParent(_rt != null ? _rt : transform, false);
-        rt.sizeDelta = new Vector2(180f, 56f);
+        rt.sizeDelta = new Vector2(200f, 52f);
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
@@ -308,13 +283,7 @@ public class ScorePopUI : MonoBehaviour
         text.raycastTarget = false;
         text.supportRichText = false;
 
-        var outline = go.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-        outline.effectDistance = new Vector2(2f, -2f);
-
-        var shadow = go.AddComponent<Shadow>();
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
-        shadow.effectDistance = new Vector2(0f, -3f);
+        ProtocolUiStyle.ApplyNeonOutline(text, ProtocolUiStyle.CyanFace, 1.6f, 0.7f);
 
         go.SetActive(false);
         return text;

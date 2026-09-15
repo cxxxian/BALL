@@ -2,19 +2,23 @@
    Ref: https://www.stylekit.top/zh/styles/cyberpunk-neon */
 
 :root {
-    --neon-bg: rgb(10, 10, 15);
+    --neon-bg: rgb(6, 10, 18);
     --neon-panel: rgb(3, 7, 18);
     --neon-panel-elevated: rgb(8, 12, 24);
-    --neon-cyan: rgb(0, 255, 255);
-    --neon-fuchsia: rgb(255, 0, 255);
-    --neon-yellow: rgb(255, 255, 0);
-    --neon-green: rgb(0, 255, 0);
-    --neon-red: rgb(255, 5, 6);
-    --neon-text: rgb(255, 255, 255);
-    --neon-muted: rgb(156, 163, 175);
-    --neon-border: rgba(0, 255, 255, 0.3);
-    --neon-border-strong: rgba(0, 255, 255, 0.55);
-    --neon-radius: 8px;
+    /* 战场青白主轴 */
+    --neon-cyan: rgb(0, 232, 255);
+    --neon-ice: rgb(200, 245, 255);
+    --neon-white: rgb(236, 248, 255);
+    /* 层次：品红点缀 + 琥珀数值 */
+    --neon-fuchsia: rgb(255, 64, 200);
+    --neon-yellow: rgb(255, 214, 96);
+    --neon-green: rgb(0, 232, 255);
+    --neon-red: rgb(255, 72, 96);
+    --neon-text: rgb(236, 248, 255);
+    --neon-muted: rgb(110, 140, 158);
+    --neon-border: rgba(0, 232, 255, 0.32);
+    --neon-border-strong: rgba(120, 240, 255, 0.55);
+    --neon-radius: 0;
     --neon-fast: 0.12s;
 }
 
@@ -24,13 +28,27 @@
     background-color: rgba(10, 10, 15, 0);
 }
 
+.vignette-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("project://database/Assets/UI/Textures/ui_vignette.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    background-color: rgba(0, 8, 20, 0.18);
+}
+
 .scanline-overlay {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 255, 255, 0.008);
+    background-image: url("project://database/Assets/UI/Textures/ui_scanlines.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    background-color: rgba(0, 20, 40, 0.04);
+    opacity: 0.35;
 }
 
 .grid-overlay {
@@ -56,9 +74,7 @@
     justify-content: center;
 }
 
-/* ── 主菜单 home landing
-   比例直接对齐 HTML demos/main-menu/styles.css：
-   hero max-width 1280 · columns 1.15fr / 0.85fr · gap 36 · CTA max 420 ── */
+/* ── 主菜单 Protocol Terminal ── */
 .menu-panel,
 .home-panel {
     position: absolute;
@@ -72,14 +88,225 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
+.terminal-home {
+    background-color: rgba(2, 6, 14, 0.4);
+}
+
+.terminal-topbar {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 16px 24px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 232, 255, 0.22);
+    background-color: rgba(4, 10, 22, 0.55);
+}
+
+.term-status {
+    font-size: 16px;
+    color: var(--neon-cyan);
+    letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 14px rgba(0, 232, 255, 0.55);
+}
+
+.term-nav {
+    height: 36px;
+    margin-right: 16px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--neon-muted);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.term-nav:hover {
+    color: var(--neon-ice);
+    text-shadow: 0 0 10px rgba(120, 240, 255, 0.55);
+}
+
+.term-stage {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 24px 32px;
+    overflow: hidden;
+}
+
+.term-title-cn {
+    font-size: 40px;
+    color: rgba(140, 230, 255, 0.82);
+    letter-spacing: 14px;
+    margin-bottom: 14px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 16px rgba(0, 200, 255, 0.35);
+}
+
+.term-title-en {
+    font-size: 72px;
+    color: var(--neon-ice);
+    letter-spacing: 12px;
+    margin-bottom: 12px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 28px rgba(0, 232, 255, 0.7);
+}
+
+.term-subtitle {
+    font-size: 24px;
+    letter-spacing: 10px;
+    margin-bottom: 52px;
+    color: var(--neon-cyan);
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 18px rgba(255, 64, 200, 0.35);
+}
+
+.term-cta {
+    height: 64px;
+    width: auto;
+    min-width: 560px;
+    max-width: 900px;
+    margin-bottom: 32px;
+    padding-left: 24px;
+    padding-right: 24px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.term-cta > .unity-button__text {
+    display: none;
+}
+
+.term-cta-label {
+    font-size: 22px;
+    color: var(--neon-white);
+    letter-spacing: 4px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 18px rgba(0, 232, 255, 0.65);
+}
+
+.term-cta:hover .term-cta-label {
+    color: var(--neon-ice);
+    text-shadow: 0 0 24px rgba(120, 240, 255, 0.9);
+}
+
+.term-secondary-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+}
+
+.term-link {
+    height: 40px;
+    min-width: auto;
+    margin: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgba(160, 230, 255, 0.78);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-font-style: bold;
+}
+
+.term-link:hover {
+    color: var(--neon-fuchsia);
+    text-shadow: 0 0 12px rgba(255, 64, 200, 0.55);
+}
+
+.term-sep {
+    margin-left: 6px;
+    margin-right: 6px;
+    font-size: 18px;
+    color: rgba(80, 120, 150, 0.75);
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.term-meta-block {
+    flex-direction: column;
+    align-items: center;
+    max-width: 960px;
+}
+
+.term-meta-line {
+    font-size: 18px;
+    color: rgba(170, 220, 240, 0.72);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.term-meta-dim {
+    color: rgba(110, 140, 158, 0.95);
+    font-size: 15px;
+}
+
+.term-edit-link {
+    height: 32px;
+    margin-bottom: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: rgba(0, 232, 255, 0.9);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 10px rgba(0, 232, 255, 0.4);
+}
+
+.term-edit-link:hover {
+    color: var(--neon-white);
+    text-shadow: 0 0 14px rgba(255, 64, 200, 0.5);
+}
+
+.term-compat-hidden {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.terminal-footer {
+    border-top-color: rgba(0, 232, 255, 0.18);
+}
+
+.terminal-footer .home-footer-hint {
+    font-size: 14px;
+    color: rgba(0, 232, 255, 0.55);
+    letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 8px rgba(0, 232, 255, 0.25);
+}
+
 .home-topbar {
     flex-direction: row;
     align-items: center;
     flex-shrink: 0;
     padding: 18px 28px;
     border-bottom-width: 1px;
-    border-bottom-color: rgba(0, 255, 255, 0.18);
-    background-color: rgba(5, 8, 16, 0.72);
+    border-bottom-color: rgba(0, 232, 255, 0.2);
+    background-color: rgba(5, 10, 20, 0.72);
 }
 
 .home-status-chip,
@@ -149,18 +376,19 @@
 }
 
 .home-credits-key {
-    font-size: 16px;
-    color: rgba(255, 255, 0, 0.55);
-    letter-spacing: 1px;
-    margin-right: 4px;
+    font-size: 14px;
+    color: rgba(0, 232, 255, 0.55);
+    letter-spacing: 2px;
+    margin-right: 6px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
 
 .home-credits-label {
     font-size: 16px;
     color: var(--neon-yellow);
-    -unity-font-style: bold;
     letter-spacing: 1px;
-    text-shadow: 0 0 6px rgba(255, 255, 0, 0.3);
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 10px rgba(255, 214, 96, 0.4);
 }
 
 /* 加宽内容区并水平居中，左右对称 */

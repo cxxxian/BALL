@@ -29,10 +29,15 @@ public class MainMenuController : MonoBehaviour
     private Label _homeStatCombo;
     private Label _homeStatBosses;
     private Label _homeStatProtocols;
+    private Label _homeLoadoutLine;
+    private Label _homeTelemetryLine;
+    private Label _termSubtitle;
+    private Label _termCtaLabel;
 
     private Label _summaryBallLabel;
     private Label _summarySkillsLabel;
     private AudioSource _menuBgm;
+    private IVisualElementScheduledItem _termFxSchedule;
 
     private void Awake()
     {
@@ -57,6 +62,10 @@ public class MainMenuController : MonoBehaviour
         _homeStatCombo = root.Q<Label>("HomeStatCombo");
         _homeStatBosses = root.Q<Label>("HomeStatBosses");
         _homeStatProtocols = root.Q<Label>("HomeStatProtocols");
+        _homeLoadoutLine = root.Q<Label>("HomeLoadoutLine");
+        _homeTelemetryLine = root.Q<Label>("HomeTelemetryLine");
+        _termSubtitle = root.Q<Label>("TermSubtitle");
+        _termCtaLabel = root.Q<Label>("TermCtaLabel");
 
         _summaryBallLabel = root.Q<Label>("SummaryBallLabel");
         _summarySkillsLabel = root.Q<Label>("SummarySkillsLabel");
@@ -77,6 +86,7 @@ public class MainMenuController : MonoBehaviour
 
         NeonHoverGlow.AttachAll(root);
         SetupSettingsStub(root);
+        SetupTerminalFx(root);
         SetupLevelScroll(root.Q<ScrollView>("LevelScrollView"));
         SetupMenuBgm();
     }
@@ -202,6 +212,14 @@ public class MainMenuController : MonoBehaviour
             _homeSkill0Name.text = s0 != null ? s0.displayName : "—";
         if (_homeSkill1Name != null)
             _homeSkill1Name.text = s1 != null ? s1.displayName : "—";
+
+        if (_homeLoadoutLine != null)
+        {
+            string ballName = ball != null ? ball.displayName : "—";
+            string q = s0 != null ? s0.displayName : "—";
+            string e = s1 != null ? s1.displayName : "—";
+            _homeLoadoutLine.text = $"LOADOUT  {ballName}  |  Q:{q}  E:{e}";
+        }
     }
 
     private void RefreshHomeTelemetry()
@@ -216,6 +234,45 @@ public class MainMenuController : MonoBehaviour
             _homeStatCombo.text = "—";
         if (_homeStatBosses != null && string.IsNullOrEmpty(_homeStatBosses.text))
             _homeStatBosses.text = "—";
+
+        if (_homeTelemetryLine != null)
+        {
+            string wave = _homeStatWave != null ? _homeStatWave.text : "—";
+            string combo = _homeStatCombo != null ? _homeStatCombo.text : "—";
+            string bosses = _homeStatBosses != null ? _homeStatBosses.text : "—";
+            string proto = _homeStatProtocols != null ? _homeStatProtocols.text : "1";
+            _homeTelemetryLine.text = $"WAVE {wave}  ·  COMBO {combo}  ·  BOSS {bosses}  ·  PROTO {proto}";
+        }
+    }
+
+    private void SetupTerminalFx(VisualElement root)
+    {
+        if (_termSubtitle == null && _termCtaLabel == null) return;
+        _termFxSchedule?.Pause();
+        _termFxSchedule = root.schedule.Execute(TickTerminalFx).Every(33);
+    }
+
+    private void TickTerminalFx()
+    {
+        float t = Time.unscaledTime;
+        if (_termCtaLabel != null)
+        {
+            // 柔脉冲，而非街机硬闪
+            float pulse = 0.55f + 0.45f * (0.5f + 0.5f * Mathf.Sin(t * 3.2f));
+            _termCtaLabel.style.opacity = pulse;
+        }
+
+        if (_termSubtitle != null)
+        {
+            // 青白 ↔ 品红：赛博层次，避免纯彩虹街机感
+            float u = 0.5f + 0.5f * Mathf.Sin(t * 2.4f);
+            var ice = new Color(0.72f, 0.95f, 1f, 1f);
+            var cyan = new Color(0f, 0.9f, 1f, 1f);
+            var mag = new Color(1f, 0.28f, 0.78f, 1f);
+            Color a = Color.Lerp(cyan, ice, Mathf.Clamp01(u * 1.2f));
+            Color b = Color.Lerp(a, mag, Mathf.Clamp01((u - 0.35f) * 1.4f));
+            _termSubtitle.style.color = b;
+        }
     }
 
     private void ShowCampaign()
