@@ -282,10 +282,21 @@ public static class BuildMechanismMaps
         var visual = new GameObject("Visual");
         visual.transform.SetParent(go.transform, false);
         var sr = visual.AddComponent<SpriteRenderer>();
-        var color = new Color(2f, 1.7f, 0f, 1f);
-        sr.sprite = CyberVisualFactory.CreateBoostGearSprite(color);
-        sr.color = color;
-        sr.material = CyberVisualFactory.UnlitMaterial;
+        var art = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Table/boost_gear.png");
+        var artMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteNeonHDR_BoostGear.mat");
+        if (art != null)
+        {
+            sr.sprite = art;
+            sr.color = Color.white;
+            sr.sharedMaterial = artMat != null ? artMat : CyberVisualFactory.UnlitMaterial;
+        }
+        else
+        {
+            var color = new Color(2f, 1.7f, 0f, 1f);
+            sr.sprite = CyberVisualFactory.CreateBoostGearSprite(color);
+            sr.color = color;
+            sr.material = CyberVisualFactory.UnlitMaterial;
+        }
         sr.sortingOrder = 6;
 
         go.AddComponent<BoostGear>();

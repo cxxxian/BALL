@@ -29,20 +29,54 @@ public class BoostGear : MonoBehaviour
     private float                 _currentRotSpeed;
     private Coroutine             _boostRoutine;
     private bool                  _isBoosting;
-    private Color                 _savedTrailStart = Color.white;
-    private Color                 _savedTrailEnd   = Color.clear;
+    private float                 _flashValue;
+    private float                 _flashHold;
+
+    private static readonly int HitFlashID   = Shader.PropertyToID("_HitFlash");
+    private static readonly int FlashColorID = Shader.PropertyToID("_FlashColor");
+
+    private static readonly Color GearFlashColor = new Color(2.8f, 2.05f, 0.4f, 1f);
 
     // ──────────────────────────────────────────────────────
     private void Awake()
     {
-        _sr                = GetComponentInChildren<SpriteRenderer>();
-        _mpb               = new MaterialPropertyBlock();
-        _currentRotSpeed   = idleRotationSpeed;
+        _sr = ResolveVisualRenderer();
+        _mpb             = new MaterialPropertyBlock();
+        _currentRotSpeed = idleRotationSpeed;
+        ApplyHitFlash(0f);
+    }
+
+    private SpriteRenderer ResolveVisualRenderer()
+    {
+        var visualT = transform.Find("Visual");
+        if (visualT != null)
+        {
+            var vsr = visualT.GetComponent<SpriteRenderer>();
+            if (vsr != null) return vsr;
+        }
+
+        var srs = GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < srs.Length; i++)
+        {
+            if (srs[i] != null && srs[i].enabled && srs[i].sprite != null)
+                return srs[i];
+        }
+        return GetComponentInChildren<SpriteRenderer>(true);
     }
 
     private void Update()
     {
         transform.Rotate(Vector3.forward, _currentRotSpeed * Time.deltaTime);
+
+        if (_flashHold > 0f)
+        {
+            _flashHold -= Time.deltaTime;
+            _flashValue = Mathf.Max(_flashValue, 1f);
+        }
+        else if (_flashValue > 0f)
+            _flashValue = Mathf.Max(0f, _flashValue - Time.deltaTime / 0.16f);
+
+        ApplyHitFlash(_flashValue);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -65,7 +99,9 @@ public class BoostGear : MonoBehaviour
 
         // ── 激活 ──────────────────────────────────────────
         _currentRotSpeed = activeRotationSpeed;
-        SetGearColor(gearActiveColor);
+        _flashValue = 1f;
+        _flashHold = 0.12f;
+        ApplyHitFlash(_flashValue);
 
         // 只在非加速状态时保存原始颜色：防止球再次触碰齿轮时把金色存为"原始色"
         var trail = ball.GetComponent<TrailRenderer>();
@@ -91,8 +127,8 @@ public class BoostGear : MonoBehaviour
 
         // ── 还原 ──────────────────────────────────────────
         _currentRotSpeed = idleRotationSpeed;
-        SetGearColor(Color.white);
         _isBoosting = false;
+        _flashHold = 0f;
 
         if (ball != null)
         {
@@ -108,11 +144,12 @@ public class BoostGear : MonoBehaviour
         _boostRoutine = null;
     }
 
-    private void SetGearColor(Color c)
+    private void ApplyHitFlash(float value)
     {
         if (_sr == null) return;
         _sr.GetPropertyBlock(_mpb);
-        _mpb.SetColor("_Color", c);
+        _mpb.SetFloat(HitFlashID, Mathf.Clamp01(value));
+        _mpb.SetColor(FlashColorID, GearFlashColor);
         _sr.SetPropertyBlock(_mpb);
     }
 }

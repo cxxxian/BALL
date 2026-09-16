@@ -88,6 +88,10 @@ public class FlipperController : MonoBehaviour
         var rb = col.rigidbody;
         if (rb == null) return;
 
+        var fx = GetComponent<FlipperFX>();
+        // 任意触球：仅颜色高亮（无外形缩放）
+        fx?.TriggerContactFlash();
+
         // 如果挡板是在向下归位或静止状态，完全由完美的物理材质进行精确反射（100% 反射角守恒）
         // 只有当挡板在“向上挥击（Active Kick）”时，才给予弹珠额外的主动推送增量，而非覆盖速度
         bool isActivating = side == FlipperSide.Left
@@ -98,7 +102,7 @@ public class FlipperController : MonoBehaviour
         {
             ContactPoint2D contact = col.GetContact(0);
             Vector2 hitPos = contact.point;
-            JuiceRouter.FlipperPerfectCatch(hitPos, GetComponent<FlipperFX>());
+            JuiceRouter.FlipperPerfectCatch(hitPos, fx);
 
             Vector2 r       = hitPos - (Vector2)transform.position;
             float omegaRad  = _angularVelocity * Mathf.Deg2Rad;

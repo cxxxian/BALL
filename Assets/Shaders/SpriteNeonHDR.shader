@@ -1,4 +1,5 @@
 // SpriteNeonHDR — 仅亮青霓虹做 HDR 增益；金属保持贴图原色（不变灰）
+// 额外：墙框沿弧长扩散脉冲（UV2.x = 弧长 s），Bumper/Slingshot 的 UV2=0 时脉冲无效
 Shader "Custom/SpriteNeonHDR"
 {
     Properties
@@ -13,6 +14,13 @@ Shader "Custom/SpriteNeonHDR"
         [Header(Hit Flash)]
         _HitFlash ("Hit Flash (0-1)", Range(0, 1)) = 0
         _FlashColor ("Flash Color", Color) = (1, 1, 1, 1)
+
+        [Header(Wall Arc Pulse)]
+        _PulseSpread ("Pulse Spread Speed", Float) = 16
+        _PulseWidth ("Pulse Band Width", Float) = 0.7
+        _PulseDuration ("Pulse Duration", Float) = 0.65
+        _WallPulse0 ("Wall Pulse 0-1", Vector) = (0, -1, 0, -1)
+        _WallPulse1 ("Wall Pulse 2-3", Vector) = (0, -1, 0, -1)
     }
 
     HLSLINCLUDE
@@ -28,14 +36,23 @@ Shader "Custom/SpriteNeonHDR"
         float  _NeonThreshold;
         float  _NeonSharpness;
         float  _MetalMul;
-        float  _HitFlash;
-        float4 _FlashColor;
     CBUFFER_END
+
+    // CBUFFER 外：MaterialPropertyBlock 逐实例写入
+    float  _HitFlash;
+    float4 _FlashColor;
+    float  _PulseSpread;
+    float  _PulseWidth;
+    float  _PulseDuration;
+    // 每条脉冲：xy = (弧长 s, 年龄 age)；age < 0 表示关闭
+    float4 _WallPulse0; // (s0, age0, s1, age1)
+    float4 _WallPulse1; // (s2, age2, s3, age3)
 
     struct Attributes
     {
         float4 pos   : POSITION;
         float2 uv    : TEXCOORD0;
+        float2 uv2   : TEXCOORD1;
         float4 color : COLOR;
     };
 
@@ -43,6 +60,7 @@ Shader "Custom/SpriteNeonHDR"
     {
         float4 pos   : SV_POSITION;
         float2 uv    : TEXCOORD0;
+        float  arcS  : TEXCOORD1;
         float4 color : COLOR;
     };
 
@@ -51,8 +69,30 @@ Shader "Custom/SpriteNeonHDR"
         Varyings O;
         O.pos   = TransformObjectToHClip(IN.pos.xyz);
         O.uv    = TRANSFORM_TEX(IN.uv, _MainTex);
-        O.color = IN.color;
+        O.arcS  = IN.uv2.x;
+        // Mesh 无顶点色时 Unity 可能给 0；墙框需要白 tint
+        O.color = any(IN.color) ? IN.color : float4(1, 1, 1, 1);
         return O;
+    }
+
+    float PulseMask(float arcS, float pulseS, float age, float spread, float width, float duration)
+    {
+        if (age < 0.0 || duration < 0.0001)
+            return 0.0;
+
+        float life = saturate(1.0 - age / duration);
+        life = life * life; // 前半段更亮，尾段更快收
+        float front = spread * age;
+        float d = abs(arcS - pulseS);
+        // 扩散前沿亮带（更宽、更软）
+        float band = 1.0 - saturate(abs(d - front) / max(width, 0.001));
+        band = pow(saturate(band), 1.35);
+        // 撞击点残留核心
+        float core = 1.0 - saturate(d / max(width * 2.2, 0.001));
+        core = pow(saturate(core), 1.5) * saturate(1.0 - age / max(duration * 0.7, 0.001));
+        // 前沿内侧拖尾：从撞击点到前沿之间略亮
+        float wake = (d < front) ? (1.0 - saturate(d / max(front, 0.001))) * 0.45 * life : 0.0;
+        return saturate(max(max(band, core), wake) * (0.55 + 0.45 * life));
     }
 
     float4 frag(Varyings IN) : SV_Target
@@ -61,19 +101,35 @@ Shader "Custom/SpriteNeonHDR"
         float3 rgb = tex.rgb * IN.color.rgb;
         float  a   = tex.a * IN.color.a;
 
-        // 只认「偏青 + 够亮」：灰金属 / 暗底板掩码≈0
-        float cyanDom = saturate((rgb.g + rgb.b) * 0.5 - rgb.r * 0.85);
-        float bright  = max(rgb.g, rgb.b);
-        float gate    = saturate((bright - _NeonThreshold) / max(1.0 - _NeonThreshold, 0.001));
-        float neonMask = pow(saturate(cyanDom * 2.2) * gate, _NeonSharpness);
+        // 偏青 或 偏金黄霓虹槽：暗金属（含黄铜高光）进不来
+        float cyanDom   = saturate((rgb.g + rgb.b) * 0.5 - rgb.r * 0.85);
+        float cyanBright = max(rgb.g, rgb.b);
+        float cyanGate  = saturate((cyanBright - _NeonThreshold) / max(1.0 - _NeonThreshold, 0.001));
+        float cyanMask  = pow(saturate(cyanDom * 2.2) * cyanGate, _NeonSharpness);
 
-        // 金属：贴图原色；霓虹：HDR 拉亮喂 Bloom
-        float3 metal = rgb * _MetalMul;
-        float3 neon  = rgb * _NeonTint.rgb * _NeonIntensity;
-        float3 outRgb = lerp(metal, neon, neonMask);
+        float yellowDom  = saturate(min(rgb.r, rgb.g) - rgb.b - 0.12);
+        float yellowGate = saturate((max(rgb.r, rgb.g) - 0.62) / 0.38);
+        float yellowMask = pow(saturate(yellowDom * 3.0) * yellowGate, _NeonSharpness);
 
-        outRgb = lerp(outRgb, _FlashColor.rgb * max(_NeonIntensity * 0.45, 1.0), _HitFlash);
-        a = saturate(a + _HitFlash * _FlashColor.a * tex.a);
+        float neonMask = max(cyanMask, yellowMask);
+
+        float hit = saturate(_HitFlash);
+
+        float pulse =
+            PulseMask(IN.arcS, _WallPulse0.x, _WallPulse0.y, _PulseSpread, _PulseWidth, _PulseDuration) +
+            PulseMask(IN.arcS, _WallPulse0.z, _WallPulse0.w, _PulseSpread, _PulseWidth, _PulseDuration) +
+            PulseMask(IN.arcS, _WallPulse1.x, _WallPulse1.y, _PulseSpread, _PulseWidth, _PulseDuration) +
+            PulseMask(IN.arcS, _WallPulse1.z, _WallPulse1.w, _PulseSpread, _PulseWidth, _PulseDuration);
+        pulse = saturate(pulse);
+
+        float pulseMask = saturate(neonMask + pulse * cyanDom * 0.4);
+
+        float neonBoost = 1.0 + hit * 3.4 + pulse * 2.2;
+        float3 metal = rgb * _MetalMul; // 金属不吃 HitFlash
+        float3 neon  = rgb * _NeonTint.rgb * (_NeonIntensity * neonBoost);
+        float3 outRgb = lerp(metal, neon, pulseMask);
+        outRgb += pulseMask * _FlashColor.rgb * (hit * 1.15 + pulse * 0.85);
+        a = saturate(a + pulseMask * (hit * 0.25 + pulse * 0.22) * _FlashColor.a * tex.a);
 
         return float4(outRgb, a);
     }

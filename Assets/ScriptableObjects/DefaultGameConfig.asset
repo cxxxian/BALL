@@ -100,3 +100,5 @@ MonoBehaviour:
   neonPalette: {fileID: 11400000, guid: 1a2de9d420a62ab41868e26fab8a0e51, type: 2}
   bumperRoundSprite: {fileID: 21300000, guid: d2c827ef2342897448277c1cc100847c, type: 3}
   bumperMaterial: {fileID: 2100000, guid: bcdf9474b2e38ad4b94a9dca08739056, type: 2}
+  boostGearSprite: {fileID: 21300000, guid: 7c4e9a2b1f8d4e6a9b3c5d7e0f1a2b3c, type: 3}
+  boostGearMaterial: {fileID: 2100000, guid: e8a1c4d7b2f94a6e8c0d1e2f3a4b5c6d, type: 2}

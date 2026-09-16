@@ -160,4 +160,8 @@ public class GameConfig : ScriptableObject
     public Sprite bumperRoundSprite;
     [Tooltip("Bumper 用 SpriteNeonHDR 材质；为空则用 Sprites/Default")]
     public Material bumperMaterial;
+    [Tooltip("加速齿轮美术精灵；为空则回退程序化贴图")]
+    public Sprite boostGearSprite;
+    [Tooltip("BoostGear 用 SpriteNeonHDR 材质；为空则用 Sprites/Default")]
+    public Material boostGearMaterial;
 }

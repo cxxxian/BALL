@@ -86,9 +86,33 @@ public class GameManager : MonoBehaviour
         foreach (var bg in FindObjectsOfType<BoostGear>())
         {
             var sr = bg.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
+            if (sr == null)
+            {
+                var visual = bg.transform.Find("Visual");
+                if (visual == null)
+                {
+                    var vgo = new GameObject("Visual");
+                    visual = vgo.transform;
+                    visual.SetParent(bg.transform, false);
+                }
+                sr = visual.GetComponent<SpriteRenderer>();
+                if (sr == null) sr = visual.gameObject.AddComponent<SpriteRenderer>();
+                sr.sortingOrder = 6;
+            }
+
+            if (config != null && config.boostGearSprite != null)
+            {
+                sr.sprite = config.boostGearSprite;
+                sr.color = Color.white;
+                if (config.boostGearMaterial != null)
+                    sr.sharedMaterial = config.boostGearMaterial;
+                else
+                    sr.material = CyberVisualFactory.UnlitMaterial;
+            }
+            else
             {
                 sr.sprite = CyberVisualFactory.CreateBoostGearSprite(bg.boostTrailColor);
+                sr.color = bg.boostTrailColor;
                 sr.material = CyberVisualFactory.UnlitMaterial;
             }
         }

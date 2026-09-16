@@ -8,6 +8,7 @@ using UnityEngine;
 [ExecuteAlways]
 [DisallowMultipleComponent]
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(EdgeCollider2D))]
+[RequireComponent(typeof(PlayfieldWallPulse))]
 public class PlayfieldTopArc : MonoBehaviour
 {
     [Header("Geometry (world)")]
@@ -50,6 +51,14 @@ public class PlayfieldTopArc : MonoBehaviour
     private Mesh _mesh;
     private Material _runtimeArtMat;
 
+    /// <summary>外框中心折线（世界坐标，左下→顶弧→右下）。</summary>
+    private Vector2[] _centerline;
+    private float[] _arcDist;
+    private float _totalArcLength;
+
+    public MeshRenderer FrameRenderer => _renderer != null ? _renderer : GetComponent<MeshRenderer>();
+    public float TotalArcLength => _totalArcLength;
+
     private void Awake() => Rebuild();
     private void OnEnable() => Rebuild();
 
@@ -76,8 +85,63 @@ public class PlayfieldTopArc : MonoBehaviour
         var center = BuildFrameCenterline();
         if (center.Count < 3) return;
 
+        CacheCenterline(center);
         BuildRibbonMesh(center, halfThick, ResolveTileLength());
         BuildInnerEdgeCollider(center, halfThick);
+    }
+
+    private void CacheCenterline(List<Vector2> center)
+    {
+        int n = center.Count;
+        _centerline = new Vector2[n];
+        _arcDist = new float[n];
+        _arcDist[0] = 0f;
+        float total = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            _centerline[i] = center[i];
+            if (i > 0)
+            {
+                total += Vector2.Distance(center[i - 1], center[i]);
+                _arcDist[i] = total;
+            }
+        }
+        _totalArcLength = Mathf.Max(0.001f, total);
+    }
+
+    /// <summary>将世界撞击点投影到外框中心折线，返回弧长 s（0…TotalArcLength）。</summary>
+    public bool TryProjectWorldToArcLength(Vector2 worldPos, out float arcLength, out Vector2 nearestOnCenter)
+    {
+        arcLength = 0f;
+        nearestOnCenter = worldPos;
+        if (_centerline == null || _centerline.Length < 2 || _arcDist == null)
+            return false;
+
+        float bestDistSq = float.MaxValue;
+        float bestS = 0f;
+        Vector2 bestPt = _centerline[0];
+
+        for (int i = 0; i < _centerline.Length - 1; i++)
+        {
+            Vector2 a = _centerline[i];
+            Vector2 b = _centerline[i + 1];
+            Vector2 ab = b - a;
+            float abLenSq = ab.sqrMagnitude;
+            float t = abLenSq > 0.00001f ? Mathf.Clamp01(Vector2.Dot(worldPos - a, ab) / abLenSq) : 0f;
+            Vector2 p = a + ab * t;
+            float dSq = (worldPos - p).sqrMagnitude;
+            if (dSq < bestDistSq)
+            {
+                bestDistSq = dSq;
+                bestPt = p;
+                float segLen = Mathf.Sqrt(abLenSq);
+                bestS = _arcDist[i] + segLen * t;
+            }
+        }
+
+        nearestOnCenter = bestPt;
+        arcLength = bestS;
+        return true;
     }
 
     private void EnsureComponents()
@@ -226,6 +290,7 @@ public class PlayfieldTopArc : MonoBehaviour
         int n = center.Count;
         var verts = new Vector3[n * 2];
         var uvs = new Vector2[n * 2];
+        var uv2 = new Vector2[n * 2]; // x = 弧长 s（世界单位），y = 总长
         var tris = new int[(n - 1) * 6];
 
         float totalLen = 0f;
@@ -259,6 +324,10 @@ public class PlayfieldTopArc : MonoBehaviour
             float v = artUv ? (dist[i] / tileLen) : (dist[i] / totalLen);
             uvs[i * 2] = new Vector2(u0, v);
             uvs[i * 2 + 1] = new Vector2(u1, v);
+
+            var arcUv = new Vector2(dist[i], totalLen);
+            uv2[i * 2] = arcUv;
+            uv2[i * 2 + 1] = arcUv;
         }
 
         int ti = 0;
@@ -279,6 +348,7 @@ public class PlayfieldTopArc : MonoBehaviour
         _mesh.Clear();
         _mesh.vertices = verts;
         _mesh.uv = uvs;
+        _mesh.uv2 = uv2;
         _mesh.triangles = tris;
         _mesh.RecalculateBounds();
         _mesh.RecalculateNormals();

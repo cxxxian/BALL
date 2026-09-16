@@ -89,7 +89,9 @@ public static class JuiceRouter
         float intensity = VelocityMult(velMag) * 0.85f;
 
         ImpactFX.Instance?.SpawnHit(worldPos, wallColor, intensity);
-        ImpactFX.Instance?.SpawnWallFlash(worldPos, normal, wallColor, intensity);
+        // 沿外框弧长扩散的墙体霓虹脉冲（取代/补充短 LineRenderer）
+        PlayfieldWallPulse.NotifyHit(worldPos, intensity);
+        ImpactFX.Instance?.SpawnWallFlash(worldPos, normal, wallColor, intensity * 0.55f);
 
         if (velMag >= WallShakeVelThreshold)
             CameraShake.Instance?.Shake(CameraShake.Preset.Light);

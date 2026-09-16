@@ -33,11 +33,11 @@ Material:
     - _MetalFloor: 0.35
     - _MetalMul: 1
     - _NeonBias: 1.1
-    - _NeonIntensity: 2
+    - _NeonIntensity: 2.25
     - _NeonSharpness: 3.5
-    - _NeonThreshold: 0.55
+    - _NeonThreshold: 0.5
     m_Colors:
     - _Color: {r: 1.05, g: 1.15, b: 1.35, a: 1}
-    - _FlashColor: {r: 1, g: 1, b: 1, a: 1}
-    - _NeonTint: {r: 0.9, g: 1.15, b: 1.35, a: 1}
+    - _FlashColor: {r: 1.35, g: 1.8, b: 2.15, a: 1}
+    - _NeonTint: {r: 0.95, g: 1.22, b: 1.45, a: 1}
   m_BuildTextureStacks: []
