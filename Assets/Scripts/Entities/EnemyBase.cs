@@ -290,6 +290,31 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
+    /// <summary>挡板武器直接伤害：不吃弹珠 Buff，仍走受击/击杀流程。</summary>
+    public void TakeFlipperWeaponHit(int damage, Vector2 hitPos)
+    {
+        if (IsDead || damage <= 0) return;
+
+        CurrentHits += damage;
+        if (GameManager.Instance != null)
+            GameManager.Instance.AddScore(scoreOnHit * damage);
+        OnHit();
+        EnemyJuice.OnHit(this, false, hitPos);
+
+        if (CurrentHits >= maxHits)
+        {
+            if (this is Boss)
+            {
+                VFXDirector.Instance?.TriggerBossKillEffect(transform.position);
+                HideVisualForDissolve();
+                ImpactFX.Instance?.SpawnBossDissolve(transform.position, BaseColor, 1.5f);
+                Die(skipKillJuice: true);
+                return;
+            }
+            Die();
+        }
+    }
+
     /// <summary>球心震爆命中：伤害只加一次力量加成；击杀走脉冲散落 Juice。</summary>
     public void TakeHitFromCorePulse(int baseDamage, Vector2 hitPos)
     {

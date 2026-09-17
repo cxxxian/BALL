@@ -138,6 +138,10 @@
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:Label text="技能由所选弹珠决定，不可自由更换。" class="loadout-skill-note" />
+
+                    <ui:Label text="挡板武器 · 左右共享" class="column-title flipper-weapon-title" />
+                    <ui:VisualElement name="FlipperWeaponList" class="flipper-weapon-list" />
+                    <ui:Label name="FlipperWeaponHint" text="Perfect Flip 释放 · Combo 充能" class="loadout-skill-note" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

@@ -1668,6 +1668,71 @@
     margin-top: 4px;
 }
 
+.flipper-weapon-title {
+    margin-top: 28px;
+}
+
+.flipper-weapon-list {
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.flipper-weapon-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background-color: var(--neon-panel);
+    border-width: 1px;
+    border-color: var(--neon-border);
+    border-radius: var(--neon-radius);
+}
+
+.flipper-weapon-card:hover {
+    border-color: var(--neon-cyan);
+}
+
+.flipper-weapon-card-selected {
+    border-color: var(--neon-yellow);
+    background-color: rgba(255, 220, 40, 0.08);
+}
+
+.flipper-weapon-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.flipper-weapon-copy {
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.flipper-weapon-name {
+    font-size: 16px;
+    color: var(--neon-text);
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+}
+
+.flipper-weapon-desc {
+    font-size: 13px;
+    color: var(--neon-muted);
+    margin-top: 4px;
+    white-space: normal;
+}
+
+.flipper-weapon-state {
+    font-size: 13px;
+    color: var(--neon-yellow);
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
 /* ── 协议商店 ── */
 .shop-panel {
     flex-direction: column;

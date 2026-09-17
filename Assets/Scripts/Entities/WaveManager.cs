@@ -40,6 +40,8 @@ public class WaveManager : MonoBehaviour
 
     private readonly List<EnemyBase> _activeMinions = new List<EnemyBase>();
     private Boss    _currentBoss;
+
+    public Boss CurrentBoss => _currentBoss != null && !_currentBoss.IsDead ? _currentBoss : null;
     private int     _currentWave = 0;
     private int     _lastBreachClearCount;
     private bool    _breachClearArmed;

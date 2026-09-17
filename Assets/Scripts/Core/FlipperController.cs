@@ -104,6 +104,9 @@ public class FlipperController : MonoBehaviour
             Vector2 hitPos = contact.point;
             JuiceRouter.FlipperPerfectCatch(hitPos, fx);
 
+            var weaponCtrl = FlipperWeaponController.Instance ?? FlipperWeaponController.EnsureInstance();
+            weaponCtrl.TryFireOnPerfectFlip(side, hitPos);
+
             Vector2 r       = hitPos - (Vector2)transform.position;
             float omegaRad  = _angularVelocity * Mathf.Deg2Rad;
             Vector2 surfVel = new Vector2(-r.y, r.x) * omegaRad;

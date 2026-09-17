@@ -104,6 +104,17 @@ public static class JuiceRouter
         flipperFx?.TriggerCatchFlash();
     }
 
+    /// <summary>挡板武器释放：从挡板触点射向目标。</summary>
+    public static void FlipperWeaponFire(Tier tier, Vector2 from, Vector2 to, Color weaponColor)
+    {
+        Vector2 dir = to - from;
+        float intensity = tier >= Tier.Ultimate ? 1.45f : 1.15f;
+        ImpactFX.Instance?.SpawnHit(from, weaponColor, intensity);
+        ImpactFX.Instance?.SpawnParryClash(to, dir.sqrMagnitude > 0.01f ? dir.normalized : Vector2.up, weaponColor, intensity);
+        Play(tier, to, weaponColor, intensity);
+        SlowMoFX.Instance?.PulseFlash(weaponColor, tier >= Tier.Ultimate ? 0.55f : 0.35f, 0.12f);
+    }
+
     public static void TowerFire(Vector2 towerPos, NeonRole role, bool hitEnemy)
     {
         Color color = NeonColors.Active.GetBase(role);

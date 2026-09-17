@@ -186,12 +186,12 @@ public class BallController : MonoBehaviour
     private float _originalTrailWidth;
     private bool  _trailColorOverridden;
 
-    // ── 运动死区检测（引力过载） ─────────────────────────────────────────
+    // ── 运动死区检测（最后保险；主解靠桌面几何导流） ─────────────────────
     private float _horizontalDeadZoneTimer = 0f;
     private float _verticalDeadZoneTimer   = 0f;
     private bool  _gravityOverloadActive   = false;
     private const float AXIS_DEAD_THRESHOLD = 0.15f; // 副轴速度低于此视为死区
-    private const float DEADZONE_DURATION    = 1.5f;   // 触发引力过载的时长
+    private const float DEADZONE_DURATION    = 4.5f;  // 拉长触发，避免抢几何导流的戏
 
     private enum MotionDeadZone { None, Horizontal, Vertical }
 
@@ -741,49 +741,54 @@ public class BallController : MonoBehaviour
         }
     }
 
-    // ── 引力过载：打破水平/垂直死区 ─────────────────────────────────────
+    // ── 死区轻推：仅作几何导流失效时的保险，不强制改路线 ───────────────
     private IEnumerator GravityOverloadRoutine(MotionDeadZone deadZone)
     {
         _gravityOverloadActive = true;
         _horizontalDeadZoneTimer = 0f;
         _verticalDeadZoneTimer   = 0f;
 
-        // 视觉特效：蓝色电光拖尾
-        Color originalStart = _trail.startColor;
-        Color originalEnd = _trail.endColor;
+        Color originalStart = _trail != null ? _trail.startColor : Color.white;
+        Color originalEnd = _trail != null ? _trail.endColor : Color.white;
         Color electricBlue = new Color(0f, 0.8f, 1f, 1f);
-        
+
         if (_trail != null)
         {
-            _trail.startColor = electricBlue;
-            _trail.endColor = new Color(electricBlue.r, electricBlue.g, electricBlue.b, 0.05f);
+            _trail.startColor = Color.Lerp(originalStart, electricBlue, 0.45f);
+            _trail.endColor = new Color(electricBlue.r, electricBlue.g, electricBlue.b, 0.04f);
         }
 
-        float forceMagnitude = config.ballMaxSpeed * 1.5f;
+        Vector2 v = _rb.velocity;
+        float speed = Mathf.Max(v.magnitude, 0.01f);
+        // 轻微补垂直/水平分量，保留原方向主体速度
+        float nudge = Mathf.Clamp(speed * 0.12f, 1.2f, config != null ? config.ballMaxSpeed * 0.2f : 3f);
+
         if (deadZone == MotionDeadZone.Horizontal)
         {
-            // 水平往复 → 强向下推力
-            _rb.velocity = new Vector2(_rb.velocity.x * 0.3f, -forceMagnitude);
+            // 水平往复 → 轻微增加向下分量，保留绝大部分 vx
+            float vy = v.y;
+            if (vy > -nudge * 0.25f)
+                vy = -nudge;
+            else
+                vy -= nudge * 0.35f;
+            _rb.velocity = new Vector2(v.x, vy);
         }
         else
         {
-            // 垂直往复 → 强横向推力（偏向场地中心）
             float hx = GetHorizontalBreakSign();
-            _rb.velocity = new Vector2(hx * forceMagnitude, _rb.velocity.y * 0.3f);
+            float vx = v.x;
+            if (Mathf.Abs(vx) < nudge * 0.25f)
+                vx = hx * nudge;
+            else
+                vx += hx * nudge * 0.35f;
+            _rb.velocity = new Vector2(vx, v.y);
         }
 
-        // 音效和震屏
         AudioManager.Instance?.PlayBounce();
-        CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
-        
-        // 粒子特效
-        if (ImpactFX.Instance != null)
-        {
-            ImpactFX.Instance.SpawnHit(transform.position, electricBlue, 1.0f);
-        }
+        CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+        ImpactFX.Instance?.SpawnHit(transform.position, electricBlue, 0.45f);
 
-        // 持续0.5秒后恢复
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.25f);
 
         if (_trail != null && !_executeChainActive)
         {

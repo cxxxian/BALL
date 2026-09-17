@@ -33,6 +33,8 @@ public class RunBootstrap : MonoBehaviour
         var ball = RunLoadout.GetSelectedBall(catalog);
         if (ball != null && BallController.Instance != null)
             BallController.Instance.ApplyBallDefinition(ball);
+
+        FlipperWeaponController.EnsureInstance().ApplyFromLoadout();
     }
 
     private static void EnsureTutorialDirector()

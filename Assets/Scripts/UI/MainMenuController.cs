@@ -218,7 +218,9 @@ public class MainMenuController : MonoBehaviour
             string ballName = ball != null ? ball.displayName : "—";
             string q = s0 != null ? s0.displayName : "—";
             string e = s1 != null ? s1.displayName : "—";
-            _homeLoadoutLine.text = $"LOADOUT  {ballName}  |  Q:{q}  E:{e}";
+            var weapon = RunLoadout.GetSelectedFlipperWeapon();
+            string flip = weapon != null ? weapon.displayName : "—";
+            _homeLoadoutLine.text = $"LOADOUT  {ballName}  |  Q:{q}  E:{e}  |  FLIP:{flip}";
         }
     }
 

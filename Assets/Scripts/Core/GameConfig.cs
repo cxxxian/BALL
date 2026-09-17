@@ -45,7 +45,12 @@ public class GameConfig : ScriptableObject
     [Header("Combo")]
     public float comboTimeout = 2f;                  // 超时重置连击
     public int comboDisplayThreshold = 3;            // 达到此数显示 Combo UI
-    // comboEnergyBase 已废弃：充能豆推迟至弹药型弹珠技能
+
+    [Header("Flipper Weapon")]
+    [Tooltip("挡板武器公共能量上限")]
+    public float flipperWeaponMaxEnergy = 100f;
+    [Tooltip("每次 Combo 命中增加的能量（默认 4 → 约 25 连击充满，保留弹珠战主导）")]
+    public float flipperWeaponEnergyPerCombo = 4f;
 
     [Header("Combo Milestone — Bumper Pulse")]
     [Tooltip("首次触发脉冲的连击数（测试 5，正式 25）")]

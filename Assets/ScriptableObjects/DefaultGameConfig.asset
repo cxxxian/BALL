@@ -37,6 +37,8 @@ MonoBehaviour:
   minCreditsPerRun: 10
   comboTimeout: 2
   comboDisplayThreshold: 3
+  flipperWeaponMaxEnergy: 100
+  flipperWeaponEnergyPerCombo: 4
   comboRewardThreshold25: 25
   comboPulseInterval: 10
   bumperPulseMilestoneDamage: 1

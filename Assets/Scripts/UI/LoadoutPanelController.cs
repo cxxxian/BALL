@@ -22,6 +22,7 @@ public class LoadoutPanelController : MonoBehaviour
     private Button _equipBtn;
     private VisualElement _skillSlot0;
     private VisualElement _skillSlot1;
+    private VisualElement _flipperWeaponList;
 
     private RunCatalog _catalog;
     private LoadoutReturnTarget _returnTarget = LoadoutReturnTarget.MainMenu;
@@ -54,6 +55,7 @@ public class LoadoutPanelController : MonoBehaviour
         _equipBtn = root.Q<Button>("BtnEquipBall");
         _skillSlot0 = root.Q<VisualElement>("SkillSlot0");
         _skillSlot1 = root.Q<VisualElement>("SkillSlot1");
+        _flipperWeaponList = root.Q<VisualElement>("FlipperWeaponList");
 
         root.Q<Button>("BtnLoadoutBack")?.RegisterCallback<ClickEvent>(_ => Hide());
         root.Q<Button>("BtnBallPrev")?.RegisterCallback<ClickEvent>(_ => BrowseBall(-1));
@@ -109,9 +111,13 @@ public class LoadoutPanelController : MonoBehaviour
         {
             var s0 = RunLoadout.GetSkillInSlot(0, _catalog);
             var s1 = RunLoadout.GetSkillInSlot(1, _catalog);
+            var weapon = RunLoadout.GetSelectedFlipperWeapon();
             string left = s0 != null ? s0.displayName : "—";
             string right = s1 != null ? s1.displayName : "—";
-            skillsLabel.text = s1 != null ? $"{left} · {right}" : left;
+            string flip = weapon != null ? weapon.displayName : "—";
+            skillsLabel.text = s1 != null
+                ? $"{left} · {right} · FLIP:{flip}"
+                : $"{left} · FLIP:{flip}";
         }
     }
 
@@ -120,6 +126,7 @@ public class LoadoutPanelController : MonoBehaviour
         RebuildBrowseBallList();
         SyncBrowseIndexToSelection();
         RefreshBallColumn();
+        RefreshFlipperWeapons();
     }
 
     private void RebuildBrowseBallList()
@@ -289,6 +296,68 @@ public class LoadoutPanelController : MonoBehaviour
         }
         slotRoot.EnableInClassList("skill-slot-empty", false);
         slotRoot.EnableInClassList("skill-slot-locked", locked);
+    }
+
+    private void RefreshFlipperWeapons()
+    {
+        if (_flipperWeaponList == null) return;
+        _flipperWeaponList.Clear();
+
+        string selectedId = RunLoadout.Data.flipperWeaponId;
+        foreach (var weapon in FlipperWeaponCatalog.GetLoadoutWeapons())
+        {
+            if (weapon == null) continue;
+            bool selected = weapon.weaponId == selectedId;
+
+            var card = new VisualElement();
+            card.AddToClassList("flipper-weapon-card");
+            if (selected) card.AddToClassList("flipper-weapon-card-selected");
+
+            var swatch = new VisualElement();
+            swatch.AddToClassList("flipper-weapon-swatch");
+            swatch.style.backgroundColor = weapon.effectColor;
+            card.Add(swatch);
+
+            var copy = new VisualElement();
+            copy.AddToClassList("flipper-weapon-copy");
+            var name = new Label(weapon.displayName);
+            name.AddToClassList("flipper-weapon-name");
+            copy.Add(name);
+            var desc = new Label(ResolveWeaponDesc(weapon));
+            desc.AddToClassList("flipper-weapon-desc");
+            copy.Add(desc);
+            card.Add(copy);
+
+            var state = new Label(selected ? "已装备" : "装备");
+            state.AddToClassList("flipper-weapon-state");
+            if (!selected) state.style.color = new StyleColor(new Color(0.55f, 0.7f, 0.78f));
+            card.Add(state);
+
+            string capturedId = weapon.weaponId;
+            card.RegisterCallback<ClickEvent>(_ => TryEquipFlipperWeapon(capturedId));
+            _flipperWeaponList.Add(card);
+        }
+    }
+
+    private void TryEquipFlipperWeapon(string weaponId)
+    {
+        if (!RunLoadout.TrySelectFlipperWeapon(weaponId)) return;
+        LoadoutChanged?.Invoke();
+        RefreshFlipperWeapons();
+    }
+
+    private static string ResolveWeaponDesc(FlipperWeaponDefinition weapon)
+    {
+        if (weapon == null) return string.Empty;
+        if (!string.IsNullOrEmpty(weapon.loadoutDescription))
+            return weapon.loadoutDescription;
+        return weapon.weaponType switch
+        {
+            FlipperWeaponType.Cannon => "单体爆发 · Perfect Flip 对 Boss 造成高额瞬间伤害",
+            FlipperWeaponType.Bomb => "范围清场 · 清理小怪并对 Boss 造成少量伤害",
+            FlipperWeaponType.Laser => "持续输出 · 锁定 Boss 短时持续削减 HP",
+            _ => "挡板主动武器"
+        };
     }
 
     private static Color GetCategoryColor(SkillCategory category) => category switch

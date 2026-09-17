@@ -4,14 +4,17 @@ using UnityEngine;
 public class RunLoadoutData
 {
     public string ballId;
+    public string flipperWeaponId;
 }
 
-/// <summary>战前配置：仅持久化所选弹珠；槽0 强制协议改向，槽1 为身份技。</summary>
+/// <summary>战前配置：弹珠 + 挡板武器；槽0 强制协议改向，槽1 为身份技。</summary>
 public static class RunLoadout
 {
     public const int SlotCount = 2;
+    public const string DefaultFlipperWeaponId = "cannon";
 
     private const string PrefBall = "run_ball_id";
+    private const string PrefFlipperWeapon = "run_flipper_weapon_id";
 
     private static RunLoadoutData _data = new RunLoadoutData();
     public static RunLoadoutData Data => _data;
@@ -20,11 +23,13 @@ public static class RunLoadout
     {
         if (_data == null) _data = new RunLoadoutData();
         _data.ballId = PlayerPrefs.GetString(PrefBall, string.Empty);
+        _data.flipperWeaponId = PlayerPrefs.GetString(PrefFlipperWeapon, string.Empty);
     }
 
     public static void Save()
     {
         PlayerPrefs.SetString(PrefBall, _data.ballId ?? string.Empty);
+        PlayerPrefs.SetString(PrefFlipperWeapon, _data.flipperWeaponId ?? string.Empty);
         PlayerPrefs.Save();
     }
 
@@ -39,6 +44,10 @@ public static class RunLoadout
             || !PlayerProfile.IsBallUnlocked(Data.ballId))
             Data.ballId = defaultBall != null ? defaultBall.ballId : "standard";
 
+        if (string.IsNullOrEmpty(Data.flipperWeaponId)
+            || GetSelectedFlipperWeapon() == null)
+            Data.flipperWeaponId = DefaultFlipperWeaponId;
+
         Save();
     }
 
@@ -47,6 +56,7 @@ public static class RunLoadout
         if (catalog == null) return false;
         var ball = GetSelectedBall(catalog);
         if (ball == null || !PlayerProfile.IsBallUnlocked(ball.ballId)) return false;
+        if (GetSelectedFlipperWeapon() == null) return false;
         return catalog.GetSkill(SkillManager.ProtocolRedirectSkillId) != null
                || ball.primarySkill != null;
     }
@@ -97,6 +107,18 @@ public static class RunLoadout
             return false;
 
         Data.ballId = ballId;
+        Save();
+        return true;
+    }
+
+    public static FlipperWeaponDefinition GetSelectedFlipperWeapon() =>
+        FlipperWeaponCatalog.Get(Data.flipperWeaponId);
+
+    public static bool TrySelectFlipperWeapon(string weaponId)
+    {
+        var weapon = FlipperWeaponCatalog.Get(weaponId);
+        if (weapon == null) return false;
+        Data.flipperWeaponId = weapon.weaponId;
         Save();
         return true;
     }
