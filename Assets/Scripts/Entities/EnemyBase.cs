@@ -25,6 +25,9 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>协议校准：仅斩杀连锁可击杀，普通球撞击不掉血。</summary>
     public bool TutorialExecuteOnlyHits { get; set; }
 
+    /// <summary>协议校准弹刀靶：弹珠、技能、挡板武器都不造成伤害。</summary>
+    public bool TutorialInvulnerable { get; set; }
+
     /// <summary>含分裂等小数积攒的受击进度，供血条显示（避免「闪了但条不动」）。</summary>
     public float DamageProgress => CurrentHits + _ballHitCredit;
 
@@ -173,7 +176,7 @@ public abstract class EnemyBase : MonoBehaviour
     // ── 护盾清场：强制击杀（给分，触发死亡流程）───────────────────────────
     public void ForceKill()
     {
-        if (IsDead) return;
+        if (IsDead || TutorialInvulnerable) return;
         CurrentHits = maxHits - 1;
         TakeHit();
     }
@@ -182,7 +185,7 @@ public abstract class EnemyBase : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D col)
     {
-        if (IsDead) return;
+        if (IsDead || TutorialInvulnerable) return;
 
         Vector2? hitPos = col.contacts.Length > 0 ? col.contacts[0].point : (Vector2?)null;
 
@@ -217,7 +220,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>按倍率累计碰撞伤（分裂幻影 0.5× 等），凑整后走 TakeHit。</summary>
     public void TakeBallHitScaled(float scale, Vector2? hitPos = null)
     {
-        if (IsDead) return;
+        if (IsDead || TutorialInvulnerable) return;
         float dmg = 1f;
         if (BuffManager.Instance != null)
             dmg += BuffManager.Instance.BallDamageBonus;
@@ -264,7 +267,7 @@ public abstract class EnemyBase : MonoBehaviour
 
     public virtual void TakeHit(int damage = 1, bool isFromBall = false, Vector2? hitPos = null)
     {
-        if (IsDead) return;
+        if (IsDead || TutorialInvulnerable) return;
         if (isFromBall && BuffManager.Instance != null)
             damage += BuffManager.Instance.BallDamageBonus;
         if (isFromBall && ProtocolFieldDirector.Instance != null)
@@ -293,7 +296,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>挡板武器直接伤害：不吃弹珠 Buff，仍走受击/击杀流程。</summary>
     public void TakeFlipperWeaponHit(int damage, Vector2 hitPos)
     {
-        if (IsDead || damage <= 0) return;
+        if (IsDead || TutorialInvulnerable || damage <= 0) return;
 
         CurrentHits += damage;
         if (GameManager.Instance != null)
@@ -318,7 +321,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>球心震爆命中：伤害只加一次力量加成；击杀走脉冲散落 Juice。</summary>
     public void TakeHitFromCorePulse(int baseDamage, Vector2 hitPos)
     {
-        if (IsDead) return;
+        if (IsDead || TutorialInvulnerable) return;
 
         int damage = Mathf.Max(1, baseDamage);
         if (BuffManager.Instance != null)

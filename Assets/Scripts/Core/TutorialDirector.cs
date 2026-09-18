@@ -3,24 +3,24 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
-/// <summary>
-/// 协议校准导演（旁白门控初版）：
-/// Narrate → 时间态 → 等正确输入/结果 → 旁白消失 → 下一拍。
-/// </summary>
+/// <summary>协议校准：10 阶段 Protocol Interface 引导。</summary>
 [DefaultExecutionOrder(50)]
 public class TutorialDirector : MonoBehaviour
 {
     private TutorialPromptUI _ui;
+    private TutorialHighlight _highlight;
+    private TutorialFingerHint _finger;
     private bool _skipRequested;
     private bool _running;
     private Coroutine _routine;
 
-    /// <summary>实战拍：挡板 + 发球 + 技能均可。</summary>
     private const TutorialInputMask CombatPlay =
         TutorialInputMask.PlayfieldBasic
         | TutorialInputMask.Launch
         | TutorialInputMask.Skill0
         | TutorialInputMask.Skill1;
+
+    private const int TotalSteps = TutorialProtocolCopy.TotalSteps;
 
     private void Start()
     {
@@ -31,6 +31,9 @@ public class TutorialDirector : MonoBehaviour
         }
 
         _ui = TutorialPromptUI.Ensure();
+        _highlight = TutorialHighlight.Ensure();
+        _finger = TutorialFingerHint.Ensure();
+
         if (GameManager.Instance != null)
             GameManager.Instance.onGameStart.AddListener(OnGameStart);
 
@@ -42,6 +45,10 @@ public class TutorialDirector : MonoBehaviour
     {
         TutorialTimeControl.Exit();
         TutorialInputGate.Disable();
+        FlipperWeaponController.SetTutorialFireLocked(false);
+        ReleaseSkillPresentation();
+        if (_highlight != null) _highlight.Clear();
+        if (_finger != null) _finger.Hide();
         if (GameManager.Instance != null)
             GameManager.Instance.onGameStart.RemoveListener(OnGameStart);
     }
@@ -63,6 +70,7 @@ public class TutorialDirector : MonoBehaviour
         if (_routine != null)
             StopCoroutine(_routine);
         TutorialTimeControl.Exit();
+        FlipperWeaponController.SetTutorialFireLocked(true);
         _skipRequested = false;
         _running = true;
         _routine = StartCoroutine(RunTutorial());
@@ -71,422 +79,266 @@ public class TutorialDirector : MonoBehaviour
     private IEnumerator RunTutorial()
     {
         yield return null;
-        // 确保终端 UI 已挂好
         _ui = TutorialPromptUI.Ensure();
-        yield return null;
         yield return null;
 
         WaveManager.Instance?.ClearTutorialField();
 
-        // 1) 挡板 → 2) 发球 → 3) 技能 → 4) 机制
-        // 球还在发射槽时练 Z/X，无需冻结台面，挡板不会卡顿
-        yield return IntroBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T01_Flippers();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return FlipperExplainBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T02_Launch();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return FlipperBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T03_RedirectOnly();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return LaunchExplainBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T04_ArmE();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return LaunchBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T05_EthenQ();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return SkillOnDummyBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T06_Combo();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return BumperBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T07_FlipperWeapon();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return ThreatBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T08_BossAndParry();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return BossBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
+        yield return T09_Slot();
+        if (_skipRequested) { Finish(true); yield break; }
 
-        yield return ParryBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
-
-        yield return BuffBeat();
-        if (_skipRequested) { Finish(skipped: true); yield break; }
-
-        Finish(skipped: false);
+        yield return T10_FreePlay();
+        Finish(false);
     }
 
-    // ── Beats ─────────────────────────────────────────────────────────────
+    // ── T01 挡板 ─────────────────────────────────────────────────────────
 
-    private IEnumerator IntroBeat()
+    private IEnumerator T01_Flippers()
     {
-        bool done = false;
-        yield return Narrate(
-            step: "SEQ 01 / BOOT",
-            line: "> 协议校准启动。\n> 顺序：挡板 → 发球 → 技能 → 战场机制 → 老虎机重摇。",
-            keyHint: null,
-            mode: TutorialTimeMode.HardPause,
-            gate: () => done,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => done = true);
-    }
+        bool started = false;
+        yield return ProtocolStep(1, "控制挡板", "接住球，再把它弹回去。", TutorialProtocolCopy.HintFlipper,
+            TutorialTimeMode.HardPause, () => started, TutorialInputMask.UiOnly,
+            TutorialTerminalMode.Brief, TutorialProtocolAnchor.Bottom, showContinue: true,
+            onContinue: () => started = true);
 
-    private IEnumerator FlipperExplainBeat()
-    {
-        bool done = false;
-        yield return Narrate(
-            step: "SEQ 02 / FLIP",
-            line: "> 弹珠还在发射槽。\n> 先熟悉左右挡板——球飞起来前就把手感练好。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "下一步：练习底栏左右挡板",
-#else
-            keyHint: "下一步：练习 Z / X 挡板",
-#endif
-            mode: TutorialTimeMode.HardPause,
-            gate: () => done,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => done = true);
-    }
+        _finger?.ShowFlipperLeftOnce();
+        _highlight?.PulseSkillSlot(0, 0.01f);
 
-    private IEnumerator FlipperBeat()
-    {
-        // 球在槽内：Normal 流速即可，挡板 FixedUpdate 正常，无需 SoftFreeze
         bool left = false;
-        yield return Narrate(
-            step: "SEQ 03 / FLIP_L",
-            line: "> 左挡板：按住试一下手感。发球后用它托住弹珠。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 按住 · 屏幕底栏左侧 ]",
-#else
-            keyHint: "[ 按住 Z 或 ← ]",
-#endif
-            mode: TutorialTimeMode.Normal,
-            gate: () =>
+        yield return ProtocolStep(1, "控制挡板", null, TutorialProtocolCopy.HintFlipperLeft,
+            TutorialTimeMode.Normal,
+            () =>
             {
                 if (InputManager.Instance != null && InputManager.Instance.LeftFlipperPressed)
                     left = true;
                 return left;
             },
-            inputMask: TutorialInputMask.FlipperLeft | TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact);
+            TutorialInputMask.FlipperLeft | TutorialInputMask.Pause,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Bottom);
 
-        if (_skipRequested) yield break;
+        _finger?.ShowFlipperRightOnce();
 
         bool right = false;
-        yield return Narrate(
-            step: "SEQ 04 / FLIP_R",
-            line: "> 右挡板：同样按住。左右配合才能稳住局面。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 按住 · 屏幕底栏右侧 ]",
-#else
-            keyHint: "[ 按住 X 或 → ]",
-#endif
-            mode: TutorialTimeMode.Normal,
-            gate: () =>
+        yield return ProtocolStep(1, "控制挡板", null, TutorialProtocolCopy.HintFlipperRight,
+            TutorialTimeMode.Normal,
+            () =>
             {
                 if (InputManager.Instance != null && InputManager.Instance.RightFlipperPressed)
                     right = true;
                 return right;
             },
-            inputMask: TutorialInputMask.FlipperRight | TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact);
+            TutorialInputMask.FlipperRight | TutorialInputMask.Pause,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Bottom);
     }
 
-    private IEnumerator LaunchExplainBeat()
+    private IEnumerator T02_Launch()
     {
-        bool done = false;
-        yield return Narrate(
-            step: "SEQ 05 / LAUNCH",
-            line: "> 挡板就绪。\n> 接下来发射弹珠——这是一切对局的起点。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "下一步：点击屏幕发球",
-#else
-            keyHint: "下一步：左键或空格发球",
-#endif
-            mode: TutorialTimeMode.HardPause,
-            gate: () => done,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => done = true);
+        yield return ProtocolStep(2, "发射弹珠", "准备好了，就让球进入战场。", TutorialProtocolCopy.HintLaunch,
+            TutorialTimeMode.HardPause,
+            () => BallController.Instance != null && !BallController.Instance.IsWaitingForLaunch,
+            TutorialInputMask.Launch,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Bottom);
     }
 
-    private IEnumerator LaunchBeat()
-    {
-        yield return Narrate(
-            step: "SEQ 06 / FIRE",
-            line: "> 现在，发射弹珠。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 点击屏幕 ]",
-#else
-            keyHint: "[ 左键 / 空格 ]",
-#endif
-            mode: TutorialTimeMode.HardPause,
-            gate: () => BallController.Instance != null && !BallController.Instance.IsWaitingForLaunch,
-            inputMask: TutorialInputMask.Launch,
-            terminalMode: TutorialTerminalMode.Compact);
-    }
+    // ── T03 仅 Q 改向 ───────────────────────────────────────────────────
 
-    private IEnumerator SkillOnDummyBeat()
+    private IEnumerator T03_RedirectOnly()
     {
-        WaveManager.Instance?.ClearTutorialField();
+        yield return EnsureBallInPlay();
+        SkillManager.Instance?.ClearExecuteArm();
 
-        // 放 3 只静止靶，对应斩杀连锁上限
-        var def = WaveManager.Instance?.GetTutorialMinionDefinition();
-        if (def != null && WaveManager.Instance != null)
+        bool brief = false;
+        yield return ProtocolStep(3, "改变球路", "按 Q 瞄准，确认后改变球的方向。", TutorialProtocolCopy.HintRedirect,
+            TutorialTimeMode.HardPause, () => brief, TutorialInputMask.UiOnly,
+            TutorialTerminalMode.Brief, TutorialProtocolAnchor.Skills, showContinue: true,
+            onContinue: () => brief = true);
+
+        RefreshSkillReady(0);
+        _highlight?.PulseSkillSlot(0);
+
+        bool redirectDone = false;
+        void OnFired(Vector2 dir)
         {
-            Vector3[] spots =
-            {
-                new Vector3(-0.9f, 3.4f, 0f),
-                new Vector3(0.6f, 3.2f, 0f),
-                new Vector3(0.0f, 4.0f, 0f)
-            };
-            foreach (var pos in spots)
-            {
-                var dummy = WaveManager.Instance.SpawnMinion(def, pos, 0);
-                if (dummy == null) continue;
-                dummy.moveSpeed = 0f;
-                dummy.maxHits = 4;
-                // 开链前普攻不掉血，避免误杀后无法练 E→Q
-                dummy.TutorialExecuteOnlyHits = true;
-            }
+            if (dir.sqrMagnitude > 0.001f && SkillManager.Instance != null && !SkillManager.Instance.IsExecuteArmed)
+                redirectDone = true;
         }
 
-        bool ack = false;
-        yield return Narrate(
-            step: "SEQ 07 / SKILL",
-            line: "> 标准弹珠连招：先 E 武装斩杀，再立刻 Q 协议改向确认。\n> 武装窗口内确认，可连锁锁定最多 3 个敌人。",
-            keyHint: "连招：E → Q",
-            mode: TutorialTimeMode.HardPause,
-            gate: () => ack,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => ack = true);
+        if (SkillManager.Instance != null)
+            SkillManager.Instance.onFired.AddListener(OnFired);
 
-        if (_skipRequested) yield break;
+        yield return ProtocolStep(3, "改变球路", null, TutorialProtocolCopy.HintRedirect,
+            TutorialTimeMode.SlowMo, () => redirectDone, TutorialInputMask.Skill0 | CombatPlay,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Skills,
+            timeout: 50f, whileWaiting: EnsureBallPlayable);
 
-        yield return EnsureBallInPlayOrRelaunch("SEQ 08 / RELAUNCH");
-        if (_skipRequested) yield break;
+        if (SkillManager.Instance != null)
+            SkillManager.Instance.onFired.RemoveListener(OnFired);
 
-        // ── 先 E：斩杀武装 ──
+        ResetTutorialCombatState();
+    }
+
+    // ── T04 E ───────────────────────────────────────────────────────────
+
+    private IEnumerator T04_ArmE()
+    {
+        yield return EnsureBallInPlay();
         RefreshSkillReady(1);
+        _highlight?.PulseSkillSlot(1);
+
         bool armed = false;
         UnityAction onArm = () => armed = true;
         if (SkillManager.Instance != null)
             SkillManager.Instance.onExecuteArmStarted.AddListener(onArm);
 
-        yield return Narrate(
-            step: "SEQ 08 / ARM",
-            line: "> 先按 E：武装斩杀协议。\n> 武装后有短暂窗口，必须马上接 Q。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 技能槽 2 / E ]",
-#else
-            keyHint: "[ E ]",
-#endif
-            mode: TutorialTimeMode.Normal,
-            gate: () => armed || (SkillManager.Instance != null && SkillManager.Instance.IsExecuteArmed),
-            inputMask: TutorialInputMask.Skill1 | TutorialInputMask.Launch | TutorialInputMask.Flippers | TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 40f);
+        yield return ProtocolStep(4, "释放身份技", "标准球可以启动斩杀武装。", TutorialProtocolCopy.HintIdentityE,
+            TutorialTimeMode.Normal, () => armed || (SkillManager.Instance != null && SkillManager.Instance.IsExecuteArmed),
+            TutorialInputMask.Skill1 | CombatPlay,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Skills,
+            timeout: 40f, whileWaiting: EnsureBallPlayable);
 
         if (SkillManager.Instance != null)
             SkillManager.Instance.onExecuteArmStarted.RemoveListener(onArm);
+    }
 
-        if (_skipRequested) yield break;
+    // ── T05 E→Q ─────────────────────────────────────────────────────────
 
-        // ── 紧接 Q：改向确认开链 ──
+    private IEnumerator T05_EthenQ()
+    {
+        WaveManager.Instance?.ClearTutorialField();
+        var def = WaveManager.Instance?.GetTutorialMinionDefinition();
+        if (def != null && WaveManager.Instance != null)
+        {
+            foreach (var pos in new[] { new Vector3(-0.9f, 3.4f, 0f), new Vector3(0.6f, 3.2f, 0f), new Vector3(0f, 4f, 0f) })
+            {
+                var d = WaveManager.Instance.SpawnMinion(def, pos, 0);
+                if (d == null) continue;
+                d.moveSpeed = 0f;
+                d.maxHits = 4;
+                d.TutorialExecuteOnlyHits = true;
+            }
+        }
+
+        yield return EnsureBallInPlay();
         RefreshSkillReady(0);
         RefreshSkillReady(1);
-        SkillManager.Instance?.TutorialExtendExecuteArm(60f);
+
+        if (SkillManager.Instance != null && !SkillManager.Instance.IsExecuteArmed)
+        {
+            SkillManager.Instance.TutorialExtendExecuteArm(60f);
+        }
 
         bool chained = false;
         UnityAction onChain = () => chained = true;
         if (SkillManager.Instance != null)
             SkillManager.Instance.onExecuteChainStarted.AddListener(onChain);
 
-        yield return Narrate(
-            step: "SEQ 09 / CHAIN",
-            line: "> 立刻 Q：右键瞄准，左键确认。\n> 在武装状态下确认，开启最多 3 段斩杀连锁。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 若武装消失先 E，再瞄准确认 ]",
-#else
-            keyHint: "[ 右键瞄准 · 左键确认 ]（可先补 E）",
-#endif
-            mode: TutorialTimeMode.Normal,
-            gate: () => chained,
-            inputMask: TutorialInputMask.Skill0 | TutorialInputMask.Skill1 | TutorialInputMask.Launch | TutorialInputMask.Flippers | TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact,
+        yield return ProtocolStep(5, "组合技能", "先启动武装，再用 Q 把球送向目标。", TutorialProtocolCopy.HintComboEthenQ,
+            TutorialTimeMode.Normal, () => chained, TutorialInputMask.Skill0 | TutorialInputMask.Skill1 | CombatPlay,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Skills,
             timeout: 55f,
             whileWaiting: () =>
             {
-                var sm = SkillManager.Instance;
-                if (sm == null || chained) return;
+                EnsureBallPlayable();
                 RefreshSkillReady(0);
-                if (!sm.IsExecuteArmed)
+                if (SkillManager.Instance != null && !SkillManager.Instance.IsExecuteArmed)
                     RefreshSkillReady(1);
             });
 
         if (SkillManager.Instance != null)
             SkillManager.Instance.onExecuteChainStarted.RemoveListener(onChain);
 
-        if (_skipRequested) yield break;
-
-        // 连锁在 HardPause 下只启动，须等时间恢复后跑完再清场，否则会残留斩杀态
         yield return WaitForExecuteChainComplete();
         ResetTutorialCombatState();
         WaveManager.Instance?.ClearTutorialField();
     }
 
-    /// <summary>掉球后卡在发球等待时，单独开一拍让玩家重发，避免技能教学死锁。</summary>
-    private IEnumerator EnsureBallInPlayOrRelaunch(string step)
-    {
-        if (BallController.Instance != null && !BallController.Instance.IsWaitingForLaunch)
-            yield break;
+    // ── T06 Combo ───────────────────────────────────────────────────────
 
-        yield return Narrate(
-            step: step,
-            line: "> 球已掉出。先重新发球，再继续技能校准。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 点击屏幕发球 ]",
-#else
-            keyHint: "[ 左键 / 空格 发球 ]",
-#endif
-            mode: TutorialTimeMode.HardPause,
-            gate: () => BallController.Instance != null && !BallController.Instance.IsWaitingForLaunch,
-            inputMask: TutorialInputMask.Launch | TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 0f);
-    }
-
-    private IEnumerator BumperBeat()
+    private IEnumerator T06_Combo()
     {
         ResetTutorialCombatState();
+        int targetCombo = 5;
+        int startCombo = ComboSystem.Instance != null ? ComboSystem.Instance.CurrentCombo : 0;
 
-        bool ack = false;
-        yield return Narrate(
-            step: "SEQ 10 / SYSTEMS",
-            line: "> 机制阶段：Bumper、敌人、Boss、弹刀与波次奖励。",
-            keyHint: null,
-            mode: TutorialTimeMode.HardPause,
-            gate: () => ack,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => ack = true);
-
-        if (_skipRequested) yield break;
-
-        bool hit = false;
-        void OnHit() => hit = true;
-        Bumper.OnBallHit += OnHit;
-
-        yield return Narrate(
-            step: "SEQ 11 / BUMPER",
-            line: "> 青色 Bumper：撞上去会弹开并得分。",
-            keyHint: "[ 用球撞击保险杠 ]",
-            mode: TutorialTimeMode.Normal,
-            gate: () => hit,
-            inputMask: CombatPlay,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 30f,
-            whileWaiting: EnsureBallPlayable);
-
-        Bumper.OnBallHit -= OnHit;
-    }
-
-    private IEnumerator ThreatBeat()
-    {
-        WaveManager.Instance?.ClearTutorialField();
-        var def = WaveManager.Instance?.GetTutorialMinionDefinition();
-        EnemyBase minion = null;
-        if (def != null && WaveManager.Instance != null)
-        {
-            minion = WaveManager.Instance.SpawnMinion(def, new Vector3(0f, 4.0f, 0f), 0);
-            if (minion != null)
+        yield return ProtocolStep(6, "保持连击", "连续命中会增加 Combo，并加快技能恢复。", null,
+            TutorialTimeMode.Normal,
+            () => ComboSystem.Instance != null && ComboSystem.Instance.CurrentCombo >= startCombo + targetCombo,
+            CombatPlay,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Combo,
+            timeout: 45f,
+            whileWaiting: () =>
             {
-                minion.moveSpeed = 0f;
-                minion.maxHits = 1;
-            }
-        }
-
-        bool ack = false;
-        yield return Narrate(
-            step: "SEQ 12 / THREAT",
-            line: "> 小兵触底会扣生命。先记住这条规则。",
-            keyHint: null,
-            mode: TutorialTimeMode.HardPause,
-            gate: () => ack,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => ack = true);
-
-        if (_skipRequested) yield break;
-
-        if (minion != null)
-            minion.moveSpeed = 0.22f;
-
-        yield return Narrate(
-            step: "SEQ 13 / DESTROY",
-            line: "> 用弹珠击毁这只小兵。可用 Q 改向瞄准。",
-            keyHint: "[ 撞击敌人 · 或 Q 改向 ]",
-            mode: TutorialTimeMode.Normal,
-            gate: () => minion == null || minion.IsDead,
-            inputMask: CombatPlay,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 45f,
-            whileWaiting: EnsureBallPlayable);
-
-        WaveManager.Instance?.ClearTutorialField();
+                EnsureBallPlayable();
+                _highlight?.PulseCombo(0.01f);
+            });
     }
 
-    private IEnumerator BossBeat()
-    {
-        WaveManager.Instance?.ClearTutorialField();
-        var boss = WaveManager.Instance?.SpawnTutorialBoss(0);
-        int hitsBefore = boss != null ? boss.CurrentHits : 0;
+    // ── T07 挡板武器 ────────────────────────────────────────────────────
 
-        yield return Narrate(
-            step: "SEQ 14 / BOSS",
-            line: "> Boss 在上方。用球撞击削减它的血量。",
-            keyHint: "[ 撞击 Boss ]",
-            mode: TutorialTimeMode.Normal,
-            gate: () => boss == null || boss.IsDead || boss.CurrentHits > hitsBefore,
-            inputMask: CombatPlay,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 45f,
-            whileWaiting: EnsureBallPlayable);
+    private IEnumerator T07_FlipperWeapon()
+    {
+        FlipperWeaponController.SetTutorialFireLocked(false);
+        FlipperWeaponController.Instance?.TutorialFillEnergyForLesson();
+        _highlight?.PulseFlipperWeaponHud();
+
+        bool fired = false;
+        UnityAction onFire = () => fired = true;
+        if (FlipperWeaponController.Instance != null)
+            FlipperWeaponController.Instance.onWeaponFired.AddListener(onFire);
+
+        yield return ProtocolStep(7, "挡板也是武器", "Combo 会为武器充能，满能量后按住挡板接球即可释放。", TutorialProtocolCopy.HintPerfectFlip,
+            TutorialTimeMode.Normal, () => fired, CombatPlay,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Bottom,
+            timeout: 60f, whileWaiting: EnsureBallPlayable);
+
+        if (FlipperWeaponController.Instance != null)
+            FlipperWeaponController.Instance.onWeaponFired.RemoveListener(onFire);
     }
 
-    private IEnumerator ParryBeat()
-    {
-        Boss boss = FindAnyObjectByType<Boss>();
-        if (boss == null)
-            boss = WaveManager.Instance?.SpawnTutorialBoss(0);
+    // ── T08 Boss + 弹刀 ─────────────────────────────────────────────────
 
-        bool bossHitFromParry = false;
-        void OnParryBossHit(bool _) => bossHitFromParry = true;
-        BezierMissile.OnAnyParryBossHit += OnParryBossHit;
+    private IEnumerator T08_BossAndParry()
+    {
+        WaveManager.Instance?.ClearTutorialField();
+        var boss = WaveManager.Instance?.SpawnTutorialBoss(0, parryDummy: true);
+        boss?.ConfigureTutorialParryDummy();
+
+        bool parryDone = false;
+
+        void OnParry(bool _) => parryDone = true;
+        BezierMissile.OnAnyParryBossHit += OnParry;
 
         float nextFireAt = 0f;
-        yield return Narrate(
-            step: "SEQ 15 / PARRY",
-            line: "> 导弹靠近出现双圈时，在窗口内招架。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 点屏幕弹刀 ]",
-#else
-            keyHint: "[ 左键弹刀 ]",
-#endif
-            mode: TutorialTimeMode.Normal,
-            gate: () => bossHitFromParry,
-            inputMask: CombatPlay | TutorialInputMask.Parry,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 60f,
+        yield return ProtocolStep(8, "找到节奏", "这面靶不会掉血。看到导弹，就把它弹开。", TutorialProtocolCopy.HintParry,
+            TutorialTimeMode.Normal,
+            () => parryDone,
+            CombatPlay | TutorialInputMask.Parry,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Top,
+            timeout: 75f,
             whileWaiting: () =>
             {
                 EnsureBallPlayable();
@@ -500,41 +352,32 @@ public class TutorialDirector : MonoBehaviour
                     nextFireAt = Time.unscaledTime + 0.8f;
             });
 
-        BezierMissile.OnAnyParryBossHit -= OnParryBossHit;
-
-        // 等 Boss 受击反馈播完，再进老虎机教学
+        BezierMissile.OnAnyParryBossHit -= OnParry;
+        WaveManager.Instance?.ClearTutorialField();
         TutorialTimeControl.Exit();
-        yield return new WaitForSecondsRealtime(1.1f);
+        yield return new WaitForSecondsRealtime(0.8f);
     }
 
-    private IEnumerator BuffBeat()
+    // ── T09 老虎机 ──────────────────────────────────────────────────────
+
+    private IEnumerator T09_Slot()
     {
         WaveManager.Instance?.ClearTutorialField();
         TutorialTimeControl.Exit();
         TutorialInputGate.Disable();
 
         bool ack = false;
-        yield return Narrate(
-            step: "SEQ 16 / SLOT",
-            line: "> 清波后进入老虎机：开转 → 可选重摇 → 领取强化。",
-            keyHint: null,
-            mode: TutorialTimeMode.HardPause,
-            gate: () => ack,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
+        yield return ProtocolStep(9, "选择强化", "清除波次后，选择一个强化继续战斗。", TutorialProtocolCopy.HintSlotSpin,
+            TutorialTimeMode.HardPause, () => ack, TutorialInputMask.UiOnly,
+            TutorialTerminalMode.Brief, TutorialProtocolAnchor.Center, showContinue: true,
             onContinue: () => ack = true);
-
-        if (_skipRequested) yield break;
 
         if (GameManager.Instance != null)
             GameManager.Instance.CompleteWave();
 
-        // 等老虎机浮层出现
         float waitOpen = 2.5f;
-        while (waitOpen > 0f
-               && (BuffSelectionController.Instance == null
-                   || !BuffSelectionController.Instance.IsOverlayVisible))
+        while (waitOpen > 0f && (BuffSelectionController.Instance == null
+                                || !BuffSelectionController.Instance.IsOverlayVisible))
         {
             waitOpen -= Time.unscaledDeltaTime;
             yield return null;
@@ -542,86 +385,85 @@ public class TutorialDirector : MonoBehaviour
 
         BuffSelectionController.Instance?.SetTutorialGate(SlotTutorialGate.SpinOnly);
 
-        // ── 开转 ──
-        yield return Narrate(
-            step: "SEQ 17 / SPIN",
-            line: "> 拉动右侧能量杆（或空格）开转三轮。",
-#if UNITY_ANDROID || UNITY_IOS
-            keyHint: "[ 点右侧拉杆 ]",
-#else
-            keyHint: "[ 拉杆 / 空格 ]",
-#endif
-            mode: TutorialTimeMode.Normal,
-            gate: () => BuffSelectionController.Instance != null
-                        && BuffSelectionController.Instance.IsResolvePreviewPhase,
-            inputMask: TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact,
+        yield return ProtocolStep(9, "选择强化", null, TutorialProtocolCopy.HintSlotSpin,
+            TutorialTimeMode.Normal,
+            () => BuffSelectionController.Instance != null && BuffSelectionController.Instance.IsResolvePreviewPhase,
+            TutorialInputMask.Pause,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.SlotTop,
             timeout: 90f);
-
-        if (_skipRequested) yield break;
-
-        // 说明拍锁交互，避免抢先重转/领取
-        BuffSelectionController.Instance?.SetTutorialGate(SlotTutorialGate.Locked);
-        BuffSelectionController.Instance?.TutorialEnsureFreeRerolls(1);
-
-        bool ackReroll = false;
-        yield return Narrate(
-            step: "SEQ 18 / REROLL",
-            line: "> 停轮后可重摇：先点选一轮，再拉杆只转该轮。\n> 已发放 1 次免费重转（不挂 Debuff）。付费重转会挂 Debuff。",
-            keyHint: "点选一轮 → 拉杆",
-            mode: TutorialTimeMode.HardPause,
-            gate: () => ackReroll,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            onContinue: () => ackReroll = true);
-
-        if (_skipRequested) yield break;
 
         BuffSelectionController.Instance?.TutorialEnsureFreeRerolls(1);
         BuffSelectionController.Instance?.SetTutorialGate(SlotTutorialGate.RerollOnly);
 
-        // ── 实操重摇（超时后放行到领取）──
-        int rerollsBefore = BuffSelectionController.Instance != null
-            ? BuffSelectionController.Instance.TutorialRerollCount
-            : 0;
-
-        yield return Narrate(
-            step: "SEQ 19 / REROLL_DO",
-            line: "> 试一次：点选一轮 → 再拉杆重转。\n> 此步不可领取，完成重转后再继续。",
-            keyHint: "[ 点轮 → 拉杆 ]",
-            mode: TutorialTimeMode.Normal,
-            gate: () =>
+        int rerollsBefore = BuffSelectionController.Instance?.TutorialRerollCount ?? 0;
+        yield return ProtocolStep(9, "选择强化", "不满意可重摇一轮。", TutorialProtocolCopy.HintSlotReroll,
+            TutorialTimeMode.Normal,
+            () =>
             {
                 var slot = BuffSelectionController.Instance;
-                if (slot == null || !slot.IsOverlayVisible) return true;
-                return slot.TutorialRerollCount > rerollsBefore;
+                return slot == null || !slot.IsOverlayVisible
+                       || slot.TutorialRerollCount > rerollsBefore;
             },
-            inputMask: TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact,
-            timeout: 45f,
-            allowTimeoutPass: true);
-
-        if (_skipRequested) yield break;
+            TutorialInputMask.Pause,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.SlotTop,
+            timeout: 45f, allowTimeoutPass: true);
 
         BuffSelectionController.Instance?.SetTutorialGate(SlotTutorialGate.ClaimOnly);
 
-        // ── 领取 ──
-        yield return Narrate(
-            step: "SEQ 20 / CLAIM",
-            line: "> 满意后点「领取」拿绿色框强化。",
-            keyHint: "[ 领取 ]",
-            mode: TutorialTimeMode.Normal,
-            gate: () => GameManager.Instance != null && GameManager.Instance.State == GameState.Playing,
-            inputMask: TutorialInputMask.Pause,
-            terminalMode: TutorialTerminalMode.Compact,
+        yield return ProtocolStep(9, "选择强化", null, "领取",
+            TutorialTimeMode.Normal,
+            () => GameManager.Instance != null && GameManager.Instance.State == GameState.Playing,
+            TutorialInputMask.Pause,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.SlotTop,
             timeout: 120f);
 
         BuffSelectionController.Instance?.SetTutorialGate(SlotTutorialGate.None);
-
-        if (GameManager.Instance != null
-            && GameManager.Instance.State == GameState.BuffSelection)
+        if (GameManager.Instance != null && GameManager.Instance.State == GameState.BuffSelection)
             GameManager.Instance.OnBuffSelectionDone();
+    }
+
+    // ── T10 自由 ────────────────────────────────────────────────────────
+
+    private IEnumerator T10_FreePlay()
+    {
+        TutorialInputGate.Disable();
+        TutorialTimeControl.Exit();
+        WaveManager.Instance?.ClearTutorialField();
+        var boss = WaveManager.Instance?.SpawnTutorialBoss(0);
+
+        bool ack = false;
+        yield return ProtocolStep(10, "现在，交给你", "下一波已经进场。控制球、维持 Combo，用你的方式击破。", null,
+            TutorialTimeMode.HardPause, () => ack, TutorialInputMask.UiOnly,
+            TutorialTerminalMode.Brief, TutorialProtocolAnchor.Top, showContinue: true,
+            onContinue: () => ack = true);
+
+        yield return ProtocolStep(10, "现在，交给你", null, null,
+            TutorialTimeMode.Normal,
+            () => boss == null || boss.IsDead,
+            CombatPlay,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Top,
+            timeout: 180f, allowTimeoutPass: true,
+            whileWaiting: EnsureBallPlayable);
+
+        bool finishAck = false;
+        yield return ProtocolStep(10, "校准完成", "你已经掌握基础战斗。协议币可在商店解锁弹珠。", null,
+            TutorialTimeMode.HardPause, () => finishAck, TutorialInputMask.UiOnly,
+            TutorialTerminalMode.Brief, TutorialProtocolAnchor.Center, showContinue: true,
+            onContinue: () => finishAck = true);
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────
+
+    private IEnumerator EnsureBallInPlay()
+    {
+        if (BallController.Instance != null && !BallController.Instance.IsWaitingForLaunch)
+            yield break;
+
+        yield return ProtocolStep(2, "发射弹珠", "先重新发球。", TutorialProtocolCopy.HintLaunch,
+            TutorialTimeMode.HardPause,
+            () => BallController.Instance != null && !BallController.Instance.IsWaitingForLaunch,
+            TutorialInputMask.Launch | TutorialInputMask.Pause,
+            TutorialTerminalMode.Compact, TutorialProtocolAnchor.Bottom);
     }
 
     private void Finish(bool skipped)
@@ -630,69 +472,50 @@ public class TutorialDirector : MonoBehaviour
         _running = false;
         TutorialTimeControl.Exit();
         TutorialInputGate.Disable();
+        FlipperWeaponController.SetTutorialFireLocked(false);
+        ReleaseSkillPresentation();
         BuffSelectionController.Instance?.SetTutorialGate(SlotTutorialGate.None);
+        if (_highlight != null) _highlight.Clear();
+        if (_finger != null) _finger.Hide();
         _ui?.Hide();
 
         PlayerProfile.Load();
         PlayerProfile.MarkTutorialCompleted();
         WaveManager.Instance?.ClearTutorialField();
 
-        StartCoroutine(FinishRoutine(skipped));
-    }
-
-    private IEnumerator FinishRoutine(bool skipped)
-    {
-        bool ack = false;
-        yield return Narrate(
-            step: skipped ? "校准跳过" : "校准完成",
-            line: skipped
-                ? "> 已写入完成标记。可随时再来校准。"
-                : "> 协议校准完成。协议币可在商店解锁弹珠。",
-            keyHint: null,
-            mode: TutorialTimeMode.HardPause,
-            gate: () => ack,
-            inputMask: TutorialInputMask.UiOnly,
-            terminalMode: TutorialTerminalMode.Brief,
-            showContinue: true,
-            showSkip: false,
-            onContinue: () => ack = true);
-
-        TutorialTimeControl.Exit();
-        TutorialInputGate.Disable();
-        _ui?.Hide();
         if (GameManager.Instance != null)
             GameManager.Instance.TriggerGameOver();
     }
 
-    // ── Narrate core ──────────────────────────────────────────────────────
-
-    private IEnumerator Narrate(
-        string step,
-        string line,
-        string keyHint,
-        TutorialTimeMode mode,
+    private IEnumerator ProtocolStep(
+        int stepIndex,
+        string title,
+        string description,
+        string hint,
+        TutorialTimeMode timeMode,
         Func<bool> gate,
         TutorialInputMask inputMask,
-        TutorialTerminalMode terminalMode,
-        float timeout = 0f,
+        TutorialTerminalMode uiMode,
+        TutorialProtocolAnchor anchor,
         bool showContinue = false,
-        bool showSkip = true,
+        float timeout = 0f,
         bool allowTimeoutPass = false,
         Action onContinue = null,
         Action whileWaiting = null)
     {
-        TutorialTimeControl.Enter(mode);
+        TutorialTimeControl.Enter(timeMode);
         TutorialInputGate.Enable(inputMask);
 
         bool cont = false;
-        _ui.ShowNarration(
-            step,
-            line,
-            keyHint,
-            waitingForInput: !showContinue,
-            showContinue: showContinue,
-            showSkip: showSkip,
-            terminalMode: terminalMode,
+        _ui.ShowProtocol(
+            stepIndex,
+            TotalSteps,
+            title,
+            description,
+            hint,
+            uiMode,
+            anchor,
+            showContinue,
             onContinue: () =>
             {
                 cont = true;
@@ -701,16 +524,34 @@ public class TutorialDirector : MonoBehaviour
             onSkip: () => _skipRequested = true);
 
         yield return null;
-        yield return null;
 
         float left = timeout > 0f ? timeout : float.PositiveInfinity;
+        Func<bool> pass = gate;
         while (!_skipRequested)
         {
             whileWaiting?.Invoke();
             TutorialTimeControl.Maintain();
 
+            // 改向瞄准还开着时不要切下一拍：否则 timeScale 被教程态抢走，箭头和后处理会留下。
+            if (IsSkillPresentationBusy())
+            {
+                if (timeout > 0f)
+                {
+                    left -= Time.unscaledDeltaTime;
+                    if (left <= 0f)
+                    {
+                        ReleaseSkillPresentation();
+                        if (allowTimeoutPass) break;
+                        left = timeout;
+                    }
+                }
+
+                yield return null;
+                continue;
+            }
+
             if (showContinue && cont) break;
-            if (!showContinue && gate != null && gate()) break;
+            if (!showContinue && pass != null && pass()) break;
 
             if (timeout > 0f)
             {
@@ -719,13 +560,6 @@ public class TutorialDirector : MonoBehaviour
                 {
                     if (allowTimeoutPass) break;
                     left = timeout;
-                    _ui.ShowNarration(
-                        step, line, keyHint,
-                        waitingForInput: true,
-                        showContinue: false,
-                        showSkip: showSkip,
-                        terminalMode: terminalMode,
-                        onSkip: () => _skipRequested = true);
                 }
             }
 
@@ -734,45 +568,57 @@ public class TutorialDirector : MonoBehaviour
 
         if (_skipRequested)
         {
+            ReleaseSkillPresentation();
             TutorialTimeControl.Exit();
             TutorialInputGate.Disable();
             _ui.Hide();
             yield break;
         }
 
-        _ui.ShowSuccess();
-        yield return new WaitForSecondsRealtime(0.35f);
+        if (!showContinue)
+        {
+            _ui.ShowSuccess();
+            yield return new WaitForSecondsRealtime(0.4f);
+        }
+
+        while (IsSkillPresentationBusy() && !_skipRequested)
+            yield return null;
+
+        if (_skipRequested)
+        {
+            ReleaseSkillPresentation();
+            TutorialTimeControl.Exit();
+            TutorialInputGate.Disable();
+            _ui.Hide();
+            yield break;
+        }
+
         TutorialTimeControl.Exit();
         TutorialInputGate.Disable();
         _ui.Hide();
-        yield return new WaitForSecondsRealtime(0.12f);
+        yield return new WaitForSecondsRealtime(0.1f);
     }
 
     private static void RefreshSkillReady(int slotIndex)
     {
         var sm = SkillManager.Instance;
-        if (sm == null || sm.slots == null) return;
-        if (slotIndex < 0 || slotIndex >= sm.slots.Length) return;
+        if (sm?.slots == null || slotIndex < 0 || slotIndex >= sm.slots.Length) return;
         sm.slots[slotIndex].currentCD = 0f;
         sm.onSlotCooldownChanged.Invoke(slotIndex, 0f);
     }
 
-    private static void EnsureBallPlayable()
-    {
-        // 掉球重生由 BallController 处理
-    }
+    private static void EnsureBallPlayable() { }
 
-    /// <summary>等斩杀连锁跑完（确认后 timeScale 已恢复）。</summary>
     private IEnumerator WaitForExecuteChainComplete(float timeout = 14f)
     {
-        TutorialTimeControl.Exit();
+        while (IsSkillPresentationBusy())
+            yield return null;
 
+        TutorialTimeControl.Exit();
         var ball = BallController.Instance;
-        if (ball == null || !ball.IsExecuteChainActive)
-            yield break;
+        if (ball == null || !ball.IsExecuteChainActive) yield break;
 
         _ui?.Hide();
-
         float left = timeout;
         while (ball != null && ball.IsExecuteChainActive && left > 0f)
         {
@@ -783,18 +629,34 @@ public class TutorialDirector : MonoBehaviour
         yield return new WaitForSecondsRealtime(0.55f);
     }
 
-    /// <summary>清掉教学残留的武装/瞄准/斩杀连锁，避免后续步骤无法 Q 改向。</summary>
+    private static bool IsSkillPresentationBusy()
+    {
+        var sm = SkillManager.Instance;
+        if (sm != null && (sm.IsAiming || sm.IsGroundAiming)) return true;
+        return SlowMoFX.Instance != null && SlowMoFX.Instance.IsSkillSlowMoActive;
+    }
+
+    /// <summary>打断改向时，时间、后处理、瞄准箭头一起收掉，避免只恢复 timeScale。</summary>
+    private static void ReleaseSkillPresentation()
+    {
+        bool busy = IsSkillPresentationBusy();
+        SkillManager.Instance?.CancelAiming();
+        SkillManager.Instance?.CancelGroundAim();
+        var guide = LaunchGuide.Instance;
+        if (guide != null) guide.Hide();
+        if (busy)
+            SlowMoFX.Instance?.CancelSkillAim();
+    }
+
     private static void ResetTutorialCombatState()
     {
-        SkillManager.Instance?.CancelAiming();
+        ReleaseSkillPresentation();
         SkillManager.Instance?.ClearExecuteArm();
 
         if (BallController.Instance != null && BallController.Instance.IsExecuteChainActive)
             BallController.Instance.StopExecuteChain();
 
-        SlowMoFX.Instance?.CancelSkillAim();
         SlowMoFX.Instance?.ForceRestore();
-        LaunchGuide.Instance?.Hide();
 
         var sm = SkillManager.Instance;
         if (sm?.slots == null) return;

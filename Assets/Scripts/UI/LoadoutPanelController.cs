@@ -16,7 +16,9 @@ public class LoadoutPanelController : MonoBehaviour
     private VisualElement _ballPreviewHost;
     private VisualElement _ballPreviewOrb;
     private VisualElement _ballPagerDots;
+    private VisualElement _ballThumbList;
     private Label _ballNameLabel;
+    private Label _ballRoleLabel;
     private Label _ballDescLabel;
     private Label _ballLockHint;
     private Button _equipBtn;
@@ -28,6 +30,10 @@ public class LoadoutPanelController : MonoBehaviour
     private LoadoutReturnTarget _returnTarget = LoadoutReturnTarget.MainMenu;
     private int _browseBallIndex;
     private readonly List<BallDefinition> _browseBalls = new List<BallDefinition>();
+
+    private Vector2 _swipeStart;
+    private bool _swipeTracking;
+    private const float SwipeThresholdPx = 56f;
 
     private void Awake()
     {
@@ -49,7 +55,9 @@ public class LoadoutPanelController : MonoBehaviour
         _ballPreviewHost = root.Q<VisualElement>("BallPreviewHost");
         _ballPreviewOrb = root.Q<VisualElement>("BallPreviewOrb");
         _ballPagerDots = root.Q<VisualElement>("BallPagerDots");
+        _ballThumbList = root.Q<VisualElement>("BallThumbList");
         _ballNameLabel = root.Q<Label>("BallNameLabel");
+        _ballRoleLabel = root.Q<Label>("BallRoleLabel");
         _ballDescLabel = root.Q<Label>("BallDescLabel");
         _ballLockHint = root.Q<Label>("BallLockHint");
         _equipBtn = root.Q<Button>("BtnEquipBall");
@@ -61,6 +69,7 @@ public class LoadoutPanelController : MonoBehaviour
         root.Q<Button>("BtnBallPrev")?.RegisterCallback<ClickEvent>(_ => BrowseBall(-1));
         root.Q<Button>("BtnBallNext")?.RegisterCallback<ClickEvent>(_ => BrowseBall(1));
         _equipBtn?.RegisterCallback<ClickEvent>(_ => TryEquipBrowseBall());
+        BindBallSwipe(_ballPreviewHost);
 
         if (_panel != null)
             _panel.style.display = DisplayStyle.None;
@@ -83,6 +92,9 @@ public class LoadoutPanelController : MonoBehaviour
 
         if (_panel != null)
             _panel.style.display = DisplayStyle.Flex;
+
+        if (_equipBtn != null)
+            NeonHoverGlow.Attach(_equipBtn);
 
         RefreshAll();
     }
@@ -178,6 +190,32 @@ public class LoadoutPanelController : MonoBehaviour
         RefreshBallColumn();
     }
 
+    private void BindBallSwipe(VisualElement host)
+    {
+        if (host == null) return;
+
+        host.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            _swipeTracking = true;
+            _swipeStart = evt.position;
+            host.CapturePointer(evt.pointerId);
+        });
+
+        host.RegisterCallback<PointerUpEvent>(evt =>
+        {
+            if (!_swipeTracking) return;
+            _swipeTracking = false;
+            if (host.HasPointerCapture(evt.pointerId))
+                host.ReleasePointer(evt.pointerId);
+
+            float dx = evt.position.x - _swipeStart.x;
+            if (Mathf.Abs(dx) < SwipeThresholdPx) return;
+            BrowseBall(dx < 0 ? 1 : -1);
+        });
+
+        host.RegisterCallback<PointerCaptureOutEvent>(_ => { _swipeTracking = false; });
+    }
+
     private void RefreshBallColumn()
     {
         var ball = GetBrowseBall();
@@ -187,6 +225,7 @@ public class LoadoutPanelController : MonoBehaviour
         bool equipped = RunLoadout.Data.ballId == ball.ballId;
 
         if (_ballNameLabel != null) _ballNameLabel.text = ball.displayName;
+        if (_ballRoleLabel != null) _ballRoleLabel.text = FormatBallRole(ball);
         if (_ballDescLabel != null) _ballDescLabel.text = ball.loadoutDescription;
         if (_ballPreviewOrb != null) _ballPreviewOrb.style.backgroundColor = ball.glowColor;
         if (_ballPreviewHost != null)
@@ -208,11 +247,74 @@ public class LoadoutPanelController : MonoBehaviour
         RefreshSkillSlot(_skillSlot0, RunLoadout.GetBoundSkillForPreview(ball, 0, _catalog), 0, locked: true);
         RefreshSkillSlot(_skillSlot1, RunLoadout.GetBoundSkillForPreview(ball, 1, _catalog), 1, locked: false);
         RefreshBallPagerDots(ball, unlocked, equipped);
+        RefreshBallThumbs(ball);
 
         if (_equipBtn != null)
         {
-            _equipBtn.SetEnabled(unlocked && !equipped);
-            _equipBtn.text = equipped ? "已装备" : "装备此弹珠";
+            _equipBtn.EnableInClassList("btn-outline-cyan", unlocked && !equipped);
+            _equipBtn.EnableInClassList("btn-outline-yellow", equipped || !unlocked);
+
+            if (!unlocked)
+            {
+                _equipBtn.SetEnabled(false);
+                _equipBtn.text = "未解锁";
+            }
+            else if (equipped)
+            {
+                _equipBtn.SetEnabled(false);
+                _equipBtn.text = "已装备";
+            }
+            else
+            {
+                _equipBtn.SetEnabled(true);
+                _equipBtn.text = "装备";
+            }
+        }
+    }
+
+    private void RefreshBallThumbs(BallDefinition activeBall)
+    {
+        if (_ballThumbList == null) return;
+        _ballThumbList.Clear();
+
+        string selectedId = RunLoadout.Data.ballId;
+        for (int i = 0; i < _browseBalls.Count; i++)
+        {
+            var b = _browseBalls[i];
+            bool unlocked = PlayerProfile.IsBallUnlocked(b.ballId);
+            bool isActive = activeBall != null && b.ballId == activeBall.ballId;
+            bool isEquipped = b.ballId == selectedId;
+
+            var thumb = new VisualElement();
+            thumb.AddToClassList("ball-thumb");
+            if (isActive) thumb.AddToClassList("ball-thumb-active");
+            if (isEquipped) thumb.AddToClassList("ball-thumb-equipped");
+            if (!unlocked) thumb.AddToClassList("ball-thumb-locked");
+
+            var orb = new VisualElement();
+            orb.AddToClassList("ball-thumb-orb");
+            orb.style.backgroundColor = b.glowColor;
+            thumb.Add(orb);
+
+            var name = new Label(b.displayName);
+            name.AddToClassList("ball-thumb-name");
+            thumb.Add(name);
+
+            if (isEquipped)
+            {
+                var mark = new Label("EQ");
+                mark.AddToClassList("ball-thumb-mark");
+                thumb.Add(mark);
+            }
+
+            int captured = i;
+            thumb.RegisterCallback<ClickEvent>(_ =>
+            {
+                _browseBallIndex = captured;
+                RefreshBallColumn();
+            });
+
+            _ballThumbList.Add(thumb);
         }
     }
 
@@ -232,6 +334,11 @@ public class LoadoutPanelController : MonoBehaviour
             if (dotActive) dot.AddToClassList("ball-pager-dot-active");
             if (!dotUnlocked) dot.AddToClassList("ball-pager-dot-locked");
             if (equipped && dotActive) dot.AddToClassList("ball-pager-dot-equipped");
+
+            var core = new VisualElement();
+            core.AddToClassList("ball-pager-dot-core");
+            core.pickingMode = PickingMode.Ignore;
+            dot.Add(core);
 
             int captured = i;
             dot.RegisterCallback<ClickEvent>(_ =>
@@ -266,17 +373,17 @@ public class LoadoutPanelController : MonoBehaviour
         if (def == null)
         {
             if (nameLbl != null) nameLbl.text = index == 1 ? "身份待定" : "—";
-            if (keyLbl != null) keyLbl.text = index == 1 ? "E" : string.Empty;
+            if (keyLbl != null) keyLbl.text = index == 0 ? "SLOT.01 · 主技能" : "SLOT.02 · 副技能";
             if (cdLbl != null) cdLbl.text = string.Empty;
             if (modeLbl != null) modeLbl.text = index == 1 ? "待定" : string.Empty;
-            if (icon != null) icon.style.opacity = 0.2f;
+            if (icon != null) icon.style.opacity = 0.35f;
             slotRoot.EnableInClassList("skill-slot-empty", true);
             slotRoot.EnableInClassList("skill-slot-locked", locked);
             return;
         }
 
-        if (nameLbl != null) nameLbl.text = locked ? $"{def.displayName} · 锁" : def.displayName;
-        if (keyLbl != null) keyLbl.text = def.GetSlotKeyHint(index);
+        if (nameLbl != null) nameLbl.text = def.displayName;
+        if (keyLbl != null) keyLbl.text = index == 0 ? "SLOT.01 · 主技能" : "SLOT.02 · 副技能";
         if (cdLbl != null) cdLbl.text = $"CD {def.baseCooldown:F0}s";
         if (modeLbl != null)
         {
@@ -303,15 +410,26 @@ public class LoadoutPanelController : MonoBehaviour
         if (_flipperWeaponList == null) return;
         _flipperWeaponList.Clear();
 
+        var weapons = FlipperWeaponCatalog.GetLoadoutWeapons();
         string selectedId = RunLoadout.Data.flipperWeaponId;
-        foreach (var weapon in FlipperWeaponCatalog.GetLoadoutWeapons())
+        int count = 0;
+        foreach (var weapon in weapons)
+        {
+            if (weapon == null) continue;
+            count++;
+        }
+
+        int index = 0;
+        foreach (var weapon in weapons)
         {
             if (weapon == null) continue;
             bool selected = weapon.weaponId == selectedId;
+            bool isLast = index == count - 1;
 
             var card = new VisualElement();
             card.AddToClassList("flipper-weapon-card");
             if (selected) card.AddToClassList("flipper-weapon-card-selected");
+            if (isLast) card.AddToClassList("flipper-weapon-card-last");
 
             var swatch = new VisualElement();
             swatch.AddToClassList("flipper-weapon-swatch");
@@ -323,7 +441,7 @@ public class LoadoutPanelController : MonoBehaviour
             var name = new Label(weapon.displayName);
             name.AddToClassList("flipper-weapon-name");
             copy.Add(name);
-            var desc = new Label(ResolveWeaponDesc(weapon));
+            var desc = new Label(ResolveWeaponShortDesc(weapon));
             desc.AddToClassList("flipper-weapon-desc");
             copy.Add(desc);
             card.Add(copy);
@@ -336,6 +454,7 @@ public class LoadoutPanelController : MonoBehaviour
             string capturedId = weapon.weaponId;
             card.RegisterCallback<ClickEvent>(_ => TryEquipFlipperWeapon(capturedId));
             _flipperWeaponList.Add(card);
+            index++;
         }
     }
 
@@ -346,17 +465,30 @@ public class LoadoutPanelController : MonoBehaviour
         RefreshFlipperWeapons();
     }
 
-    private static string ResolveWeaponDesc(FlipperWeaponDefinition weapon)
+    private static string FormatBallRole(BallDefinition ball)
+    {
+        if (ball == null || string.IsNullOrEmpty(ball.ballId)) return "CORE";
+        return ball.ballId.Replace('_', ' ').ToUpperInvariant();
+    }
+
+    private static string ResolveWeaponShortDesc(FlipperWeaponDefinition weapon)
     {
         if (weapon == null) return string.Empty;
         if (!string.IsNullOrEmpty(weapon.loadoutDescription))
-            return weapon.loadoutDescription;
+        {
+            string d = weapon.loadoutDescription;
+            int cut = d.IndexOf('·');
+            if (cut > 0 && cut < 18) return d.Substring(0, cut).Trim();
+            if (d.Length > 16) return d.Substring(0, 16) + "…";
+            return d;
+        }
+
         return weapon.weaponType switch
         {
-            FlipperWeaponType.Cannon => "单体爆发 · Perfect Flip 对 Boss 造成高额瞬间伤害",
-            FlipperWeaponType.Bomb => "范围清场 · 清理小怪并对 Boss 造成少量伤害",
-            FlipperWeaponType.Laser => "持续输出 · 锁定 Boss 短时持续削减 HP",
-            _ => "挡板主动武器"
+            FlipperWeaponType.Cannon => "单体爆发",
+            FlipperWeaponType.Bomb => "范围清场",
+            FlipperWeaponType.Laser => "持续输出",
+            _ => "挡板武器"
         };
     }
 

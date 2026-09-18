@@ -23,6 +23,11 @@ public class LaunchGuide : MonoBehaviour
         Hide();
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     private void SetupRenderer()
     {
         _lr.useWorldSpace = true;
@@ -51,6 +56,8 @@ public class LaunchGuide : MonoBehaviour
     /// <summary>决定窗末段：瞄准线切到暖色紧迫态。</summary>
     public void SetUrgency(bool urgent)
     {
+        LaunchGuide self = this;
+        if (self == null || _lr == null) return;
         if (_urgent == urgent) return;
         _urgent = urgent;
         ApplyGradient(urgent);
@@ -58,6 +65,7 @@ public class LaunchGuide : MonoBehaviour
 
     private void ApplyGradient(bool urgent)
     {
+        if (_lr == null) return;
         var start = urgent ? UrgentStart : NormalStart;
         var end   = urgent ? UrgentEnd   : NormalEnd;
         float a0  = urgent ? 1f : 0.9f;
@@ -72,6 +80,8 @@ public class LaunchGuide : MonoBehaviour
 
     public void Show(Vector2 origin, Vector2 direction)
     {
+        LaunchGuide self = this;
+        if (self == null || _lr == null) return;
         _visible = true;
         _lr.enabled = true;
         Rebuild(origin, direction);
@@ -79,11 +89,21 @@ public class LaunchGuide : MonoBehaviour
 
     public void UpdateDirection(Vector2 origin, Vector2 direction)
     {
-        if (_visible) Rebuild(origin, direction);
+        LaunchGuide self = this;
+        if (self == null || _lr == null || !_visible) return;
+        Rebuild(origin, direction);
     }
 
     public void Hide()
     {
+        // 场景卸载时 LineRenderer 可能已销毁；Unity 假空引用，?. 拦不住
+        LaunchGuide self = this;
+        if (self == null || _lr == null)
+        {
+            _visible = false;
+            return;
+        }
+
         _visible = false;
         _lr.enabled = false;
         SetUrgency(false);
@@ -91,6 +111,7 @@ public class LaunchGuide : MonoBehaviour
 
     private void Rebuild(Vector2 origin, Vector2 dir)
     {
+        if (_lr == null) return;
         var cfg = GameManager.Instance != null ? GameManager.Instance.config : null;
         int count  = cfg != null ? cfg.launchGuideDots : 20;
         float len  = cfg != null ? cfg.launchGuideLength : 6f;

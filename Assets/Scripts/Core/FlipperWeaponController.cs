@@ -20,6 +20,9 @@ public class FlipperWeaponController : MonoBehaviour
     public bool IsReady => Energy >= MaxEnergy - 0.01f;
     public bool IsFiring => _laserRoutine != null;
 
+    /// <summary>教程：T07 之前禁止 Perfect Flip 释放，避免连击阶段误触。</summary>
+    public static bool TutorialFireLocked { get; private set; }
+
     public UnityEvent<float> onEnergyChanged = new UnityEvent<float>();
     public UnityEvent onWeaponReady = new UnityEvent();
     public UnityEvent onWeaponFired = new UnityEvent();
@@ -83,6 +86,7 @@ public class FlipperWeaponController : MonoBehaviour
     /// <summary>Perfect Flip 且能量已满时由 FlipperController 调用。</summary>
     public bool TryFireOnPerfectFlip(FlipperSide side, Vector2 contactPos)
     {
+        if (TutorialFireLocked) return false;
         if (EquippedWeapon == null || !IsReady || IsFiring) return false;
         if (GameManager.Instance == null) return false;
         var state = GameManager.Instance.State;
@@ -150,6 +154,18 @@ public class FlipperWeaponController : MonoBehaviour
         Energy = 0f;
         _readyNotified = false;
         onEnergyChanged.Invoke(0f);
+    }
+
+    /// <summary>教程：T07 之前锁住释放；进入挡板武器教学或教程结束时打开。</summary>
+    public static void SetTutorialFireLocked(bool locked) => TutorialFireLocked = locked;
+
+    /// <summary>教程：将武器能量设为满，不修改其它战斗规则。</summary>
+    public void TutorialFillEnergyForLesson()
+    {
+        Energy = MaxEnergy;
+        _readyNotified = true;
+        onEnergyChanged.Invoke(1f);
+        onWeaponReady.Invoke();
     }
 
     private void FireWeapon(FlipperSide side, Vector2 contactPos)

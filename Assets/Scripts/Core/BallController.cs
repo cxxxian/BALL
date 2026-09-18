@@ -228,6 +228,15 @@ public class BallController : MonoBehaviour
         }
     }
 
+    private void ApplyFlipperHudClearanceToSpawn()
+    {
+        float dy = FlipperController.HudClearanceY;
+        if (dy <= 0.001f) return;
+        _spawnPosition += Vector2.up * dy;
+        if (!_launched || IsWaitingForLaunch)
+            transform.position = new Vector3(_spawnPosition.x, _spawnPosition.y, transform.position.z);
+    }
+
     /// <summary>战前配置注入弹珠类型（RunBootstrap 调用）。</summary>
     public void ApplyBallDefinition(BallDefinition def)
     {
@@ -330,6 +339,8 @@ public class BallController : MonoBehaviour
 
     private void Start()
     {
+        // 与挡板上移同步抬高发球/重生点，避免球停在挡板下方死角
+        ApplyFlipperHudClearanceToSpawn();
         SetupPhysics();
         if (GameManager.Instance != null)
         {

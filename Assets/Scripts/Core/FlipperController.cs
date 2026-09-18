@@ -43,6 +43,28 @@ public class FlipperController : MonoBehaviour
         _targetAngle = _restAngle;
         _rb.rotation = _restAngle;
         _prevAngle   = _restAngle;
+        ApplyHudClearance();
+    }
+
+    // 只上移挡板与底座视觉位置，给底部 Action HUD 让路。不改角度、时长、碰撞材质。
+    // 约 1.15 世界单位 ≈ 竖屏可视高度的 6%。再高会贴近现有弹射器（约 y=-5.1）。
+    // Ball 发球点用同一常量同步上移（见 BallController）。
+    public const float HudClearanceY = 1.15f;
+    private static bool _mountsLifted;
+
+    private void ApplyHudClearance()
+    {
+        transform.position += Vector3.up * HudClearanceY;
+        if (_mountsLifted) return;
+        _mountsLifted = true;
+        var all = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None);
+        for (int i = 0; i < all.Length; i++)
+        {
+            var t = all[i];
+            if (t == null) continue;
+            if (t.name != "Flipper_Left_Mount" && t.name != "Flipper_Right_Mount") continue;
+            t.position += Vector3.up * HudClearanceY;
+        }
     }
 
     private void Update()
@@ -92,20 +114,16 @@ public class FlipperController : MonoBehaviour
         // 任意触球：仅颜色高亮（无外形缩放）
         fx?.TriggerContactFlash();
 
-        // 如果挡板是在向下归位或静止状态，完全由完美的物理材质进行精确反射（100% 反射角守恒）
-        // 只有当挡板在“向上挥击（Active Kick）”时，才给予弹珠额外的主动推送增量，而非覆盖速度
+        // 向上挥击：给球额外冲量 + Perfect Catch juice
         bool isActivating = side == FlipperSide.Left
-            ? _angularVelocity > 200f
-            : _angularVelocity < -200f;
+            ? _angularVelocity > 100f
+            : _angularVelocity < -100f;
 
         if (isActivating)
         {
             ContactPoint2D contact = col.GetContact(0);
             Vector2 hitPos = contact.point;
             JuiceRouter.FlipperPerfectCatch(hitPos, fx);
-
-            var weaponCtrl = FlipperWeaponController.Instance ?? FlipperWeaponController.EnsureInstance();
-            weaponCtrl.TryFireOnPerfectFlip(side, hitPos);
 
             Vector2 r       = hitPos - (Vector2)transform.position;
             float omegaRad  = _angularVelocity * Mathf.Deg2Rad;
@@ -121,6 +139,15 @@ public class FlipperController : MonoBehaviour
                 Vector2 boostForce = -normal * pushComponent * config.flipperBoostFactor;
                 rb.AddForce(boostForce, ForceMode2D.Impulse);
             }
+        }
+
+        // 挡板武器：按住挡板触球即可（不要求峰值角速度，避免顶住接球时发不出）
+        if (_isActivated)
+        {
+            ContactPoint2D contact = col.GetContact(0);
+            Vector2 hitPos = contact.point;
+            var weaponCtrl = FlipperWeaponController.Instance ?? FlipperWeaponController.EnsureInstance();
+            weaponCtrl.TryFireOnPerfectFlip(side, hitPos);
         }
 
         // 强力限速锁：与球的有效硬顶一致

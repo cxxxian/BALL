@@ -188,7 +188,7 @@ public class WaveManager : MonoBehaviour
     }
 
     // ── Boss 生成 ─────────────────────────────────────────────────────────
-    public Boss SpawnTutorialBoss(int waveIndex = 0) => SpawnBoss(waveIndex);
+    public Boss SpawnTutorialBoss(int waveIndex = 0, bool parryDummy = false) => SpawnBoss(waveIndex, parryDummy);
 
     public void ClearTutorialField() => ClearAll();
 
@@ -206,7 +206,7 @@ public class WaveManager : MonoBehaviour
         return null;
     }
 
-    private Boss SpawnBoss(int waveIndex)
+    private Boss SpawnBoss(int waveIndex, bool parryDummy = false)
     {
         BossDefinition def = GetBossDefinition(waveIndex);
         if (def == null)
@@ -235,7 +235,7 @@ public class WaveManager : MonoBehaviour
         col.size            = new Vector2(1.5f, 1.5f);
 
         var boss = go.AddComponent<Boss>();
-        boss.Initialize(def, minX, maxX, waveIndex);
+        boss.Initialize(def, minX, maxX, waveIndex, parryDummy);
         boss.onDeath.AddListener(_ => _currentBoss = null);
 
         // Boss 与现有小兵忽略物理碰撞，防止互相卡住

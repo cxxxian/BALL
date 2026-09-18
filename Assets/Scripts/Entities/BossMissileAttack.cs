@@ -101,7 +101,7 @@ public class BossMissileAttack : MonoBehaviour
     public float warningBlinkHz = 3.2f;
     public Sprite ballLockSprite;
 
-    private const string BallLockAssetPath = "Assets/Art/UI/Fx/ui_ball_lockon_v1.png";
+    private const string BallLockAssetPath = "Assets/Resources/UI/ui_ball_lockon_v1.png";
     private const string BallLockResourcePath = "UI/ui_ball_lockon_v1";
 
     [Header("Late-game Scaling (reserved)")]

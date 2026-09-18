@@ -1415,137 +1415,282 @@
     border-radius: 5px;
 }
 
+/* ── 战前配置 · 复用主菜单 Terminal / 字雨背景 ── */
 .loadout-panel {
     flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
     padding: 36px 56px;
     position: relative;
-    background-color: rgba(10, 10, 15, 0.94);
+    background-color: rgba(2, 6, 14, 0.28);
+}
+
+.loadout-stage {
+    width: 94%;
+    max-width: 1680px;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
 }
 
 .loadout-header {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 22px;
+    flex-shrink: 0;
+    margin-bottom: 36px;
+    padding: 16px 28px;
 }
 
-.loadout-header-spacer {
+.loadout-header-center {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.loadout-back-btn {
+    min-width: 96px;
+    height: 44px;
+    margin-right: 8px;
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+
+.loadout-sys {
     min-width: 110px;
+    -unity-text-align: middle-right;
 }
 
 .loadout-title {
-    font-size: 40px;
-    color: var(--neon-cyan);
+    font-size: 36px;
+    color: rgba(140, 230, 255, 0.9);
     -unity-font-style: bold;
-    letter-spacing: 8px;
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.45);
+    letter-spacing: 10px;
+    text-shadow: 0 0 16px rgba(0, 200, 255, 0.4);
+    -unity-text-align: middle-center;
+    margin-bottom: 4px;
 }
 
-.loadout-skill-note {
-    font-size: 17px;
-    color: var(--neon-muted);
-    margin-top: 18px;
-    white-space: normal;
+.loadout-title-en {
+    font-size: 14px;
+    color: var(--neon-cyan);
+    letter-spacing: 6px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 12px rgba(0, 232, 255, 0.4);
 }
 
 .loadout-body {
     flex-direction: row;
-    flex-grow: 1;
-    min-height: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-height: 560px;
+    height: 580px;
+    align-items: stretch;
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
-.loadout-column {
+.loadout-rail {
     flex-direction: column;
     min-height: 0;
-}
-
-.ball-column {
-    width: 36%;
-    padding-right: 28px;
-    border-right-width: 1px;
-    border-right-color: var(--neon-border);
     flex-shrink: 0;
 }
 
-.skill-column {
+.loadout-rail-left {
+    width: 22%;
+    max-width: 320px;
+    min-width: 220px;
+    padding-right: 40px;
+    margin-right: 12px;
+    border-right-width: 1px;
+    border-right-color: rgba(0, 232, 255, 0.16);
+}
+
+.loadout-rail-right {
+    width: 24%;
+    max-width: 380px;
+    min-width: 240px;
+    padding-left: 40px;
+    margin-left: 12px;
+    border-left-width: 1px;
+    border-left-color: rgba(0, 232, 255, 0.16);
+}
+
+.loadout-hero {
     flex-grow: 1;
-    padding-left: 28px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     min-width: 0;
+    padding-left: 48px;
+    padding-right: 48px;
 }
 
 .column-title {
-    font-size: 18px;
+    font-size: 16px;
     color: var(--neon-cyan);
     -unity-font-style: bold;
-    letter-spacing: 3px;
+    letter-spacing: 4px;
+    margin-bottom: 22px;
+    flex-shrink: 0;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.column-title-center {
+    -unity-text-align: middle-center;
+    align-self: stretch;
+}
+
+.ball-thumb-scroll {
+    flex-grow: 1;
+    min-height: 0;
+    margin-bottom: 18px;
+}
+
+.ball-thumb-list {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.ball-thumb {
+    flex-direction: row;
+    align-items: center;
+    min-height: 56px;
     margin-bottom: 16px;
+    padding: 12px 16px;
+    background-color: rgba(4, 10, 22, 0.42);
+    border-width: 1px;
+    border-color: rgba(0, 232, 255, 0.2);
+}
+
+.ball-thumb:active {
+    translate: 2px -1px;
+    border-color: var(--neon-fuchsia);
+}
+
+.ball-thumb-active {
+    border-color: var(--neon-cyan);
+    background-color: rgba(0, 232, 255, 0.1);
+}
+
+.ball-thumb-equipped {
+    border-color: rgba(255, 214, 96, 0.55);
+}
+
+.ball-thumb-locked {
+    opacity: 0.45;
+}
+
+.ball-thumb-orb {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    background-color: var(--neon-cyan);
+}
+
+.ball-thumb-name {
+    flex-grow: 1;
+    font-size: 17px;
+    color: var(--neon-text);
+    -unity-font-style: bold;
+    white-space: nowrap;
+}
+
+.ball-thumb-mark {
+    font-size: 12px;
+    color: var(--neon-yellow);
+    letter-spacing: 1px;
+    margin-left: 6px;
+    flex-shrink: 0;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
 
 .ball-preview-host {
+    width: 100%;
+    max-width: 400px;
     height: 200px;
     align-items: center;
     justify-content: center;
-    background-color: var(--neon-panel);
-    border-width: 1px;
-    border-color: var(--neon-border);
-    border-radius: var(--neon-radius);
-    margin-bottom: 14px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 .ball-preview-orb {
-    width: 96px;
-    height: 96px;
-    border-radius: 48px;
+    width: 128px;
+    height: 128px;
+    border-radius: 64px;
     background-color: var(--neon-cyan);
+    border-width: 2px;
+    border-color: rgba(200, 245, 255, 0.6);
+}
+
+.ball-preview-locked {
+    opacity: 0.4;
 }
 
 .ball-pager-row {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
+    flex-shrink: 0;
+    margin-top: 6px;
 }
 
 .ball-pager-dots {
     flex-direction: row;
+    align-items: center;
     justify-content: center;
-    margin-bottom: 0;
+    flex-grow: 1;
+    min-width: 0;
 }
 
 .ball-pager-dot {
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.ball-pager-dot-core {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+.ball-pager-dot-active > .ball-pager-dot-core {
+    background-color: var(--neon-cyan);
     width: 12px;
     height: 12px;
     border-radius: 6px;
-    margin-left: 6px;
-    margin-right: 6px;
-    background-color: rgba(255, 255, 255, 0.25);
 }
 
-.ball-pager-dot-active {
-    background-color: var(--neon-cyan);
+.ball-pager-dot-equipped > .ball-pager-dot-core {
+    background-color: var(--neon-yellow);
 }
 
-.ball-pager-dot-equipped {
-    background-color: var(--neon-green);
-}
-
-.ball-pager-dot-locked {
-    background-color: rgba(255, 5, 6, 0.45);
-}
-
-.ball-preview-locked {
-    opacity: 0.45;
+.ball-pager-dot-locked > .ball-pager-dot-core {
+    background-color: rgba(255, 72, 96, 0.55);
 }
 
 .ball-nav-btn {
     width: 48px;
-    height: 44px;
-    font-size: 20px;
-    margin-left: 8px;
-    margin-right: 8px;
-    background-color: var(--neon-panel);
+    height: 48px;
+    min-width: 48px;
+    font-size: 28px;
+    margin-left: 2px;
+    margin-right: 2px;
+    background-color: rgba(4, 10, 22, 0.45);
     border-width: 1px;
     border-color: var(--neon-border-strong);
     color: var(--neon-cyan);
@@ -1555,7 +1700,7 @@
 
 .ball-nav-btn:hover {
     border-color: var(--neon-cyan);
-    background-color: rgba(0, 255, 255, 0.1);
+    background-color: rgba(0, 232, 255, 0.1);
 }
 
 .ball-nav-btn:active {
@@ -1565,144 +1710,216 @@
 }
 
 .ball-lock-hint {
-    font-size: 17px;
+    font-size: 16px;
     color: var(--neon-red);
     -unity-font-style: bold;
     letter-spacing: 1px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
 }
 
 .ball-name-label {
-    font-size: 30px;
-    color: var(--neon-text);
+    font-size: 38px;
+    color: var(--neon-ice);
     -unity-font-style: bold;
-    margin-bottom: 8px;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 18px rgba(0, 232, 255, 0.45);
+}
+
+.ball-role-label {
+    font-size: 13px;
+    color: rgba(0, 232, 255, 0.65);
+    letter-spacing: 5px;
+    margin-bottom: 16px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 10px rgba(0, 232, 255, 0.35);
 }
 
 .ball-desc-label {
-    font-size: 18px;
-    color: var(--neon-muted);
+    font-size: 17px;
+    color: rgba(170, 220, 240, 0.72);
     white-space: normal;
-    margin-bottom: 16px;
+    margin-bottom: 28px;
+    max-width: 420px;
+    -unity-text-align: middle-center;
 }
 
 .hangar-equip-btn {
     height: 56px;
-    font-size: 20px;
+    min-width: 220px;
+    padding-left: 28px;
+    padding-right: 28px;
+    font-size: 18px;
     letter-spacing: 3px;
-    color: var(--neon-cyan);
-    background-color: rgba(0, 255, 255, 0.08);
-    border-width: 1px;
-    border-color: var(--neon-cyan);
-    border-radius: var(--neon-radius);
-    margin-top: 14px;
-    transition-duration: var(--neon-fast);
+    align-self: center;
+    margin-right: 0;
 }
 
-.hangar-equip-btn:hover {
-    background-color: rgba(0, 255, 255, 0.18);
+.hangar-equip-btn:disabled {
+    opacity: 1;
 }
 
-.hangar-equip-btn:active {
-    translate: 2px -1px;
-    color: var(--neon-fuchsia);
-    border-color: var(--neon-fuchsia);
-}
-
-.skill-slot-row {
-    flex-direction: row;
-    align-items: stretch;
-    margin-bottom: 8px;
-}
-
-.skill-slot {
+.skill-slot-stack {
+    flex-direction: column;
     flex-grow: 1;
-    padding: 20px;
-    background-color: var(--neon-panel);
-    border-width: 1px;
-    border-color: rgba(156, 163, 175, 0.35);
-    border-radius: var(--neon-radius);
-    min-height: 150px;
-    margin-right: 14px;
+    min-height: 0;
+    justify-content: flex-start;
+    padding-top: 4px;
+}
+
+.skill-entry {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: stretch;
+    margin-bottom: 36px;
+    padding: 4px 0 12px 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 232, 255, 0.12);
+    min-height: 0;
 }
 
 .skill-slot-readonly {
-    opacity: 0.95;
+    opacity: 1;
 }
 
 .skill-slot-empty {
-    border-color: var(--neon-border-strong);
-    border-style: dashed;
+    opacity: 0.55;
 }
 
-.skill-slot-icon {
-    width: 10px;
-    height: 36px;
-    border-radius: 2px;
-    margin-bottom: 10px;
+.skill-slot-empty > .skill-entry-rail {
+    background-color: rgba(0, 232, 255, 0.25);
+}
+
+.skill-slot-locked > .skill-entry-rail {
+    background-color: var(--neon-cyan);
+}
+
+.skill-entry-rail {
+    width: 3px;
+    min-width: 3px;
+    margin-right: 16px;
+    flex-shrink: 0;
     background-color: var(--neon-fuchsia);
+    align-self: stretch;
 }
 
-.skill-slot-name {
+.skill-entry-body {
+    flex-grow: 1;
+    flex-direction: column;
+    min-width: 0;
+    justify-content: center;
+}
+
+.skill-entry-code {
+    font-size: 12px;
+    color: rgba(0, 232, 255, 0.7);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    text-shadow: 0 0 8px rgba(0, 232, 255, 0.25);
+}
+
+.skill-entry-name {
     font-size: 24px;
-    color: var(--neon-text);
+    color: var(--neon-ice);
     -unity-font-style: bold;
+    margin-bottom: 10px;
+    white-space: normal;
+    text-shadow: 0 0 12px rgba(0, 232, 255, 0.28);
 }
 
-.skill-slot-key {
-    font-size: 16px;
-    color: var(--neon-cyan);
+.skill-entry-meta {
+    flex-direction: row;
+    align-items: center;
+}
+
+.skill-entry-cd {
+    font-size: 15px;
+    color: rgba(170, 220, 240, 0.62);
+}
+
+.skill-entry-dot {
+    font-size: 15px;
+    color: rgba(110, 140, 158, 0.7);
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.skill-entry-mode {
+    font-size: 15px;
+    color: rgba(170, 220, 240, 0.62);
+}
+
+.loadout-skill-note {
+    font-size: 13px;
+    color: rgba(110, 140, 158, 0.85);
     margin-top: 8px;
     letter-spacing: 1px;
+    white-space: normal;
+    flex-shrink: 0;
 }
 
-.skill-slot-cd {
-    font-size: 15px;
-    color: var(--neon-muted);
-    margin-top: 4px;
+.loadout-footer {
+    flex-shrink: 0;
+    margin-top: 40px;
+    padding-top: 28px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-top-width: 1px;
+    border-top-color: rgba(0, 232, 255, 0.16);
 }
 
-.skill-slot-mode {
-    font-size: 14px;
-    color: var(--neon-muted);
-    margin-top: 4px;
-}
-
-.flipper-weapon-title {
-    margin-top: 28px;
+.loadout-footer-title {
+    margin-bottom: 18px;
 }
 
 .flipper-weapon-list {
-    flex-direction: column;
-    flex-grow: 1;
+    flex-direction: row;
+    align-items: stretch;
     min-height: 0;
 }
 
 .flipper-weapon-card {
-    flex-direction: row;
-    align-items: center;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    background-color: var(--neon-panel);
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 104px;
+    min-width: 0;
+    margin-right: 22px;
+    padding: 18px 22px;
+    background-color: rgba(4, 10, 22, 0.42);
     border-width: 1px;
-    border-color: var(--neon-border);
+    border-color: rgba(0, 232, 255, 0.22);
     border-radius: var(--neon-radius);
+    transition-duration: var(--neon-fast);
 }
 
-.flipper-weapon-card:hover {
-    border-color: var(--neon-cyan);
+.flipper-weapon-card-last {
+    margin-right: 0;
+}
+
+.flipper-weapon-card:active {
+    translate: 2px -1px;
+    border-color: var(--neon-fuchsia);
 }
 
 .flipper-weapon-card-selected {
     border-color: var(--neon-yellow);
-    background-color: rgba(255, 220, 40, 0.08);
+    background-color: rgba(255, 214, 96, 0.08);
 }
 
 .flipper-weapon-swatch {
-    width: 18px;
-    height: 18px;
-    border-radius: 9px;
-    margin-right: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
     flex-shrink: 0;
 }
 
@@ -1710,27 +1927,30 @@
     flex-direction: column;
     flex-grow: 1;
     min-width: 0;
+    margin-bottom: 8px;
 }
 
 .flipper-weapon-name {
-    font-size: 16px;
+    font-size: 20px;
     color: var(--neon-text);
     -unity-font-style: bold;
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .flipper-weapon-desc {
-    font-size: 13px;
-    color: var(--neon-muted);
-    margin-top: 4px;
+    font-size: 14px;
+    color: rgba(170, 220, 240, 0.65);
+    margin-top: 6px;
     white-space: normal;
 }
 
 .flipper-weapon-state {
     font-size: 13px;
     color: var(--neon-yellow);
-    margin-left: 10px;
+    letter-spacing: 2px;
     flex-shrink: 0;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
 
 /* ── 协议商店 ── */

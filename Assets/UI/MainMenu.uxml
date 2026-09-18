@@ -94,54 +94,78 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- 战前配置 -->
-        <ui:VisualElement name="LoadoutPanel" class="panel loadout-panel" style="display: none; position: relative;">
-            <ui:VisualElement class="loadout-header">
-                <ui:Button name="BtnLoadoutBack" text="◀ 返回" class="back-btn" />
-                <ui:Label text="战 前 配 置" class="loadout-title" />
-                <ui:VisualElement class="loadout-header-spacer" />
-            </ui:VisualElement>
-
-            <ui:VisualElement class="loadout-body">
-                <ui:VisualElement name="BallColumn" class="loadout-column ball-column">
-                    <ui:Label text="弹珠选择" class="column-title" />
-                    <ui:VisualElement name="BallPreviewHost" class="ball-preview-host">
-                        <ui:VisualElement name="BallPreviewOrb" class="ball-preview-orb" />
+        <!-- 战前配置 · 复用主菜单 Terminal + 字雨背景 -->
+        <ui:VisualElement name="LoadoutPanel" class="panel loadout-panel terminal-home" style="display: none;">
+            <ui:VisualElement class="loadout-stage">
+                <ui:VisualElement class="loadout-header terminal-topbar">
+                    <ui:Button name="BtnLoadoutBack" text="◀ 返回" class="term-link loadout-back-btn" />
+                    <ui:VisualElement class="loadout-header-center">
+                        <ui:Label text="战前配置" class="loadout-title" />
+                        <ui:Label text="LOADOUT" class="loadout-title-en" picking-mode="Ignore" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="ball-pager-row">
-                        <ui:Button name="BtnBallPrev" text="◀" class="ball-nav-btn" />
-                        <ui:VisualElement name="BallPagerDots" class="ball-pager-dots" />
-                        <ui:Button name="BtnBallNext" text="▶" class="ball-nav-btn" />
-                    </ui:VisualElement>
-                    <ui:Label name="BallLockHint" text="" class="ball-lock-hint" style="display: none;" />
-                    <ui:Label name="BallNameLabel" text="标准弹珠" class="ball-name-label" />
-                    <ui:Label name="BallDescLabel" text="基础均衡弹珠，适合各种局面。" class="ball-desc-label" />
-                    <ui:Button name="BtnEquipBall" text="装备此弹珠" class="hangar-equip-btn" />
+                    <ui:Label text="SYS:READY" class="term-status loadout-sys" picking-mode="Ignore" />
                 </ui:VisualElement>
 
-                <ui:VisualElement name="SkillColumn" class="loadout-column skill-column">
-                    <ui:Label text="绑定技能 · 随弹珠固定" class="column-title" />
-                    <ui:VisualElement name="SkillSlotRow" class="skill-slot-row">
-                        <ui:VisualElement name="SkillSlot0" class="skill-slot skill-slot-readonly">
-                            <ui:VisualElement name="SlotIcon" class="skill-slot-icon" />
-                            <ui:Label name="SlotSkillName" text="斩杀连锁" class="skill-slot-name" />
-                            <ui:Label name="SlotKeyHint" text="Q" class="skill-slot-key" />
-                            <ui:Label name="SlotCooldown" text="CD 12s" class="skill-slot-cd" />
-                            <ui:Label name="SlotMode" text="瞄准" class="skill-slot-mode" />
-                        </ui:VisualElement>
-                        <ui:VisualElement name="SkillSlot1" class="skill-slot skill-slot-readonly">
-                            <ui:VisualElement name="SlotIcon" class="skill-slot-icon" />
-                            <ui:Label name="SlotSkillName" text="护盾格挡" class="skill-slot-name" />
-                            <ui:Label name="SlotKeyHint" text="E" class="skill-slot-key" />
-                            <ui:Label name="SlotCooldown" text="CD 15s" class="skill-slot-cd" />
-                            <ui:Label name="SlotMode" text="即时" class="skill-slot-mode" />
+                <ui:VisualElement class="loadout-body">
+                    <ui:VisualElement name="BallColumn" class="loadout-rail loadout-rail-left">
+                        <ui:Label text="弹珠选择" class="column-title" />
+                        <ui:ScrollView name="BallThumbScroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="ball-thumb-scroll">
+                            <ui:VisualElement name="BallThumbList" class="ball-thumb-list" />
+                        </ui:ScrollView>
+                        <ui:VisualElement class="ball-pager-row">
+                            <ui:Button name="BtnBallPrev" text="‹" class="ball-nav-btn" />
+                            <ui:VisualElement name="BallPagerDots" class="ball-pager-dots" />
+                            <ui:Button name="BtnBallNext" text="›" class="ball-nav-btn" />
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:Label text="技能由所选弹珠决定，不可自由更换。" class="loadout-skill-note" />
 
-                    <ui:Label text="挡板武器 · 左右共享" class="column-title flipper-weapon-title" />
+                    <ui:VisualElement name="BallHero" class="loadout-hero">
+                        <ui:Label text="当前弹珠" class="column-title column-title-center" />
+                        <ui:VisualElement name="BallPreviewHost" class="ball-preview-host">
+                            <ui:VisualElement name="BallPreviewOrb" class="ball-preview-orb" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                        <ui:Label name="BallLockHint" text="" class="ball-lock-hint" style="display: none;" />
+                        <ui:Label name="BallNameLabel" text="标准弹珠" class="ball-name-label" />
+                        <ui:Label name="BallRoleLabel" text="STANDARD" class="ball-role-label" picking-mode="Ignore" />
+                        <ui:Label name="BallDescLabel" text="基础均衡弹珠，适合各种局面。" class="ball-desc-label" />
+                        <ui:Button name="BtnEquipBall" text="已装备" class="menu-btn btn-outline-cyan hangar-equip-btn" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="SkillColumn" class="loadout-rail loadout-rail-right">
+                        <ui:Label text="绑定技能" class="column-title" />
+                        <ui:VisualElement name="SkillSlotRow" class="skill-slot-stack">
+                            <ui:VisualElement name="SkillSlot0" class="skill-entry skill-slot-readonly" picking-mode="Ignore">
+                                <ui:VisualElement name="SlotIcon" class="skill-entry-rail" picking-mode="Ignore" />
+                                <ui:VisualElement class="skill-entry-body" picking-mode="Ignore">
+                                    <ui:Label name="SlotKeyHint" text="SLOT.01 · 主技能" class="skill-entry-code" picking-mode="Ignore" />
+                                    <ui:Label name="SlotSkillName" text="斩杀连锁" class="skill-entry-name" picking-mode="Ignore" />
+                                    <ui:VisualElement class="skill-entry-meta" picking-mode="Ignore">
+                                        <ui:Label name="SlotCooldown" text="CD 12s" class="skill-entry-cd" picking-mode="Ignore" />
+                                        <ui:Label text="·" class="skill-entry-dot" picking-mode="Ignore" />
+                                        <ui:Label name="SlotMode" text="瞄准" class="skill-entry-mode" picking-mode="Ignore" />
+                                    </ui:VisualElement>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="SkillSlot1" class="skill-entry skill-slot-readonly" picking-mode="Ignore">
+                                <ui:VisualElement name="SlotIcon" class="skill-entry-rail" picking-mode="Ignore" />
+                                <ui:VisualElement class="skill-entry-body" picking-mode="Ignore">
+                                    <ui:Label name="SlotKeyHint" text="SLOT.02 · 副技能" class="skill-entry-code" picking-mode="Ignore" />
+                                    <ui:Label name="SlotSkillName" text="护盾格挡" class="skill-entry-name" picking-mode="Ignore" />
+                                    <ui:VisualElement class="skill-entry-meta" picking-mode="Ignore">
+                                        <ui:Label name="SlotCooldown" text="CD 15s" class="skill-entry-cd" picking-mode="Ignore" />
+                                        <ui:Label text="·" class="skill-entry-dot" picking-mode="Ignore" />
+                                        <ui:Label name="SlotMode" text="即时" class="skill-entry-mode" picking-mode="Ignore" />
+                                    </ui:VisualElement>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Label text="随弹珠固定 · 不可更换" class="loadout-skill-note" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="loadout-footer">
+                    <ui:Label text="挡板武器 · 左右共享" class="column-title loadout-footer-title" />
                     <ui:VisualElement name="FlipperWeaponList" class="flipper-weapon-list" />
-                    <ui:Label name="FlipperWeaponHint" text="Perfect Flip 释放 · Combo 充能" class="loadout-skill-note" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

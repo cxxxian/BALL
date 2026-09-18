@@ -70,7 +70,7 @@ public class FlipperWeaponHud : MonoBehaviour
     {
         _energyRatio = Mathf.Clamp01(ratio);
         if (!_isReady)
-            ApplySegmentVisuals(Mathf.RoundToInt(_energyRatio * SegmentCount), false, 0f);
+            ApplySegmentVisuals(Mathf.FloorToInt(_energyRatio * SegmentCount), false, 0f);
 
         if (_group != null)
             _group.alpha = Mathf.Lerp(0.45f, 1f, Mathf.Clamp01(_energyRatio * 1.35f));

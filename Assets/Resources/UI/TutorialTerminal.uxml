@@ -1,23 +1,30 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="ProtocolNeonTheme.uss" />
     <Style src="TutorialTerminal.uss" />
-    <ui:VisualElement name="TutorialRoot" class="tutorial-root" picking-mode="Ignore">
-        <ui:VisualElement name="TutorialDim" class="tutorial-dim" picking-mode="Position" />
-        <ui:VisualElement name="TerminalFrame" class="terminal-frame">
-            <ui:VisualElement class="terminal-titlebar" picking-mode="Ignore">
-                <ui:Label name="TerminalTitle" text="NODE://CALIBRATION" class="terminal-title" />
-                <ui:Label name="TerminalStep" text="SEQ 01" class="terminal-step" />
+    <ui:VisualElement name="TutorialRoot" class="protocol-root" picking-mode="Ignore">
+        <ui:Button name="BtnSkipTop" text="跳过教程" class="protocol-skip-top" />
+        <ui:VisualElement name="ProtocolCard" class="protocol-card protocol-anchor-bottom">
+            <ui:VisualElement class="protocol-corner protocol-corner-tl" picking-mode="Ignore" />
+            <ui:VisualElement class="protocol-corner protocol-corner-tr" picking-mode="Ignore" />
+            <ui:VisualElement class="protocol-corner protocol-corner-bl" picking-mode="Ignore" />
+            <ui:VisualElement class="protocol-corner protocol-corner-br" picking-mode="Ignore" />
+            <ui:VisualElement class="protocol-header" picking-mode="Ignore">
+                <ui:Label name="ProtocolProgress" text="PROTOCOL 01 / 10" class="protocol-progress proto-font-display" />
             </ui:VisualElement>
-            <ui:VisualElement class="terminal-scanline" picking-mode="Ignore" />
-            <ui:VisualElement class="terminal-body">
-                <ui:Label name="TerminalPrompt" text="root@rebound:~$" class="terminal-prompt" />
-                <ui:Label name="TerminalLine" text="> 等待指令…" class="terminal-line" />
-                <ui:Label name="TerminalKey" text="" class="terminal-key" />
-                <ui:Label name="TerminalStatus" text="STATUS: IDLE" class="terminal-status" />
-            </ui:VisualElement>
-            <ui:VisualElement class="terminal-actions">
-                <ui:Button name="BtnTerminalSkip" text="ABORT_SKIP" class="terminal-btn terminal-btn-ghost" />
-                <ui:Button name="BtnTerminalContinue" text="ACK_CONTINUE" class="terminal-btn terminal-btn-primary" />
+            <ui:Label name="ProtocolTitle" text="控制挡板" class="protocol-title" />
+            <ui:Label name="ProtocolDescription" text="" class="protocol-description" />
+            <ui:Label name="ProtocolHint" text="" class="protocol-hint proto-font-display" />
+            <ui:Button name="BtnProtocolStart" text="开始" class="protocol-btn-primary" />
+            <ui:Label name="ProtocolConfirm" text="" class="protocol-confirm" />
+        </ui:VisualElement>
+        <ui:VisualElement name="SkipConfirmOverlay" class="skip-overlay" picking-mode="Position">
+            <ui:VisualElement name="SkipConfirmPanel" class="skip-panel">
+                <ui:Label text="跳过新手教程？" class="skip-title" />
+                <ui:Label text="之后可在设置中重新体验。" class="skip-body" />
+                <ui:VisualElement class="skip-actions">
+                    <ui:Button name="BtnSkipCancel" text="继续教学" class="protocol-btn-primary" />
+                    <ui:Button name="BtnSkipConfirm" text="跳过" class="protocol-btn-ghost" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

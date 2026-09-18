@@ -38,7 +38,7 @@ public class Boss : EnemyBase
         checkBottomLine = false;
     }
 
-    public void Initialize(BossDefinition def, float minX, float maxX, int waveIndex)
+    public void Initialize(BossDefinition def, float minX, float maxX, int waveIndex, bool tutorialParryDummy = false)
     {
         definition   = def;
         _minX        = minX;
@@ -104,7 +104,24 @@ public class Boss : EnemyBase
         if (_missileAttack == null) _missileAttack = gameObject.AddComponent<BossMissileAttack>();
         _missileAttack.Initialize(this, waveIndex);
 
-        _spawnCoroutine = StartCoroutine(SpawnCycle());
+        if (tutorialParryDummy)
+            ConfigureTutorialParryDummy();
+        else
+            _spawnCoroutine = StartCoroutine(SpawnCycle());
+    }
+
+    /// <summary>教程弹刀：不刷小兵、不显示血条、不受任何伤害，只测弹反。</summary>
+    public void ConfigureTutorialParryDummy()
+    {
+        TutorialInvulnerable = true;
+        if (_spawnCoroutine != null)
+        {
+            StopCoroutine(_spawnCoroutine);
+            _spawnCoroutine = null;
+        }
+
+        var hb = GetComponent<BossHealthBar>();
+        if (hb != null) hb.Hide();
     }
 
     protected override void ApplyMovement()

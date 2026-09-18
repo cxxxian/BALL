@@ -69,6 +69,18 @@ public class BossHealthBar : MonoBehaviour, IEnemyHealthBar
         RefreshLabels(force: true);
     }
 
+    public void Hide()
+    {
+        if (_introRoutine != null)
+        {
+            StopCoroutine(_introRoutine);
+            _introRoutine = null;
+        }
+
+        if (_panel != null)
+            _panel.gameObject.SetActive(false);
+    }
+
     private void OnDestroy()
     {
         if (_introRoutine != null) StopCoroutine(_introRoutine);
