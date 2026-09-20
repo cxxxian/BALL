@@ -51,8 +51,23 @@ public class FlipperFX : MonoBehaviour
         _flipper = GetComponent<FlipperController>();
         _renderers = GetComponentsInChildren<SpriteRenderer>(true);
         _mpb = new MaterialPropertyBlock();
+        DisableSwingTrail();
         CacheBaseNeon();
         ApplyVisuals();
+    }
+
+    /// <summary>关掉挡板尖端 Trail（挥动拉光）；教学/正式局共用本组件。</summary>
+    private void DisableSwingTrail()
+    {
+        var trails = GetComponentsInChildren<TrailRenderer>(true);
+        for (int i = 0; i < trails.Length; i++)
+        {
+            var trail = trails[i];
+            if (trail == null) continue;
+            trail.Clear();
+            trail.enabled = false;
+            trail.emitting = false;
+        }
     }
 
     private void CacheBaseNeon()

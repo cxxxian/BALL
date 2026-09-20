@@ -310,7 +310,9 @@ public class TutorialDirector : MonoBehaviour
         if (FlipperWeaponController.Instance != null)
             FlipperWeaponController.Instance.onWeaponFired.AddListener(onFire);
 
-        yield return ProtocolStep(7, "挡板也是武器", "Combo 会为武器充能，满能量后按住挡板接球即可释放。", TutorialProtocolCopy.HintPerfectFlip,
+        yield return ProtocolStep(7, "挡板也是武器",
+            "Combo 会为武器充能，满能量后按住挡板接球即可释放。也可以主动用改向把球送上挡板来触发。",
+            TutorialProtocolCopy.HintPerfectFlip,
             TutorialTimeMode.Normal, () => fired, CombatPlay,
             TutorialTerminalMode.Compact, TutorialProtocolAnchor.Bottom,
             timeout: 60f, whileWaiting: EnsureBallPlayable);

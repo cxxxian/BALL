@@ -41,30 +41,39 @@ public class FlipperController : MonoBehaviour
             _activatedAngle = -config.flipperActivatedAngle;
         }
         _targetAngle = _restAngle;
-        _rb.rotation = _restAngle;
         _prevAngle   = _restAngle;
-        ApplyHudClearance();
+        // 直接摆到静止角。教学开场 HardPause（timeScale=0）会停掉 FixedUpdate，
+        // 若只写入刚体再靠插值/逐帧转到 rest，画面会冻在半道上的小角度。
+        SnapRestPose();
     }
 
     // 只上移挡板与底座视觉位置，给底部 Action HUD 让路。不改角度、时长、碰撞材质。
     // 约 1.15 世界单位 ≈ 竖屏可视高度的 6%。再高会贴近现有弹射器（约 y=-5.1）。
     // Ball 发球点用同一常量同步上移（见 BallController）。
     public const float HudClearanceY = 1.15f;
-    private static bool _mountsLifted;
 
-    private void ApplyHudClearance()
+    private void SnapRestPose()
     {
-        transform.position += Vector3.up * HudClearanceY;
-        if (_mountsLifted) return;
-        _mountsLifted = true;
-        var all = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None);
-        for (int i = 0; i < all.Length; i++)
-        {
-            var t = all[i];
-            if (t == null) continue;
-            if (t.name != "Flipper_Left_Mount" && t.name != "Flipper_Right_Mount") continue;
-            t.position += Vector3.up * HudClearanceY;
-        }
+        Vector3 pos = transform.position + Vector3.up * HudClearanceY;
+        var rot = Quaternion.Euler(0f, 0f, _restAngle);
+        var interp = _rb.interpolation;
+        _rb.interpolation = RigidbodyInterpolation2D.None;
+        _rb.position = pos;
+        _rb.rotation = _restAngle;
+        transform.SetPositionAndRotation(pos, rot);
+        _rb.interpolation = interp;
+        SyncMountPivotY();
+    }
+
+    /// <summary>旋钮（Mount）与挡板铰点同 Y；避免跨场景 static 导致只抬挡板不抬底座。</summary>
+    private void SyncMountPivotY()
+    {
+        string mountName = side == FlipperSide.Left ? "Flipper_Left_Mount" : "Flipper_Right_Mount";
+        var mount = GameObject.Find(mountName)?.transform;
+        if (mount == null) return;
+        var p = mount.position;
+        p.y = transform.position.y;
+        mount.position = p;
     }
 
     private void Update()
