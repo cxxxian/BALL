@@ -103,7 +103,7 @@
 }
 
 .term-status {
-    font-size: 16px;
+    font-size: 20px;
     color: var(--neon-cyan);
     letter-spacing: 3px;
     -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
@@ -111,11 +111,11 @@
 }
 
 .term-nav {
-    height: 36px;
+    height: 40px;
     margin-right: 16px;
     padding-left: 8px;
     padding-right: 8px;
-    font-size: 14px;
+    font-size: 18px;
     letter-spacing: 3px;
     color: var(--neon-muted);
     background-color: rgba(0, 0, 0, 0);
@@ -140,7 +140,7 @@
 }
 
 .term-title-cn {
-    font-size: 40px;
+    font-size: 52px;
     color: rgba(140, 230, 255, 0.82);
     letter-spacing: 14px;
     margin-bottom: 14px;
@@ -150,7 +150,7 @@
 }
 
 .term-title-en {
-    font-size: 72px;
+    font-size: 90px;
     color: var(--neon-ice);
     letter-spacing: 12px;
     margin-bottom: 12px;
@@ -160,7 +160,7 @@
 }
 
 .term-subtitle {
-    font-size: 24px;
+    font-size: 30px;
     letter-spacing: 10px;
     margin-bottom: 52px;
     color: var(--neon-cyan);
@@ -170,7 +170,7 @@
 }
 
 .term-cta {
-    height: 64px;
+    height: 72px;
     width: auto;
     min-width: 560px;
     max-width: 900px;
@@ -190,7 +190,7 @@
 }
 
 .term-cta-label {
-    font-size: 22px;
+    font-size: 28px;
     color: var(--neon-white);
     letter-spacing: 4px;
     -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
@@ -212,12 +212,12 @@
 }
 
 .term-link {
-    height: 40px;
+    height: 44px;
     min-width: auto;
     margin: 0;
     padding-left: 12px;
     padding-right: 12px;
-    font-size: 22px;
+    font-size: 28px;
     letter-spacing: 3px;
     color: rgba(160, 230, 255, 0.78);
     background-color: rgba(0, 0, 0, 0);
@@ -233,7 +233,7 @@
 .term-sep {
     margin-left: 6px;
     margin-right: 6px;
-    font-size: 18px;
+    font-size: 24px;
     color: rgba(80, 120, 150, 0.75);
     -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
 }
@@ -245,7 +245,7 @@
 }
 
 .term-meta-line {
-    font-size: 18px;
+    font-size: 22px;
     color: rgba(170, 220, 240, 0.72);
     letter-spacing: 1px;
     margin-bottom: 10px;
@@ -255,15 +255,15 @@
 
 .term-meta-dim {
     color: rgba(110, 140, 158, 0.95);
-    font-size: 15px;
+    font-size: 18px;
 }
 
 .term-edit-link {
-    height: 32px;
+    height: 36px;
     margin-bottom: 12px;
     padding-left: 8px;
     padding-right: 8px;
-    font-size: 14px;
+    font-size: 17px;
     letter-spacing: 2px;
     color: rgba(0, 232, 255, 0.9);
     background-color: rgba(0, 0, 0, 0);
@@ -292,7 +292,7 @@
 }
 
 .terminal-footer .home-footer-hint {
-    font-size: 14px;
+    font-size: 17px;
     color: rgba(0, 232, 255, 0.55);
     letter-spacing: 3px;
     -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
@@ -376,7 +376,7 @@
 }
 
 .home-credits-key {
-    font-size: 14px;
+    font-size: 17px;
     color: rgba(0, 232, 255, 0.55);
     letter-spacing: 2px;
     margin-right: 6px;
@@ -384,7 +384,7 @@
 }
 
 .home-credits-label {
-    font-size: 16px;
+    font-size: 20px;
     color: var(--neon-yellow);
     letter-spacing: 1px;
     -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
@@ -992,8 +992,8 @@
 }
 
 .home-quiet {
-    height: 42px;
-    font-size: 15px;
+    height: 48px;
+    font-size: 18px;
     padding-left: 16px;
     padding-right: 16px;
     letter-spacing: 2px;

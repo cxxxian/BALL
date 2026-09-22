@@ -28,6 +28,23 @@ public class FlipperController : MonoBehaviour
         _rb.constraints = RigidbodyConstraints2D.FreezePosition;
     }
 
+    // 底部挡板区整体上移量（整组刚体一次平移，保持相对位置）。
+    public const float HudClearanceY = 0.55f;
+
+    private static bool _bottomClusterLifted;
+
+    private static readonly string[] BottomClusterRoots =
+    {
+        "Flipper_Left",
+        "Flipper_Right",
+        "Flipper_Left_Mount",
+        "Flipper_Right_Mount",
+        "Slingshot_Left",
+        "Slingshot_Right",
+        "RailProto_Left",
+        "RailProto_Right",
+    };
+
     private void Start()
     {
         if (side == FlipperSide.Left)
@@ -42,19 +59,43 @@ public class FlipperController : MonoBehaviour
         }
         _targetAngle = _restAngle;
         _prevAngle   = _restAngle;
-        // 直接摆到静止角。教学开场 HardPause（timeScale=0）会停掉 FixedUpdate，
-        // 若只写入刚体再靠插值/逐帧转到 rest，画面会冻在半道上的小角度。
+        // 先整组抬高，再摆静止角（避免只抬挡板、弹射器/侧轨留在原地）
+        LiftBottomClusterOnce();
         SnapRestPose();
     }
 
-    // 只上移挡板与底座视觉位置，给底部 Action HUD 让路。不改角度、时长、碰撞材质。
-    // 约 1.15 世界单位 ≈ 竖屏可视高度的 6%。再高会贴近现有弹射器（约 y=-5.1）。
-    // Ball 发球点用同一常量同步上移（见 BallController）。
-    public const float HudClearanceY = 1.15f;
+    private static void LiftBottomClusterOnce()
+    {
+        if (_bottomClusterLifted) return;
+        _bottomClusterLifted = true;
+        if (HudClearanceY <= 0.001f) return;
+
+        var delta = Vector3.up * HudClearanceY;
+        for (int i = 0; i < BottomClusterRoots.Length; i++)
+        {
+            var go = GameObject.Find(BottomClusterRoots[i]);
+            if (go == null) continue;
+
+            var rb = go.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                var interp = rb.interpolation;
+                rb.interpolation = RigidbodyInterpolation2D.None;
+                rb.position += (Vector2)delta;
+                go.transform.position = rb.position;
+                rb.interpolation = interp;
+            }
+            else
+            {
+                go.transform.position += delta;
+            }
+        }
+    }
 
     private void SnapRestPose()
     {
-        Vector3 pos = transform.position + Vector3.up * HudClearanceY;
+        // 位置已由整组抬高完成，这里只对齐静止角与底座 Y
+        Vector3 pos = transform.position;
         var rot = Quaternion.Euler(0f, 0f, _restAngle);
         var interp = _rb.interpolation;
         _rb.interpolation = RigidbodyInterpolation2D.None;

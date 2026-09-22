@@ -225,6 +225,9 @@ public class BallController : MonoBehaviour
         {
             _originalTrailWidth = _trail.startWidth;
             ApplyDefaultTrail();
+            // 未发射前不发光尾：场景加载 / HUD 抬高发球点会留下冻结条带（教学 HardPause 更明显）
+            _trail.Clear();
+            _trail.enabled = false;
         }
     }
 
@@ -235,6 +238,8 @@ public class BallController : MonoBehaviour
         _spawnPosition += Vector2.up * dy;
         if (!_launched || IsWaitingForLaunch)
             transform.position = new Vector3(_spawnPosition.x, _spawnPosition.y, transform.position.z);
+        if (_trail != null)
+            _trail.Clear();
     }
 
     /// <summary>战前配置注入弹珠类型（RunBootstrap 调用）。</summary>
@@ -424,6 +429,8 @@ public class BallController : MonoBehaviour
         _trailColorOverridden = false;
         ApplyDefaultTrail();
         RestoreComponents();
+        _rb.velocity = Vector2.zero;
+        _rb.angularVelocity = 0f;
         transform.position = _spawnPosition;
         BeginWaitForLaunch();
     }
@@ -513,8 +520,15 @@ public class BallController : MonoBehaviour
     private void BeginWaitForLaunch()
     {
         IsWaitingForLaunch = true;
+        _launched = false;
         _guideAngle    = 90f;
         _guideSwingDir = 1f;
+        if (_rb != null)
+        {
+            _rb.velocity = Vector2.zero;
+            _rb.angularVelocity = 0f;
+        }
+        SetTrailActive(false);
         Vector2 initDir = new Vector2(
             Mathf.Cos(_guideAngle * Mathf.Deg2Rad),
             Mathf.Sin(_guideAngle * Mathf.Deg2Rad));
@@ -525,23 +539,32 @@ public class BallController : MonoBehaviour
     {
         IsWaitingForLaunch = false;
         LaunchGuide.Instance?.Hide();
+        SetTrailActive(true);
         _rb.velocity = dir.normalized * config.ballLaunchSpeed;
         _launched    = true;
         ComboSystem.Instance?.ForceResetCombo();
+    }
+
+    private void SetTrailActive(bool active)
+    {
+        if (_trail == null) return;
+        _trail.Clear();
+        _trail.enabled = active;
     }
 
     private void HideComponents()
     {
         _col.enabled = false;
         if (_sr    != null) _sr.enabled = false;
-        if (_trail != null) { _trail.Clear(); _trail.enabled = false; }
+        SetTrailActive(false);
     }
 
     private void RestoreComponents()
     {
         _col.enabled = true;
         if (_sr    != null) _sr.enabled = true;
-        if (_trail != null) _trail.enabled = true;
+        // 拖尾等真正发球后再开，避免等待期 / timeScale=0 冻住位移条带
+        SetTrailActive(false);
     }
 
     private void FixedUpdate()

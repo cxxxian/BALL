@@ -12,10 +12,10 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    height: 28px;
-    padding-left: 10px;
-    padding-right: 10px;
-    font-size: 11px;
+    height: 34px;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 16px;
     color: var(--neon-muted);
     background-color: rgba(10, 10, 15, 0.55);
     border-width: 1px;
@@ -33,12 +33,12 @@
     left: 16px;
     right: 16px;
     min-height: 0;
-    max-width: 520px;
+    max-width: 560px;
     align-self: center;
     background-color: rgba(10, 10, 15, 0.88);
     border-width: 1px;
     border-color: rgba(0, 232, 255, 0.38);
-    padding: 14px 16px 12px;
+    padding: 18px 20px 16px;
     flex-direction: column;
 }
 
@@ -68,7 +68,7 @@
     top: 18%;
     left: 12px;
     right: auto;
-    width: 280px;
+    width: 320px;
 }
 
 .protocol-anchor-center {
@@ -79,7 +79,7 @@
 .protocol-anchor-slot-top {
     top: 4%;
     align-self: center;
-    max-width: 480px;
+    max-width: 520px;
 }
 
 .protocol-corner {
@@ -99,13 +99,13 @@
 }
 
 .protocol-progress {
-    font-size: 10px;
+    font-size: 15px;
     color: rgba(0, 232, 255, 0.75);
     letter-spacing: 1.2px;
 }
 
 .protocol-title {
-    font-size: 20px;
+    font-size: 30px;
     color: var(--neon-white);
     -unity-font-style: bold;
     margin-bottom: 6px;
@@ -113,17 +113,17 @@
 }
 
 .protocol-description {
-    font-size: 15px;
+    font-size: 22px;
     color: var(--neon-ice);
     white-space: normal;
     margin-bottom: 8px;
 }
 
 .protocol-hint {
-    font-size: 13px;
+    font-size: 20px;
     color: rgb(0, 232, 255);
     letter-spacing: 0.5px;
-    padding: 6px 10px;
+    padding: 8px 12px;
     margin-bottom: 4px;
     background-color: rgba(0, 232, 255, 0.06);
     border-width: 1px;
@@ -138,12 +138,12 @@
 
 .protocol-btn-primary {
     align-self: flex-end;
-    height: 32px;
-    min-width: 72px;
+    height: 40px;
+    min-width: 80px;
     margin-top: 6px;
-    padding-left: 16px;
-    padding-right: 16px;
-    font-size: 13px;
+    padding-left: 18px;
+    padding-right: 18px;
+    font-size: 18px;
     -unity-font-style: bold;
     color: rgb(0, 0, 0);
     background-color: rgb(0, 232, 255);
@@ -155,11 +155,11 @@
 }
 
 .protocol-btn-ghost {
-    height: 32px;
-    min-width: 72px;
-    padding-left: 14px;
-    padding-right: 14px;
-    font-size: 12px;
+    height: 40px;
+    min-width: 80px;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-size: 17px;
     color: var(--neon-muted);
     background-color: transparent;
     border-width: 1px;
@@ -167,7 +167,7 @@
 }
 
 .protocol-confirm {
-    font-size: 12px;
+    font-size: 17px;
     color: rgb(0, 232, 255);
     -unity-font-style: bold;
     margin-top: 4px;
@@ -196,8 +196,8 @@
 
 .skip-panel {
     width: 88%;
-    max-width: 360px;
-    padding: 18px 16px;
+    max-width: 400px;
+    padding: 20px 18px;
     background-color: rgba(10, 10, 15, 0.95);
     border-width: 1px;
     border-color: rgba(0, 232, 255, 0.4);
@@ -205,14 +205,14 @@
 }
 
 .skip-title {
-    font-size: 18px;
+    font-size: 26px;
     color: var(--neon-white);
     -unity-font-style: bold;
     margin-bottom: 8px;
 }
 
 .skip-body {
-    font-size: 14px;
+    font-size: 20px;
     color: var(--neon-muted);
     margin-bottom: 14px;
     white-space: normal;

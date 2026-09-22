@@ -58,7 +58,7 @@ public class TutorialFingerHint : MonoBehaviour
 
         _label = go.AddComponent<Text>();
         _label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        _label.fontSize = 22;
+        _label.fontSize = 28;
         _label.alignment = TextAnchor.MiddleCenter;
         _label.color = new Color(0.78f, 0.96f, 1f, 0.85f);
         _label.text = "👆";
