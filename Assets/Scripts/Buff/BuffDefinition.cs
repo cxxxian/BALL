@@ -43,6 +43,9 @@ public enum BuffEffectType
     FrostBurst,         // 11 Frost Rare：霜爆
     ComboMomentum,      // 12 Combo Common：连击动能
     ComboOverload,      // 13 Combo Rare：过载奖励
+    ConductiveNetwork,  // 14 Electric Epic：近全场连锁规则升级
+    Permafrost,         // 15 Frost Epic：霜爆连锁
+    ComboFrenzy,        // 16 Combo Epic：高 Combo 延长窗口
 }
 
 [CreateAssetMenu(fileName = "Buff_New", menuName = "Ball/BuffDefinition")]
@@ -91,6 +94,9 @@ public class BuffDefinition : ScriptableObject
             BuffEffectType.FrostBurst         => "霜痕满层时触发冰爆（短冻/范围伤）",
             BuffEffectType.ComboMomentum      => "每 N 次命中额外 +1 Combo",
             BuffEffectType.ComboOverload      => "达 Combo 阶段获得分数/临伤（不触发 Pulse）",
+            BuffEffectType.ConductiveNetwork  => "导电网络：电弧跨越近全场，沿带电敌人继续连锁",
+            BuffEffectType.Permafrost         => "极寒领域：霜爆沿带霜痕敌人扩散，形成有限冰霜链",
+            BuffEffectType.ComboFrenzy        => "连锁狂热：Combo 达 10 后延长连击窗口，击杀可继续延长",
             _ => string.Empty
         };
     }

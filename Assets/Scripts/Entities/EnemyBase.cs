@@ -387,6 +387,7 @@ public abstract class EnemyBase : MonoBehaviour
         ScorePopUI.Spawn(transform.position, killPts);
         if (!(this is Boss))
             BuffManager.Instance?.NotifyMinionKilled();
+        ComboCombat.OnEnemyKilled();
         if (!skipKillJuice)
             EnemyJuice.OnKill(this, transform.position);
         else

@@ -315,7 +315,8 @@ private void LateUpdate()
             Vector2 a = Jitter(points[i], i, count, halfWidth, seed);
             Vector2 b = Jitter(points[i + 1], i + 1, count, halfWidth, seed);
             AddSegment(a, b, halfWidth, color,
-                i == 0 ? 0.35f : 1f, i == count - 2 ? 0.35f : 1f);
+                i == 0 ? 0.35f : 1f, i == count - 2 ? 0.35f : 1f,
+                i / (float)(count - 1), (i + 1f) / (count - 1));
         }
     }
 
@@ -338,7 +339,7 @@ private void LateUpdate()
     }
 
     private void AddSegment(Vector2 a, Vector2 b, float halfWidth, Color color,
-        float startFade, float endFade)
+        float startFade, float endFade, float uvStart = 0f, float uvEnd = 1f)
     {
         Vector2 tangent = (b - a).normalized;
         if (tangent.sqrMagnitude < 0.001f) return;
@@ -348,10 +349,10 @@ private void LateUpdate()
         _vertices.Add(b + normal);
         _vertices.Add(b - normal);
         _vertices.Add(a - normal);
-        _uvs.Add(new Vector2(0f, 1f));
-        _uvs.Add(new Vector2(1f, 1f));
-        _uvs.Add(new Vector2(1f, 0f));
-        _uvs.Add(new Vector2(0f, 0f));
+        _uvs.Add(new Vector2(uvStart, 1f));
+        _uvs.Add(new Vector2(uvEnd, 1f));
+        _uvs.Add(new Vector2(uvEnd, 0f));
+        _uvs.Add(new Vector2(uvStart, 0f));
         Color ca = color, cb = color;
         ca.a *= startFade;
         cb.a *= endFade;

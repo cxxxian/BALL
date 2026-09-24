@@ -1,36 +1,36 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
-/// 特斯拉电弧：噪声折线 + 细白核心 / 青蓝底线。
-/// 发光靠场景 URP Bloom（HDR 颜色 > threshold），不做多层假 bloom。
-/// 折线感来自 BezierLineUtil.FillLightningBolt（对齐电流描边的 waveAmp/Freq/Speed）。
+/// Tesla discharge rendered with the same shared ribbon shader, palette,
+/// layered widths, and short jagged path as enemy charge arcs.
 /// </summary>
 public class TeslaArcFX : MonoBehaviour
 {
     public static TeslaArcFX Instance { get; private set; }
 
     private const int PoolSize = 12;
-    private const int BoltSegments = 20;
+    private const int PointCount = 6;
     private const float ArcDuration = 0.18f;
+    private const float BodyWidthPixels = 3f;
 
-    // 高于 TronGlobalProfile Bloom threshold(1.1)，交给真 Bloom
-    private static readonly Color CoreHdr = new Color(3.2f, 3.6f, 4.0f, 1f);
-    private static readonly Color GlowHdr = new Color(0.25f, 1.6f, 2.4f, 0.85f);
-
-    private const float WaveAmp = 1.05f;
-    private const float WaveFreq = 1.7f;
-    private const float WaveSpeed = 2.4f;
+    private static readonly Color GlowColor = new Color(0.02f, 0.52f, 0.78f, 0.28f);
+    private static readonly Color BodyColor = new Color(0f, 0.91f, 1f, 0.95f);
+    private static readonly Color CoreColor = new Color(0.84f, 0.98f, 1f, 1f);
+    private static Material _sharedLineMaterial;
 
     private readonly Queue<ArcInstance> _pool = new Queue<ArcInstance>();
-    private Material _lineMat;
+    private Camera _camera;
 
-    private class ArcInstance
+    private sealed class ArcInstance
     {
         public GameObject Root;
-        public LineRenderer Core;
         public LineRenderer Glow;
+        public LineRenderer Body;
+        public LineRenderer Core;
+        public readonly Vector3[] Points = new Vector3[PointCount];
         public Coroutine Routine;
     }
 
@@ -41,9 +41,11 @@ public class TeslaArcFX : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        Instance = this;
 
-        _lineMat = CreateLineMaterial();
+        Instance = this;
+        _camera = Camera.main;
+        EnsureLineMaterial();
+
         for (int i = 0; i < PoolSize; i++)
             _pool.Enqueue(CreateArcInstance());
     }
@@ -52,59 +54,77 @@ public class TeslaArcFX : MonoBehaviour
     {
         if (_pool.Count == 0) return;
 
-        var arc = _pool.Dequeue();
+        ArcInstance arc = _pool.Dequeue();
         arc.Root.SetActive(true);
-
-        if (arc.Routine != null) StopCoroutine(arc.Routine);
+        SetWidths(arc);
         arc.Routine = StartCoroutine(FlashAndReturn(arc, from, to, jitterSeed));
     }
 
-    private IEnumerator FlashAndReturn(ArcInstance arc, Vector2 from, Vector2 to, int jitterSeed)
+    private IEnumerator FlashAndReturn(ArcInstance arc, Vector2 from, Vector2 to, int seed)
     {
         float elapsed = 0f;
-        float timeBase = jitterSeed * 0.31f;
 
         while (elapsed < ArcDuration)
         {
-            float t = timeBase + elapsed;
-            BezierLineUtil.FillLightningBolt(
-                arc.Glow, from, to, t, jitterSeed,
-                BoltSegments, WaveAmp, WaveFreq, WaveSpeed, -0.13f);
-            BezierLineUtil.FillLightningBolt(
-                arc.Core, from, to, t + 0.07f, jitterSeed + 3,
-                BoltSegments, WaveAmp * 0.85f, WaveFreq, WaveSpeed, -0.12f);
-
-            float life = 1f - (elapsed / ArcDuration);
+            float life = 1f - elapsed / ArcDuration;
             float alpha = Mathf.Clamp01(life * life);
-            SetLayerColors(arc, alpha);
+            SetLayerColor(arc.Glow, GlowColor, alpha);
+            SetLayerColor(arc.Body, BodyColor, alpha);
+            SetLayerColor(arc.Core, CoreColor, alpha);
+            FillJaggedBolt(arc, from, to, seed, Mathf.FloorToInt(Time.time * 30f));
 
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        ReturnArc(arc);
-    }
-
-    private void ReturnArc(ArcInstance arc)
-    {
-        if (arc.Routine != null)
-        {
-            StopCoroutine(arc.Routine);
-            arc.Routine = null;
-        }
+        arc.Routine = null;
         arc.Root.SetActive(false);
         _pool.Enqueue(arc);
     }
 
-    private static void SetLayerColors(ArcInstance arc, float alpha)
+    private static void SetLayerColor(LineRenderer line, Color color, float alpha)
     {
-        // HDR rgb 保持 > threshold，只衰减 alpha，Bloom 仍能吃到亮度
-        var core = new Color(CoreHdr.r, CoreHdr.g, CoreHdr.b, alpha);
-        var glow = new Color(GlowHdr.r, GlowHdr.g, GlowHdr.b, GlowHdr.a * alpha);
-        arc.Core.startColor = core;
-        arc.Core.endColor = core;
-        arc.Glow.startColor = glow;
-        arc.Glow.endColor = glow;
+        color.a *= alpha;
+        line.startColor = color;
+        line.endColor = color;
+    }
+
+    private static void FillJaggedBolt(ArcInstance arc, Vector2 from, Vector2 to,
+        int seed, int tick)
+    {
+        Vector2 direction = to - from;
+        Vector2 side = direction.sqrMagnitude > 0.0001f
+            ? new Vector2(-direction.y, direction.x).normalized
+            : Vector2.up;
+        const float maxJitter = 0.10f;
+
+        arc.Points[0] = from;
+        arc.Points[PointCount - 1] = to;
+        for (int i = 1; i < PointCount - 1; i++)
+        {
+            float t = i / (float)(PointCount - 1);
+            float envelope = Mathf.Sin(t * Mathf.PI);
+            float offset = (Hash01(seed, i, tick) * 2f - 1f) * maxJitter * envelope;
+            float along = (Hash01(seed + 71, i, tick) * 2f - 1f) * 0.025f * envelope;
+            arc.Points[i] = Vector2.Lerp(from, to, t)
+                + side * offset + direction.normalized * along;
+        }
+
+        SetPoints(arc.Glow, arc.Points);
+        SetPoints(arc.Body, arc.Points);
+        SetPoints(arc.Core, arc.Points);
+    }
+
+    private static void SetPoints(LineRenderer line, Vector3[] points)
+    {
+        line.positionCount = PointCount;
+        line.SetPositions(points);
+    }
+
+    private static float Hash01(int seed, int point, int tick)
+    {
+        float value = Mathf.Sin(seed * 12.9898f + point * 78.233f + tick * 37.719f) * 43758.5453f;
+        return value - Mathf.Floor(value);
     }
 
     private ArcInstance CreateArcInstance()
@@ -112,49 +132,74 @@ public class TeslaArcFX : MonoBehaviour
         var root = new GameObject("TeslaArc");
         root.transform.SetParent(transform, false);
 
-        // 底线：略宽青蓝（色相），Bloom 会再扩一圈
-        var glowGo = new GameObject("Glow");
-        glowGo.transform.SetParent(root.transform, false);
-        var glow = glowGo.AddComponent<LineRenderer>();
-        ConfigureLine(glow, 21, 0.11f, 0.05f);
-
-        // 核心：极细近白 HDR
-        var coreGo = new GameObject("Core");
-        coreGo.transform.SetParent(root.transform, false);
-        var core = coreGo.AddComponent<LineRenderer>();
-        ConfigureLine(core, 22, 0.035f, 0.018f);
+        var glow = CreateLine(root.transform, "Glow", 21, GlowColor);
+        var body = CreateLine(root.transform, "Body", 22, BodyColor);
+        var core = CreateLine(root.transform, "Core", 23, CoreColor);
+        var arc = new ArcInstance { Root = root, Glow = glow, Body = body, Core = core };
+        SetWidths(arc);
 
         root.SetActive(false);
-        return new ArcInstance { Root = root, Core = core, Glow = glow };
+        return arc;
     }
 
-    private void ConfigureLine(LineRenderer lr, int sortingOrder, float startWidth, float endWidth)
+    private LineRenderer CreateLine(Transform parent, string objectName, int sortingOrder, Color color)
     {
-        lr.useWorldSpace = true;
-        lr.material = _lineMat;
-        lr.sortingOrder = sortingOrder;
-        lr.startWidth = startWidth;
-        lr.endWidth = endWidth;
-        lr.numCapVertices = 2;
-        lr.numCornerVertices = 1;
-        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        lr.receiveShadows = false;
-        lr.allowOcclusionWhenDynamic = false;
+        var go = new GameObject(objectName);
+        go.transform.SetParent(parent, false);
+
+        var line = go.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.textureMode = LineTextureMode.Stretch;
+        line.alignment = LineAlignment.View;
+        line.loop = false;
+        line.positionCount = PointCount;
+        line.numCapVertices = 2;
+        line.numCornerVertices = 1;
+        line.sortingOrder = sortingOrder;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        line.allowOcclusionWhenDynamic = false;
+        line.sharedMaterial = EnsureLineMaterial();
+        line.startColor = color;
+        line.endColor = color;
+        return line;
     }
 
-    private static Material CreateLineMaterial()
+    private void SetWidths(ArcInstance arc)
     {
-        var shader = Shader.Find("Sprites/Default");
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
-        if (shader == null)
-            shader = Shader.Find("Unlit/Color");
-        return new Material(shader != null ? shader : Shader.Find("Hidden/InternalErrorShader"));
+        if (_camera == null) _camera = Camera.main;
+        float worldPerPixel = _camera != null && _camera.orthographic
+            ? 2f * _camera.orthographicSize / Mathf.Max(1, Screen.height)
+            : 0.025f;
+        float bodyHalfWidth = worldPerPixel * BodyWidthPixels * 0.5f;
+
+        SetWidth(arc.Glow, bodyHalfWidth * 3.8f);
+        SetWidth(arc.Body, bodyHalfWidth * 2f);
+        SetWidth(arc.Core, bodyHalfWidth * 0.96f);
     }
 
-    private void OnDestroy()
+    private static void SetWidth(LineRenderer line, float fullWidth)
     {
-        if (Instance == this) Instance = null;
+        line.startWidth = fullWidth;
+        line.endWidth = fullWidth;
+    }
+
+    private static Material EnsureLineMaterial()
+    {
+        if (_sharedLineMaterial != null) return _sharedLineMaterial;
+
+        Shader shader = Shader.Find("Custom/ChargeArcUnlit");
+        if (shader == null) shader = Shader.Find("Sprites/Default");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+        if (shader == null) shader = Shader.Find("Unlit/Color");
+
+        _sharedLineMaterial = new Material(shader != null
+            ? shader
+            : Shader.Find("Hidden/InternalErrorShader"))
+        {
+            name = "ElectricArc_Shared"
+        };
+        return _sharedLineMaterial;
     }
 
     public static void EnsureInstance()

@@ -889,16 +889,26 @@ public class BuffSelectionController : MonoBehaviour
         HideOutcomePanel();
         HideClaimButton();
 
-        bool hasFree = TowerManager.Instance != null && TowerManager.Instance.HasFreeSlot;
+        var towerManager = TowerManager.Instance;
+        bool hasFree = towerManager != null && towerManager.HasFreeSlot;
+        bool canUpgrade = towerManager != null &&
+                          towerManager.HasUpgradeableTowerOfType(def.effectType);
         if (_towerChoiceHint != null)
         {
-            _towerChoiceHint.text = hasFree
-                ? "选择放置一座新结构，或升级已有同类型结构。"
-                : "场地已满：选择替换某座结构，或升级已有同类型结构。";
+            _towerChoiceHint.text = canUpgrade
+                ? (hasFree
+                    ? "选择放置一座新结构，或升级已有同类型结构。"
+                    : "场地已满：选择替换某座结构，或升级已有同类型结构。")
+                : (hasFree
+                    ? "同类型结构已满级；可放置一座新结构。"
+                    : "同类型结构已满级；请选择替换结构。");
         }
 
         if (_towerBtnPlace != null)
             _towerBtnPlace.text = hasFree ? "放置新结构" : "替换结构";
+
+        if (_towerBtnUpgrade != null)
+            _towerBtnUpgrade.style.display = canUpgrade ? DisplayStyle.Flex : DisplayStyle.None;
 
         if (_towerChoice != null)
             _towerChoice.style.display = DisplayStyle.Flex;

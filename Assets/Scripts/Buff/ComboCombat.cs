@@ -40,6 +40,18 @@ public static class ComboCombat
         _lastOverloadTier = 0;
     }
 
+    /// <summary>连锁狂热：高 Combo 击杀为当前连击窗口追加有限时间。</summary>
+    public static void OnEnemyKilled()
+    {
+        var bm = BuffManager.Instance;
+        var combo = ComboSystem.Instance;
+        if (bm == null || combo == null || bm.ComboFrenzyStacks <= 0) return;
+        if (combo.CurrentCombo < bm.GetFrenzyHighComboThreshold()) return;
+        combo.ExtendFrenzyComboWindow(
+            bm.GetFrenzyKillExtension(),
+            bm.GetFrenzyMaxKillExtension());
+    }
+
     /// <summary>球命中额外伤害：过载发放的临伤充能。</summary>
     public static int ConsumeTempHitBonus()
     {

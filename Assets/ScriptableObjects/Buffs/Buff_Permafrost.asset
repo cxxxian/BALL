@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8f396dbef234e4fab92cf3553ca545, type: 3}
+  m_Name: Buff_Permafrost
+  m_EditorClassIdentifier: 
+  buffName: "极寒领域"
+  description: "霜爆沿爆点外围的带霜痕敌人扩散，形成最多 2 次额外的有限寒链；每个敌人每次连锁只受一次伤害。"
+  rarity: 2
+  category: 2
+  buildTags: 01000000
+  duplicateBehavior: 0
+  createsBuilding: 0
+  effectType: 15
+  effectValue: 1
+  maxStacks: 1
+  minWave: 1

@@ -82,7 +82,7 @@ public class EnemyFrostState : MonoBehaviour
 
 /// <summary>
 /// Frost 4b-3：霜痕 → 累积 → 霜爆；冰霜塔叠痕（非纯减速）。
-/// 短冻 ≤1s；不大幅减速破坏高速手感。Permafrost Epic 留给 4b-5。
+/// 短冻 ≤1s；不大幅减速破坏高速手感。Permafrost Epic 最多额外扩散 2 次。
 /// </summary>
 public static class FrostCombat
 {
@@ -179,42 +179,94 @@ public static class FrostCombat
         float radius = bm.GetFrostBurstRadius();
         int damage = bm.GetFrostBurstDamage();
         float freeze = bm.GetFrostBurstFreezeDuration();
+        int maxExtraBursts = bm.GetPermafrostExtraBursts();
 
-        int n = Physics2D.OverlapCircleNonAlloc(center, radius, OverlapBuf);
-        int hits = 0;
+        var centers = new Queue<Vector2>();
         var hitOnce = new HashSet<EnemyBase>();
+        var chainSeeds = new HashSet<EnemyBase>();
+        centers.Enqueue(center);
+        int totalHits = 0;
+        int burstCount = 0;
+
+        while (centers.Count > 0 && burstCount <= maxExtraBursts)
+        {
+            Vector2 burstCenter = centers.Dequeue();
+            EnemyBase chainTarget = null;
+            if (burstCount < maxExtraBursts)
+                chainTarget = FindPermafrostTarget(burstCenter, radius, chainSeeds);
+
+            if (chainTarget != null)
+            {
+                chainSeeds.Add(chainTarget);
+                if (chainTarget.TryGetComponent(out EnemyFrostState targetState))
+                    targetState.ClearMarks();
+                centers.Enqueue(chainTarget.transform.position);
+            }
+
+            int n = Physics2D.OverlapCircleNonAlloc(burstCenter, radius, OverlapBuf);
+            int localHits = 0;
+            for (int i = 0; i < n; i++)
+            {
+                var col = OverlapBuf[i];
+                if (col == null || !col.CompareTag("Enemy")) continue;
+                var enemy = col.GetComponentInParent<EnemyBase>();
+                if (enemy == null || enemy.IsDead) continue;
+
+                if (enemy.TryGetComponent(out EnemyFrostState state))
+                    state.ClearMarks();
+                if (!hitOnce.Add(enemy)) continue;
+
+                enemy.TakeHit(damage, isFromBall: false, burstCenter);
+                totalHits++;
+                localHits++;
+
+                if (!(enemy is Boss))
+                    GetOrAddState(enemy).ApplyShortFreeze(freeze);
+            }
+
+            if (localHits > 0)
+                SpawnBurstFx(burstCenter, radius);
+            burstCount++;
+        }
+
+        if (totalHits <= 0) return false;
+
+        LastBurstHits = totalHits;
+        LastBurstReason = $"{reason} x{totalHits} (chain {Mathf.Max(0, burstCount - 1)})";
+        LastBurstUnscaledTime = Time.unscaledTime;
+
+        ImpactFX.Instance?.SpawnHit(center, new Color(0.6f, 0.92f, 1f), 1.1f);
+        if (totalHits >= 2)
+            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
+        return true;
+    }
+
+    /// <summary>只沿未命中的带霜痕目标扩散；半径有限且每段最多触发一次。</summary>
+    private static EnemyBase FindPermafrostTarget(
+        Vector2 center, float burstRadius, HashSet<EnemyBase> alreadyChained)
+    {
+        float searchRadius = burstRadius * 2.5f;
+        int n = Physics2D.OverlapCircleNonAlloc(center, searchRadius, OverlapBuf);
+        EnemyBase best = null;
+        float bestDistance = searchRadius * searchRadius;
+        float burstRadiusSq = burstRadius * burstRadius;
 
         for (int i = 0; i < n; i++)
         {
             var col = OverlapBuf[i];
             if (col == null || !col.CompareTag("Enemy")) continue;
             var enemy = col.GetComponentInParent<EnemyBase>();
-            if (enemy == null || enemy.IsDead || !hitOnce.Add(enemy)) continue;
+            if (enemy == null || enemy.IsDead || alreadyChained.Contains(enemy)) continue;
+            if (!enemy.TryGetComponent(out EnemyFrostState state) || state.MarkStacks <= 0)
+                continue;
 
-            // 范围内其他敌人的霜痕一并清掉一部分，避免连环无感刷爆
-            if (enemy.TryGetComponent(out EnemyFrostState other))
-                other.ClearMarks();
-
-            enemy.TakeHit(damage, isFromBall: false, center);
-            hits++;
-
-            // Boss 免疫短冻；沙盒 TestFallingEnemy / 正式 Minion 均可冻
-            if (!(enemy is Boss))
-                GetOrAddState(enemy).ApplyShortFreeze(freeze);
+            float distance = ((Vector2)enemy.transform.position - center).sqrMagnitude;
+            if (distance <= burstRadiusSq || distance >= bestDistance) continue;
+            bestDistance = distance;
+            best = enemy;
         }
 
-        if (hits <= 0) return false;
-
-        LastBurstHits = hits;
-        LastBurstReason = $"{reason} x{hits}";
-        LastBurstUnscaledTime = Time.unscaledTime;
-
-        ImpactFX.Instance?.SpawnHit(center, new Color(0.6f, 0.92f, 1f), 1.1f);
-        if (hits >= 2)
-            CameraShake.Instance?.Shake(CameraShake.Preset.Light);
-
-        SpawnBurstFx(center, radius);
-        return true;
+        return best;
     }
 
     private static void SpawnBurstFx(Vector2 center, float radius)

@@ -15,6 +15,7 @@ public class FrostTower : MonoBehaviour
 
     private void Awake()
     {
+        level = Mathf.Clamp(level, 1, TowerManager.MaxTowerLevel);
         var sr = gameObject.AddComponent<SpriteRenderer>();
         sr.sprite = CreateTowerSprite();
         sr.color = new Color(0.6f, 0.9f, 1f, 1f);
@@ -26,6 +27,7 @@ public class FrostTower : MonoBehaviour
     {
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
 
+        level = Mathf.Clamp(level, 1, TowerManager.MaxTowerLevel);
         _timer -= Time.deltaTime;
         if (_timer > 0f) return;
 
@@ -38,11 +40,12 @@ public class FrostTower : MonoBehaviour
 
     private void PulseFrostMarks()
     {
-        float radius = attackRadius + 0.25f * (level - 1);
+        int effectiveLevel = Mathf.Clamp(level, 1, TowerManager.MaxTowerLevel);
+        float radius = attackRadius + 0.25f * (effectiveLevel - 1);
         // L1=1 层/跳；L2+=偶尔 2 层，保持塔非主 DPS
-        int marks = level >= 2 ? 2 : 1;
+        int marks = effectiveLevel >= 2 ? 2 : 1;
 
-        FrostCombat.OnTowerPulse(transform.position, radius, marks, level);
+        FrostCombat.OnTowerPulse(transform.position, radius, marks, effectiveLevel);
 
         bool anyMarked = HasEnemyInRadius(radius);
         JuiceRouter.TowerFire(transform.position, NeonRole.TowerFrost, anyMarked);

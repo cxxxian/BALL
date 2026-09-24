@@ -19,6 +19,7 @@ public class ComboSystem : MonoBehaviour
     public UnityEvent<int> onComboMilestone = new UnityEvent<int>();
 
     private float _lastHitTime = -99f;
+    private float _frenzyKillExtensionUsed;
 
     private GameConfig Config => GameManager.Instance != null ? GameManager.Instance.config : null;
 
@@ -41,10 +42,14 @@ public class ComboSystem : MonoBehaviour
     {
         get
         {
-            if (Config == null) return 3f;
-            float timeout = Config.comboTimeout;
+            float timeout = Config != null ? Config.comboTimeout : 3f;
             if (DebuffManager.Instance != null)
                 timeout += DebuffManager.Instance.ComboTimeoutModifier;
+
+            var bm = BuffManager.Instance;
+            if (bm != null && CurrentCombo >= bm.GetFrenzyHighComboThreshold())
+                timeout += bm.GetFrenzyTimeoutBonus();
+
             return Mathf.Max(0.5f, timeout);
         }
     }
@@ -72,6 +77,7 @@ public class ComboSystem : MonoBehaviour
         if (Time.time - _lastHitTime > EffectiveComboTimeout)
         {
             CurrentCombo = 0;
+            _frenzyKillExtensionUsed = 0f;
             ComboCombat.OnComboReset();
         }
 
@@ -100,6 +106,16 @@ public class ComboSystem : MonoBehaviour
             CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
             onComboMilestone.Invoke(CurrentCombo);
         }
+    }
+
+    /// <summary>给 Frenzy 击杀延长窗口；每轮 Combo 的总额有硬上限。</summary>
+    public void ExtendFrenzyComboWindow(float amount, float maxTotal)
+    {
+        float available = Mathf.Max(0f, maxTotal - _frenzyKillExtensionUsed);
+        float applied = Mathf.Min(Mathf.Max(0f, amount), available);
+        if (applied <= 0f) return;
+        _frenzyKillExtensionUsed += applied;
+        _lastHitTime += applied;
     }
 
     /// <summary>震屏门槛：固定 5/10，不受 Buff 影响。</summary>
@@ -132,6 +148,7 @@ public class ComboSystem : MonoBehaviour
     {
         CurrentCombo = 0;
         _lastHitTime = -99f;
+        _frenzyKillExtensionUsed = 0f;
         ComboCombat.OnComboReset();
         onComboChanged.Invoke(0);
     }
@@ -140,6 +157,7 @@ public class ComboSystem : MonoBehaviour
     {
         CurrentCombo = 0;
         _lastHitTime = -99f;
+        _frenzyKillExtensionUsed = 0f;
         ComboCombat.DevReset();
         onComboChanged.Invoke(0);
     }

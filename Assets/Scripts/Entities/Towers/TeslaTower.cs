@@ -2,10 +2,12 @@ using UnityEngine;
 
 public class TeslaTower : MonoBehaviour
 {
+    public const int MaxDirectDamage = 3;
+
     public int level = 1;
     public float attackRadius = 4.2f;
     public float baseAttackInterval = 5.0f;
-    /// <summary>实际伤害 = baseDamage + level（L1=2）。</summary>
+    /// <summary>实际直击伤害 = clamp(baseDamage + level, 1, MaxDirectDamage)。</summary>
     public int baseDamage = 1;
 
     private float _timer = 0f;
@@ -13,6 +15,7 @@ public class TeslaTower : MonoBehaviour
 
     private void Awake()
     {
+        level = Mathf.Clamp(level, 1, TowerManager.MaxTowerLevel);
         TeslaArcFX.EnsureInstance();
 
         var sr = gameObject.AddComponent<SpriteRenderer>();
@@ -27,6 +30,7 @@ public class TeslaTower : MonoBehaviour
     {
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
 
+        level = Mathf.Clamp(level, 1, TowerManager.MaxTowerLevel);
         _timer -= Time.deltaTime;
         if (_timer <= 0f)
         {
@@ -40,8 +44,9 @@ public class TeslaTower : MonoBehaviour
 
     private void AttackSingleTarget()
     {
-        int damage = baseDamage + level;
-        float radius = attackRadius + 0.2f * (level - 1);
+        int effectiveLevel = Mathf.Clamp(level, 1, TowerManager.MaxTowerLevel);
+        int damage = Mathf.Clamp(baseDamage + effectiveLevel, 1, MaxDirectDamage);
+        float radius = attackRadius + 0.2f * (effectiveLevel - 1);
         Vector2 towerPos = transform.position;
 
         EnemyBase target = FindBottomThreatTarget(towerPos, radius);
@@ -49,7 +54,7 @@ public class TeslaTower : MonoBehaviour
         if (hit)
         {
             target.TakeHit(damage);
-            ElectricCombat.OnTeslaHit(target, level);
+            ElectricCombat.OnTeslaHit(target, effectiveLevel);
             int seed = _arcSeed++;
             TeslaArcFX.Instance?.SpawnArc(towerPos, target.transform.position, seed);
             ImpactFX.Instance?.SpawnHit(

@@ -6,6 +6,8 @@ public class TowerManager : MonoBehaviour
 {
     public static TowerManager Instance { get; private set; }
 
+    public const int MaxTowerLevel = 3;
+
     [Flags]
     public enum TowerUseActions
     {
@@ -99,10 +101,22 @@ public class TowerManager : MonoBehaviour
         return false;
     }
 
+    public bool HasUpgradeableTowerOfType(BuffEffectType type)
+    {
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            var slot = _slots[i];
+            if (slot != null && slot.type == type && slot.instance != null &&
+                slot.level < MaxTowerLevel)
+                return true;
+        }
+        return false;
+    }
+
     public TowerUseActions GetAvailableActions(BuffEffectType type)
     {
         var actions = TowerUseActions.BuildOrReplace;
-        if (HasTowerOfType(type))
+        if (HasUpgradeableTowerOfType(type))
             actions |= TowerUseActions.Upgrade;
         return actions;
     }
@@ -131,7 +145,7 @@ public class TowerManager : MonoBehaviour
         _pendingType = type;
         _onInteractionDone = onDone;
 
-        if (!HasTowerOfType(type))
+        if (!HasUpgradeableTowerOfType(type))
         {
             _pendingType = 0;
             CompleteInteraction();
@@ -160,7 +174,8 @@ public class TowerManager : MonoBehaviour
         for (int i = 0; i < _slots.Length; i++)
         {
             var slot = _slots[i];
-            if (slot != null && slot.type == type && slot.instance != null)
+            if (slot != null && slot.type == type && slot.instance != null &&
+                slot.level < MaxTowerLevel)
             {
                 _pendingType = type;
                 UpgradeTowerAtSlot(i);
@@ -287,7 +302,8 @@ public class TowerManager : MonoBehaviour
         if (slotIndex < 0 || slotIndex >= _slots.Length) return;
 
         var slot = _slots[slotIndex];
-        if (slot == null || slot.type != _pendingType || slot.instance == null) return;
+        if (slot == null || slot.type != _pendingType || slot.instance == null ||
+            slot.level >= MaxTowerLevel) return;
 
         slot.level++;
 
@@ -377,7 +393,8 @@ public class TowerManager : MonoBehaviour
         for (int i = 0; i < _slots.Length; i++)
         {
             var slot = _slots[i];
-            if (slot == null || slot.type != _pendingType || slot.instance == null) continue;
+            if (slot == null || slot.type != _pendingType || slot.instance == null ||
+                slot.level >= MaxTowerLevel) continue;
 
             var go = new GameObject($"UpgradeSlot_{i}");
             go.transform.position = slot.instance.transform.position;

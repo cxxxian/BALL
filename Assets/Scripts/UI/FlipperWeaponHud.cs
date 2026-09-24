@@ -69,6 +69,20 @@ public class FlipperWeaponHud : MonoBehaviour
     private void OnEnergyChanged(float ratio)
     {
         _energyRatio = Mathf.Clamp01(ratio);
+
+        // A new run resets the controller's energy without firing OnFired.
+        // Clear the HUD's cached ready state when that reset reaches zero.
+        if (_energyRatio <= 0f && _isReady)
+        {
+            _isReady = false;
+            if (_readyPulse != null)
+            {
+                StopCoroutine(_readyPulse);
+                _readyPulse = null;
+            }
+            SetReadyVisible(false);
+        }
+
         if (!_isReady)
             ApplySegmentVisuals(Mathf.FloorToInt(_energyRatio * SegmentCount), false, 0f);
 

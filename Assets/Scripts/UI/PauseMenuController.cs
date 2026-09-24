@@ -303,6 +303,12 @@ public class PauseMenuController : MonoBehaviour
                 AddStatLine($"连击动能 Lv{bm.ComboMomentumStacks}（每{bm.GetMomentumHitsPerBonus()}命中+1）");
             if (bm.ComboOverloadStacks > 0)
                 AddStatLine($"过载奖励 Lv{bm.ComboOverloadStacks}（5/10/15…分数+临伤）");
+            if (bm.ConductiveNetworkStacks > 0)
+                AddStatLine($"导电网络（近全场链路，最多 H{bm.GetConductiveNetworkMaxHops()}）");
+            if (bm.PermafrostStacks > 0)
+                AddStatLine($"极寒领域（霜爆额外扩散 {bm.GetPermafrostExtraBursts()} 次）");
+            if (bm.ComboFrenzyStacks > 0)
+                AddStatLine($"连锁狂热（Combo {bm.GetFrenzyHighComboThreshold()}+ 延长窗口）");
             AddStatLine($"护心 {bm.HeartGuardCharges}/{bm.MaxHeartGuardCharges}");
             AddStatLine($"Epic 权重垫刀 {bm.EpicWeightPadding:P0}");
             if (GameManager.Instance != null)

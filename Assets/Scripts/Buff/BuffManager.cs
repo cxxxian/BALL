@@ -40,6 +40,9 @@ public class BuffManager : MonoBehaviour
     public int ComboMomentumStacks     { get; private set; }
     /// <summary>Combo Rare：过载奖励层数。</summary>
     public int ComboOverloadStacks     { get; private set; }
+    public int ConductiveNetworkStacks { get; private set; }
+    public int PermafrostStacks        { get; private set; }
+    public int ComboFrenzyStacks       { get; private set; }
 
     public float EpicWeightPadding => _epicWeightPadding;
 
@@ -166,6 +169,18 @@ public class BuffManager : MonoBehaviour
 
     public int GetIgniterFuelThreshold() => 2;
 
+    public float GetConductiveNetworkRadius()
+    {
+        var cam = Camera.main;
+        if (cam == null || !cam.orthographic) return 24f;
+        Vector2 min = cam.ViewportToWorldPoint(Vector3.zero);
+        Vector2 max = cam.ViewportToWorldPoint(Vector3.one);
+        return Vector2.Distance(min, max) + 1f;
+    }
+
+    public int GetConductiveNetworkMaxHops() => 24;
+    public int GetConductiveNetworkFuelThreshold() => 1;
+
     // ── 霜痕 / 霜爆（Frost · D-F1：2～3 层触发，短冻 ≤1s）──
     /// <summary>每命中叠几层霜痕（高叠略快）。</summary>
     public int GetFrostMarksPerHit() => FrostMarkStacks >= 3 ? 2 : 1;
@@ -173,6 +188,8 @@ public class BuffManager : MonoBehaviour
     /// <summary>霜爆触发所需霜痕：Lv1=3，Lv2+=2。</summary>
     public int GetFrostBurstThreshold() =>
         FrostBurstStacks >= 2 ? 2 : 3;
+
+    public int GetPermafrostExtraBursts() => PermafrostStacks > 0 ? 2 : 0;
 
     public float GetFrostBurstRadius() =>
         2.4f + 0.3f * Mathf.Max(0, FrostBurstStacks - 1);
@@ -203,6 +220,11 @@ public class BuffManager : MonoBehaviour
     /// <summary>过载后接下来几次球命中 +1 伤。</summary>
     public int GetOverloadTempHitCharges() =>
         1 + Mathf.Max(1, ComboOverloadStacks);
+
+    public int GetFrenzyHighComboThreshold() => 10;
+    public float GetFrenzyTimeoutBonus() => ComboFrenzyStacks > 0 ? 0.5f : 0f;
+    public float GetFrenzyKillExtension() => ComboFrenzyStacks > 0 ? 0.5f : 0f;
+    public float GetFrenzyMaxKillExtension() => ComboFrenzyStacks > 0 ? 1f : 0f;
 
     // ── 特斯拉连锁（Rare 建筑 · 明显强于打火器，随塔等级涨）──
     /// <summary>L1 半屏感；L3 接近大半张台面。全图留给 Epic 导电网络。</summary>
@@ -309,6 +331,9 @@ public class BuffManager : MonoBehaviour
         FrostBurstStacks        = 0;
         ComboMomentumStacks     = 0;
         ComboOverloadStacks     = 0;
+        ConductiveNetworkStacks = 0;
+        PermafrostStacks        = 0;
+        ComboFrenzyStacks       = 0;
 
         foreach (var def in buffPool)
         {
@@ -350,6 +375,15 @@ public class BuffManager : MonoBehaviour
                     break;
                 case BuffEffectType.ComboOverload:
                     ComboOverloadStacks = stacks;
+                    break;
+                case BuffEffectType.ConductiveNetwork:
+                    ConductiveNetworkStacks = stacks;
+                    break;
+                case BuffEffectType.Permafrost:
+                    PermafrostStacks = stacks;
+                    break;
+                case BuffEffectType.ComboFrenzy:
+                    ComboFrenzyStacks = stacks;
                     break;
                 case BuffEffectType.HeartGuard:
                     MaxHeartGuardCharges = stacks;
@@ -528,13 +562,14 @@ public static class ElectricCombat
         // 2) 打火器：局部小连锁（Rare）
         if (bm.ElectricIgniterStacks > 0)
         {
+            bool network = bm.ConductiveNetworkStacks > 0;
             TrySparkChain(
                 enemy, pos,
                 useBallCooldown: true,
-                reason: "Igniter",
-                radius: bm.GetIgniterRadius(),
-                maxHops: bm.GetIgniterMaxHops(),
-                fuelNeed: bm.GetIgniterFuelThreshold());
+                reason: network ? "Igniter+Network" : "Igniter",
+                radius: network ? bm.GetConductiveNetworkRadius() : bm.GetIgniterRadius(),
+                maxHops: network ? bm.GetConductiveNetworkMaxHops() : bm.GetIgniterMaxHops(),
+                fuelNeed: network ? bm.GetConductiveNetworkFuelThreshold() : bm.GetIgniterFuelThreshold());
         }
     }
 
@@ -543,13 +578,15 @@ public static class ElectricCombat
         if (enemy == null || enemy.IsDead) return;
         // 塔自带攻击间隔；连锁规格随塔等级，明显强于打火器
         int lv = Mathf.Max(1, towerLevel);
+        var bm = BuffManager.Instance;
+        bool network = bm != null && bm.ConductiveNetworkStacks > 0;
         TrySparkChain(
             enemy, enemy.transform.position,
             useBallCooldown: false,
-            reason: $"TeslaL{lv}",
-            radius: BuffManager.GetTeslaChainRadius(lv),
-            maxHops: BuffManager.GetTeslaMaxHops(lv),
-            fuelNeed: BuffManager.GetTeslaFuelThreshold(lv));
+            reason: network ? $"TeslaL{lv}+Network" : $"TeslaL{lv}",
+            radius: network ? bm.GetConductiveNetworkRadius() : BuffManager.GetTeslaChainRadius(lv),
+            maxHops: network ? bm.GetConductiveNetworkMaxHops() : BuffManager.GetTeslaMaxHops(lv),
+            fuelNeed: network ? bm.GetConductiveNetworkFuelThreshold() : BuffManager.GetTeslaFuelThreshold(lv));
     }
 
     /// <summary>沙盒：给场上全部敌人灌燃料。</summary>
