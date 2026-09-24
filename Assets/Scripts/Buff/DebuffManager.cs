@@ -30,16 +30,21 @@ public class DebuffManager : MonoBehaviour
         Instance = this;
     }
 
-    private void OnEnable()
-    {
-        if (GameManager.Instance != null)
-            GameManager.Instance.onGameStart.AddListener(ResetForNewGame);
-    }
+    private void OnEnable() => BindGameStart();
+
+    private void Start() => BindGameStart();
 
     private void OnDisable()
     {
         if (GameManager.Instance != null)
             GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
+    }
+
+    private void BindGameStart()
+    {
+        if (GameManager.Instance == null) return;
+        GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
+        GameManager.Instance.onGameStart.AddListener(ResetForNewGame);
     }
 
     public IReadOnlyList<DebuffId> ActiveDebuffs => _active;

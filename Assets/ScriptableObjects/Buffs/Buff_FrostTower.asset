@@ -13,8 +13,12 @@ MonoBehaviour:
   m_Name: Buff_FrostTower
   m_EditorClassIdentifier: 
   buffName: "\u51B0\u971C\u5854"
-  description: "\u90E8\u7F72\u51B0\u971C\u5854\uFF0C\u5468\u671F\u6027\u51BB\u7ED3\u5C40\u90E8\u8303\u56F4\u5185\u5C0F\u5175\uFF08\u4E0D\u5F71\u54CD Boss\uFF09\u3002"
-  rarity: 2
+  description: "\u90E8\u7F72\u51B0\u971C\u5854\uFF1A\u5468\u671F\u7ED9\u9644\u8FD1\u5C0F\u5175\u53E0\u971C\u75D5\uFF08\u4E0D\u518D\u7EAF\u51CF\u901F/\u957F\u51BB\uFF09\u3002\u642D\u914D\u971C\u7206\u53EF\u987A\u5E26\u89E6\u53D1\u51B0\u7206\u3002"
+  rarity: 1
+  category: 2
+  buildTags: 01000000
+  duplicateBehavior: 1
+  createsBuilding: 1
   effectType: 5
   effectValue: 1
   maxStacks: 2

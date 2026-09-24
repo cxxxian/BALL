@@ -156,10 +156,18 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         RunSettlement.ResetForNewRun();
+        RunSession.ResetForNewRun();
+        RunTelemetry.ResetForNewRun();
+        RunSession.SnapshotWaveScore(0);
         Lives = config.initialLives;
         Score = 0;
         Wave = 0;
         State = GameState.Playing;
+
+        // 显式清 Buff / Combo 战斗态，避免 OnEnable 订事件竞态导致旧层残留
+        BuffManager.Instance?.ResetForNewGame();
+        ComboCombat.DevReset();
+
         onGameStart.Invoke();
         onLivesChanged.Invoke(Lives);
         onScoreChanged.Invoke(Score);
@@ -206,6 +214,7 @@ public class GameManager : MonoBehaviour
 
     public void CompleteWave()
     {
+        RunSession.AwardChipsForCompletedWave(Score);
         Wave++;
         onWaveChanged.Invoke(Wave);
         State = GameState.BuffSelection;

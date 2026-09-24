@@ -20,6 +20,16 @@ public enum SlotCombo
     Smooth
 }
 
+/// <summary>渐进揭示阶段（Phase 1）。</summary>
+public enum SlotRevealStage
+{
+    None = 0,
+    Stage1 = 1,
+    Stage2 = 2,
+    Stage3 = 3,
+    Resolved = 4
+}
+
 public struct ReelResult
 {
     public ReelRarity rarity;
@@ -27,6 +37,8 @@ public struct ReelResult
     public bool isEmptySpin;
     public bool mysteryResolved;
     public bool alreadyApplied;
+    /// <summary>是否已对玩家揭示（未揭示不得参与 Combo / Reroll）。</summary>
+    public bool isRevealed;
 }
 
 public enum ApplyActionKind
@@ -55,6 +67,12 @@ public class SlotSpinSession
     public readonly List<DebuffId> pendingDebuffs = new List<DebuffId>();
     public int waveIndex;
     public bool hasSpunOnce;
+
+    public SlotRevealStage revealStage = SlotRevealStage.None;
+    public int revealedReelCount;
+    public bool isCommitted;
+    /// <summary>true = 分阶段揭示；false = 旧一次三 Reel（教学 / Dev）。</summary>
+    public bool useProgressiveReveal = true;
 }
 
 public enum OutcomeLineKind

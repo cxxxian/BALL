@@ -49,6 +49,7 @@ public class TeslaTower : MonoBehaviour
         if (hit)
         {
             target.TakeHit(damage);
+            ElectricCombat.OnTeslaHit(target, level);
             int seed = _arcSeed++;
             TeslaArcFX.Instance?.SpawnArc(towerPos, target.transform.position, seed);
             ImpactFX.Instance?.SpawnHit(

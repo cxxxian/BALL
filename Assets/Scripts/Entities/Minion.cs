@@ -30,7 +30,8 @@ public class Minion : EnemyBase
     public void Initialize(MinionDefinition def, int waveIndex = 0)
     {
         definition              = def;
-        float hpMult            = EndlessWaveScaling.GetMinionHpMultiplier(waveIndex);
+        bool armored            = def != null && !def.isBomber && def.maxHP >= 3;
+        float hpMult            = EndlessWaveScaling.GetMinionHpMultiplier(waveIndex, armored);
         float spdMult           = EndlessWaveScaling.GetMinionSpeedMultiplier(waveIndex);
         maxHits                 = Mathf.Max(1, Mathf.RoundToInt(def.maxHP * hpMult));
         moveSpeed               = def.moveSpeed * spdMult;
@@ -44,7 +45,9 @@ public class Minion : EnemyBase
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
 
-        _sr.material = CyberVisualFactory.UnlitMaterial;
+        _sr.material = EnemyBuildStackVisual.SharedMaterial != null
+            ? EnemyBuildStackVisual.SharedMaterial
+            : CyberVisualFactory.UnlitMaterial;
 
         if (def.sprite != null)
         {
@@ -75,6 +78,15 @@ public class Minion : EnemyBase
         MainSR       = _sr;
         _sr.color    = _baseColor;
         _sr.sortingOrder = 2;
+
+        EnemyBuildStackVisual.EnsureOn(this);
+        // 防残留：若组件复用/竞态未销毁，出生时强制清电荷与霜痕
+        if (TryGetComponent(out EnemyElectricState elec))
+            elec.ClearCharge();
+        if (TryGetComponent(out EnemyFrostState frost))
+            frost.ClearMarks();
+        if (TryGetComponent(out EnemyBuildStackVisual buildVis))
+            buildVis.ForceRefresh();
 
         var healthBar = GetComponent<MinionHealthBar>();
         if (healthBar == null)

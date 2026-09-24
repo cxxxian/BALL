@@ -1,6 +1,6 @@
 using UnityEngine;
 
-/// <summary>球心震爆：独立圆扩散视觉 + 脉冲击杀散落。</summary>
+/// <summary>球心震爆：身份技 Core Pulse（不依赖已删除的 Pulse Buff 线）。</summary>
 public class CorePulse : MonoBehaviour
 {
     public static CorePulse Instance { get; private set; }
@@ -27,10 +27,11 @@ public class CorePulse : MonoBehaviour
         return go.AddComponent<CorePulse>();
     }
 
-    public void Activate()
+    /// <summary>释放震爆。返回值保留接口兼容（恒为 0，CD 回退由身份技自身处理）。</summary>
+    public float Activate()
     {
         var ball = BallController.Instance;
-        if (ball == null) return;
+        if (ball == null) return 0f;
 
         Vector2 center = ball.transform.position;
         float radius = Config != null ? Config.corePulseRadius : 2.5f;
@@ -38,7 +39,6 @@ public class CorePulse : MonoBehaviour
         float knock = Config != null ? Config.corePulseKnockback : 2.5f;
         float waveDur = Config != null ? Config.corePulseWaveDuration : 0.4f;
 
-        // 冰蓝圆扩散（非 Combo 金八角射线波）
         Color pulseColor = new Color(0.45f, 0.95f, 1f, 1f);
 
         CameraShake.Instance?.Shake(CameraShake.Preset.Medium);
@@ -54,15 +54,15 @@ public class CorePulse : MonoBehaviour
             if (enemy == null || enemy.IsDead) continue;
 
             Vector2 hitPos = enemy.transform.position;
-            // 基础碰撞伤 × 倍率（力量加成在 TakeHitFromCorePulse 内只加一次）
             int baseDmg = Mathf.Max(1, Mathf.RoundToInt(1f * mult));
+
             enemy.TakeHitFromCorePulse(baseDmg, hitPos);
 
-            if (!(enemy is Boss) && !enemy.IsDead)
-                ApplyKnockback(enemy, center, knock);
-            else if (!(enemy is Boss) && enemy.IsDead)
-                ApplyKnockback(enemy, center, knock * 0.35f);
+            if (!(enemy is Boss))
+                ApplyKnockback(enemy, center, enemy.IsDead ? knock * 0.35f : knock);
         }
+
+        return 0f;
     }
 
     private static void ApplyKnockback(EnemyBase enemy, Vector2 center, float force)

@@ -288,8 +288,21 @@ public class PauseMenuController : MonoBehaviour
         {
             AddStatLine($"弹珠伤害 +{bm.BallDamageBonus}");
             AddStatLine($"最大生命 +{bm.MaxHPBonus}");
-            AddStatLine($"Combo 阈值 −{bm.ComboThresholdReduction}");
             AddStatLine($"击杀得分 +{bm.ScoreOnKillBonus:P0}");
+            if (bm.HealOnKillStacks > 0)
+                AddStatLine($"生命汲取 {bm.HealOnKillStacks}（每{bm.HealOnKillKillsRequired}杀）");
+            if (bm.ElectricChargeStacks > 0)
+                AddStatLine($"电荷残留 Lv{bm.ElectricChargeStacks}（燃料）");
+            if (bm.ElectricIgniterStacks > 0)
+                AddStatLine($"打火器 Lv{bm.ElectricIgniterStacks}（局部 H{bm.GetIgniterMaxHops()} R{bm.GetIgniterRadius():0.0}）");
+            if (bm.FrostMarkStacks > 0)
+                AddStatLine($"霜痕 Lv{bm.FrostMarkStacks}（+{bm.GetFrostMarksPerHit()}/命中）");
+            if (bm.FrostBurstStacks > 0)
+                AddStatLine($"霜爆 Lv{bm.FrostBurstStacks}（满{bm.GetFrostBurstThreshold()}层冰爆）");
+            if (bm.ComboMomentumStacks > 0)
+                AddStatLine($"连击动能 Lv{bm.ComboMomentumStacks}（每{bm.GetMomentumHitsPerBonus()}命中+1）");
+            if (bm.ComboOverloadStacks > 0)
+                AddStatLine($"过载奖励 Lv{bm.ComboOverloadStacks}（5/10/15…分数+临伤）");
             AddStatLine($"护心 {bm.HeartGuardCharges}/{bm.MaxHeartGuardCharges}");
             AddStatLine($"Epic 权重垫刀 {bm.EpicWeightPadding:P0}");
             if (GameManager.Instance != null)

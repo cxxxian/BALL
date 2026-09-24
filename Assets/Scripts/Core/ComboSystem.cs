@@ -70,14 +70,20 @@ public class ComboSystem : MonoBehaviour
         LastHitWorldPosition = worldPos ?? (Vector2)ball.transform.position;
 
         if (Time.time - _lastHitTime > EffectiveComboTimeout)
+        {
             CurrentCombo = 0;
+            ComboCombat.OnComboReset();
+        }
 
         CurrentCombo++;
+        int combo = CurrentCombo;
+        ComboCombat.ApplyMomentumAndOverload(ref combo);
+        CurrentCombo = combo;
         _lastHitTime = Time.time;
         onComboChanged.Invoke(CurrentCombo);
 
-        int shakeThreshold = GetEffectiveThreshold(BaseShakeThreshold);
-        int heavyThreshold = GetEffectiveThreshold(BaseHeavyShakeThreshold);
+        int shakeThreshold = GetShakeThreshold(BaseShakeThreshold);
+        int heavyThreshold = GetShakeThreshold(BaseHeavyShakeThreshold);
 
         if (CurrentCombo == shakeThreshold)
         {
@@ -94,15 +100,21 @@ public class ComboSystem : MonoBehaviour
             CameraShake.Instance?.Shake(CameraShake.Preset.Heavy);
             onComboMilestone.Invoke(CurrentCombo);
         }
-
     }
 
-    /// <summary>连击大师：每层 -2，下限 3。用于 5/10/20 等资源轨奖励阈值。</summary>
-    public static int GetEffectiveThreshold(int baseThreshold)
-    {
-        int reduction = BuffManager.Instance != null ? BuffManager.Instance.ComboThresholdReduction : 0;
-        return Mathf.Max(MinComboThreshold, baseThreshold - reduction);
-    }
+    /// <summary>震屏门槛：固定 5/10，不受 Buff 影响。</summary>
+    public static int GetShakeThreshold(int baseThreshold) =>
+        Mathf.Max(MinComboThreshold, baseThreshold);
+
+    /// <summary>
+    /// 显示/通用门槛。4b-4 后不再被连击大师降低；Pulse 门槛见 <see cref="GetPulseEffectiveThreshold"/>。
+    /// </summary>
+    public static int GetEffectiveThreshold(int baseThreshold) =>
+        Mathf.Max(MinComboThreshold, baseThreshold);
+
+    /// <summary>Pulse 里程碑门槛（固定；不再吃 Buff 减门槛）。</summary>
+    public static int GetPulseEffectiveThreshold(int baseThreshold) =>
+        Mathf.Max(MinComboThreshold, baseThreshold);
 
     /// <summary>挡板严格断连：任意挡板接触即清零；未用 CD 券作废。</summary>
     public void BreakOnFlipper()
@@ -120,6 +132,7 @@ public class ComboSystem : MonoBehaviour
     {
         CurrentCombo = 0;
         _lastHitTime = -99f;
+        ComboCombat.OnComboReset();
         onComboChanged.Invoke(0);
     }
 
@@ -127,6 +140,7 @@ public class ComboSystem : MonoBehaviour
     {
         CurrentCombo = 0;
         _lastHitTime = -99f;
+        ComboCombat.DevReset();
         onComboChanged.Invoke(0);
     }
 

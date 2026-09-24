@@ -16,7 +16,7 @@
                 <ui:VisualElement class="led led-cyan" />
                 <ui:VisualElement class="led led-fuchsia" />
                 <ui:Label name="status-text" text="SYS · READY" class="status-text" />
-                <ui:Label text="CH-03" class="status-meta" />
+                <ui:Label name="chips-label" text="CHIPS 00" class="status-meta" />
             </ui:VisualElement>
 
             <ui:VisualElement name="panel-header" class="panel-header">
@@ -93,6 +93,11 @@
                     <ui:Label name="outcome-badge" text="IDLE" class="outcome-badge-status" />
                 </ui:VisualElement>
                 <ui:VisualElement name="outcome-list" class="outcome-list" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="stage-action-row" class="stage-action-row">
+                <ui:Button name="cashout-btn" text="兑现" class="cashout-btn" />
+                <ui:Button name="continue-btn" text="继续 -1" class="continue-btn" />
             </ui:VisualElement>
 
             <ui:Button name="confirm-btn" text="领取" class="confirm-btn" />

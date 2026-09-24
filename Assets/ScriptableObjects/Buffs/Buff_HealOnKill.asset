@@ -13,8 +13,13 @@ MonoBehaviour:
   m_Name: Buff_HealOnKill
   m_EditorClassIdentifier: 
   buffName: "\u751F\u547D\u6C72\u53D6"
-  description: "\u6BCF\u51FB\u6740 5 \u53EA\u5C0F\u5175\u56DE\u590D 1 \u70B9\u751F\u547D"
+  description: "\u6BCF\u51FB\u6740 5 \u53EA\u5C0F\u5175\u56DE\u590D 1 \u70B9\u751F\u547D\uFF08\u53E0\u5C42\u589E\u52A0\u56DE\u590D\u91CF\uFF09\u3002Universal\uFF0C\u65E0\u6784\u7B51 Tag\u3002"
   rarity: 1
+  category: 0
+  buildTags: 
+  duplicateBehavior: 0
+  createsBuilding: 0
   effectType: 3
   effectValue: 5
   maxStacks: 2
+  minWave: 1

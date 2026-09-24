@@ -226,6 +226,7 @@ public abstract class EnemyBase : MonoBehaviour
             dmg += BuffManager.Instance.BallDamageBonus;
         if (ProtocolFieldDirector.Instance != null)
             dmg += ProtocolFieldDirector.Instance.TempBallDamageBonus;
+        dmg += ComboCombat.ConsumeTempHitBonus();
         dmg *= Mathf.Max(0f, scale);
         _ballHitCredit += dmg;
         int whole = Mathf.FloorToInt(_ballHitCredit + 1e-4f);
@@ -239,6 +240,11 @@ public abstract class EnemyBase : MonoBehaviour
         _ballHitCredit -= whole;
         // 力量加成已计入 credit，避免 TakeHit 再加一次
         ApplyBallHits(whole, hitPos);
+        if (!IsDead)
+        {
+            ElectricCombat.OnBallHitEnemy(this, hitPos);
+            FrostCombat.OnBallHitEnemy(this, hitPos);
+        }
     }
 
     /// <summary>已含力量加成的整点伤害（分裂积攒兑现）。</summary>
@@ -272,6 +278,8 @@ public abstract class EnemyBase : MonoBehaviour
             damage += BuffManager.Instance.BallDamageBonus;
         if (isFromBall && ProtocolFieldDirector.Instance != null)
             damage += ProtocolFieldDirector.Instance.TempBallDamageBonus;
+        if (isFromBall)
+            damage += ComboCombat.ConsumeTempHitBonus();
         CurrentHits += damage;
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(scoreOnHit * damage);
@@ -290,6 +298,13 @@ public abstract class EnemyBase : MonoBehaviour
                 return;
             }
             Die();
+            return;
+        }
+
+        if (isFromBall)
+        {
+            ElectricCombat.OnBallHitEnemy(this, hitPos);
+            FrostCombat.OnBallHitEnemy(this, hitPos);
         }
     }
 
@@ -370,6 +385,8 @@ public abstract class EnemyBase : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.AddScore(killPts);
         ScorePopUI.Spawn(transform.position, killPts);
+        if (!(this is Boss))
+            BuffManager.Instance?.NotifyMinionKilled();
         if (!skipKillJuice)
             EnemyJuice.OnKill(this, transform.position);
         else

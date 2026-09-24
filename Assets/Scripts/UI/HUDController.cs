@@ -9,6 +9,7 @@ public class HUDController : MonoBehaviour
     [Header("HUD References")]
     public Text  scoreText;
     public Text  waveText;
+    public Text  chipsText;
     public Image[] lifeIcons;
 
     [Header("Panels")]
@@ -37,16 +38,20 @@ public class HUDController : MonoBehaviour
 
     private void OnDestroy()
     {
+        RunSession.OnChipsChanged -= UpdateChips;
         if (Instance == this) Instance = null;
     }
 
     private void Start()
     {
-        ApplyHudGlowStyles();
         if (scoreText != null)
             _scoreBaseScale = scoreText.rectTransform.localScale;
 
         EnsureScorePopUI();
+        EnsureChipsLabel();
+        ApplyHudGlowStyles();
+
+        RunSession.OnChipsChanged += UpdateChips;
 
         if (GameManager.Instance != null)
         {
@@ -68,6 +73,7 @@ public class HUDController : MonoBehaviour
         UpdateLives(GameManager.Instance.Lives);
         UpdateScore(0);
         UpdateWave(0);
+        UpdateChips(RunSession.Chips);
     }
 
     private void UpdateLives(int lives)
@@ -134,6 +140,7 @@ public class HUDController : MonoBehaviour
     {
         ProtocolUiStyle.ApplyHudValue(waveText, CyberHudGlow.GlowStyle.BumperCyan);
         ProtocolUiStyle.ApplyHudValue(scoreText, CyberHudGlow.GlowStyle.WhiteScore);
+        ProtocolUiStyle.ApplyHudValue(chipsText, CyberHudGlow.GlowStyle.BumperCyan);
         ProtocolUiStyle.ApplyDisplayFont(finalScoreText);
         ProtocolUiStyle.ApplyDisplayFont(creditsEarnedText);
         ProtocolUiStyle.ApplyDisplayFont(totalCreditsText);
@@ -196,6 +203,50 @@ public class HUDController : MonoBehaviour
         // 左上 StatusCard 已有 WAVE 标签，数字单独显示
         if (waveText != null)
             waveText.text = Mathf.Max(0, wave).ToString("00");
+    }
+
+    private void UpdateChips(int chips)
+    {
+        if (chipsText == null) return;
+        chipsText.text = $"CHIPS {Mathf.Max(0, chips):00}";
+    }
+
+    private void EnsureChipsLabel()
+    {
+        if (chipsText != null) return;
+
+        // 不要挂在 WaveBlock 里：WaveText 是拉伸锚点，同父级会叠在波次数字上。
+        // 与 ProtocolLockHud 相同：挂 Canvas，放在 StatusCard 右侧。
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null && waveText != null)
+            canvas = waveText.GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        var go = new GameObject("ChipsValue", typeof(RectTransform));
+        go.transform.SetParent(canvas.transform, false);
+        chipsText = go.AddComponent<Text>();
+        chipsText.font = waveText != null ? waveText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (chipsText.font == null)
+            chipsText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        chipsText.fontSize = 22;
+        chipsText.fontStyle = FontStyle.Bold;
+        chipsText.alignment = TextAnchor.UpperLeft;
+        chipsText.color = waveText != null
+            ? waveText.color
+            : new Color(0f, 0.996f, 1.05f, 1f);
+        chipsText.raycastTarget = false;
+        chipsText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        chipsText.verticalOverflow = VerticalWrapMode.Overflow;
+
+        var rt = chipsText.rectTransform;
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        // StatusCard ≈ (16,-14) 宽 260 → 右侧留缝；LOCK 在 (24,-120)，互不挡
+        rt.anchoredPosition = new Vector2(288f, -28f);
+        rt.sizeDelta = new Vector2(180f, 36f);
+
+        UpdateChips(RunSession.Chips);
     }
 
     private void ShowGameOver()

@@ -45,8 +45,12 @@ public class BuffSelectionController : MonoBehaviour
     private Label _rerollHintLabel;
     private Label _leverHint;
     private Label _statusText;
+    private Label _chipsLabel;
     private Label _outcomeBadgeStatus;
     private Button _confirmBtn;
+    private Button _cashOutBtn;
+    private Button _continueBtn;
+    private VisualElement _stageActionRow;
     private VisualElement _leverAssembly;
     private VisualElement _leverArm;
     private VisualElement _outcomePanel;
@@ -87,8 +91,12 @@ public class BuffSelectionController : MonoBehaviour
         _rerollHintLabel = root.Q<Label>("reroll-hint-label");
         _leverHint = root.Q<Label>("lever-hint");
         _statusText = root.Q<Label>("status-text");
+        _chipsLabel = root.Q<Label>("chips-label");
         _outcomeBadgeStatus = root.Q<Label>("outcome-badge");
         _confirmBtn = root.Q<Button>("confirm-btn");
+        _cashOutBtn = root.Q<Button>("cashout-btn");
+        _continueBtn = root.Q<Button>("continue-btn");
+        _stageActionRow = root.Q<VisualElement>("stage-action-row");
         _leverAssembly = root.Q<VisualElement>("lever-assembly");
         _leverArm = root.Q<VisualElement>("lever-arm");
         _outcomePanel = root.Q<VisualElement>("outcome-panel");
@@ -107,11 +115,17 @@ public class BuffSelectionController : MonoBehaviour
 
         _leverAssembly?.RegisterCallback<ClickEvent>(_ => OnLeverPulled());
         _confirmBtn?.RegisterCallback<ClickEvent>(_ => OnClaimClicked());
+        _cashOutBtn?.RegisterCallback<ClickEvent>(_ => OnCashOutClicked());
+        _continueBtn?.RegisterCallback<ClickEvent>(_ => OnContinueClicked());
         _debuffContinueBtn?.RegisterCallback<ClickEvent>(_ => OnDebuffContinue());
         _towerBtnUpgrade?.RegisterCallback<ClickEvent>(_ => OnTowerUpgradeChosen());
         _towerBtnPlace?.RegisterCallback<ClickEvent>(_ => OnTowerPlaceChosen());
         if (_confirmBtn != null)
             NeonHoverGlow.Attach(_confirmBtn);
+        if (_cashOutBtn != null)
+            NeonHoverGlow.Attach(_cashOutBtn);
+        if (_continueBtn != null)
+            NeonHoverGlow.Attach(_continueBtn);
 
         _overlay.style.display = DisplayStyle.None;
         HideTowerChoice();
@@ -174,12 +188,14 @@ public class BuffSelectionController : MonoBehaviour
         int wave = GameManager.Instance != null ? GameManager.Instance.Wave : 1;
         _session = SlotMachineBuffRoller.CreateEmptySession(wave);
         _phase = SlotUiPhase.IdleEmpty;
+        RunTelemetry.OnSlotOpened();
 
         ClearComboBanner();
         HideOutcomePanel();
         HideDebuffPanel();
         SetPanelMotionState(spinning: false, reveal: false);
         SetStatusText("SYS · READY");
+        RefreshChipsLabel();
         SetOutcomeBadgeStatus("IDLE", live: false);
 
         for (int i = 0; i < 3; i++)
@@ -192,6 +208,7 @@ public class BuffSelectionController : MonoBehaviour
         }
 
         UpdateClaimButtonVisibility();
+        UpdateStageActionButtons();
         RefreshHints();
         SetLeverEnabled(true);
         TutorialGate = SlotTutorialGate.None;
@@ -237,13 +254,17 @@ public class BuffSelectionController : MonoBehaviour
                     || TutorialGate == SlotTutorialGate.RerollOnly
                     || TutorialGate == SlotTutorialGate.ClaimOnly)
                     return;
-                _flowCoroutine = StartCoroutine(FullSpinFlow());
+                _flowCoroutine = StartCoroutine(
+                    _session != null && _session.useProgressiveReveal
+                        ? RevealNextFlow()
+                        : FullSpinFlow());
                 break;
             case SlotUiPhase.ResolvePreview:
                 if (TutorialGate == SlotTutorialGate.Locked
                     || TutorialGate == SlotTutorialGate.SpinOnly
                     || TutorialGate == SlotTutorialGate.ClaimOnly)
                     return;
+                // Continue 改由按钮扣筹码；拉杆仅用于已选轮重转
                 if (_selectedReel >= 0 && SlotMachineBuffRoller.CanRerollReel(_session, _selectedReel))
                     _flowCoroutine = StartCoroutine(SingleRerollFlow(_selectedReel));
                 break;
@@ -265,7 +286,12 @@ public class BuffSelectionController : MonoBehaviour
             _reels[i].SetSelected(i == _selectedReel);
             _reels[i].SetSelectableHint(SlotMachineBuffRoller.CanRerollReel(_session, i));
         }
+        bool finalReady = _session == null
+                          || !_session.useProgressiveReveal
+                          || SlotMachineBuffRoller.IsFinalRevealReady(_session);
+        SetLeverEnabled(finalReady || _selectedReel >= 0);
         RefreshHints();
+        UpdateStageActionButtons();
     }
 
     private void OnClaimClicked()
@@ -275,7 +301,35 @@ public class BuffSelectionController : MonoBehaviour
             || TutorialGate == SlotTutorialGate.SpinOnly
             || TutorialGate == SlotTutorialGate.RerollOnly)
             return;
-        _flowCoroutine = StartCoroutine(ApplyFlow());
+        if (_session != null
+            && _session.useProgressiveReveal
+            && !SlotMachineBuffRoller.IsFinalRevealReady(_session))
+            return;
+        _flowCoroutine = StartCoroutine(ApplyFlow(cashOut: false));
+    }
+
+    private void OnCashOutClicked()
+    {
+        if (_phase != SlotUiPhase.ResolvePreview || _flowCoroutine != null) return;
+        if (TutorialGate != SlotTutorialGate.None) return;
+        if (_session == null || !_session.useProgressiveReveal) return;
+        if (SlotMachineBuffRoller.IsFinalRevealReady(_session)) return;
+        if (_session.revealedReelCount <= 0) return;
+        _flowCoroutine = StartCoroutine(ApplyFlow(cashOut: true));
+    }
+
+    private void OnContinueClicked()
+    {
+        if (_phase != SlotUiPhase.ResolvePreview || _flowCoroutine != null) return;
+        if (TutorialGate != SlotTutorialGate.None) return;
+        if (_session == null || !_session.useProgressiveReveal) return;
+        if (!SlotMachineBuffRoller.CanAffordContinue(_session)) return;
+        int fromStage = _session.revealedReelCount;
+        int cost = SlotMachineBuffRoller.GetContinueChipCost(_session);
+        if (!SlotMachineBuffRoller.TryPayContinue(_session)) return;
+        RefreshChipsLabel();
+        RunTelemetry.RecordContinue(fromStage, cost, RunSession.Chips);
+        _flowCoroutine = StartCoroutine(RevealNextFlow());
     }
 
     private IEnumerator FullSpinFlow()
@@ -300,6 +354,36 @@ public class BuffSelectionController : MonoBehaviour
         _flowCoroutine = null;
     }
 
+    /// <summary>渐进揭示：每次只停 1 个 Reel。</summary>
+    private IEnumerator RevealNextFlow()
+    {
+        _phase = SlotUiPhase.Spinning;
+        SetPanelMotionState(spinning: true, reveal: false);
+        SetStatusText($"SYS · REVEAL {(_session.revealedReelCount + 1):00}/03");
+        SetOutcomeBadgeStatus("SPIN", live: false);
+        SetLeverEnabled(false);
+        HideClaimButton();
+        yield return PullLeverAnimation();
+
+        int index = SlotMachineBuffRoller.RevealNextReel(_session);
+        if (index < 0)
+        {
+            EnterPostSpinPhase();
+            _flowCoroutine = null;
+            yield break;
+        }
+
+        yield return AnimateReelStop(index, 1.55f);
+
+        if (SlotMachineBuffRoller.IsFinalRevealReady(_session))
+            yield return ShowComboBannerRoutine();
+        else
+            ClearComboBanner();
+
+        EnterPostSpinPhase();
+        _flowCoroutine = null;
+    }
+
     private IEnumerator SingleRerollFlow(int reelIndex)
     {
         _phase = SlotUiPhase.Spinning;
@@ -318,7 +402,13 @@ public class BuffSelectionController : MonoBehaviour
         }
 
         yield return AnimateReelStop(reelIndex, 1.35f);
-        yield return ShowComboBannerRoutine();
+
+        // Stage1/2 重转后不展示 Final Combo；仅 Stage3 刷新 Combo banner
+        if (SlotMachineBuffRoller.IsFinalRevealReady(_session))
+            yield return ShowComboBannerRoutine();
+        else
+            ClearComboBanner();
+
         _selectedReel = -1;
         EnterPostSpinPhase();
         _flowCoroutine = null;
@@ -345,27 +435,75 @@ public class BuffSelectionController : MonoBehaviour
     {
         _phase = SlotUiPhase.ResolvePreview;
         SetPanelMotionState(spinning: false, reveal: true);
-        SetStatusText("SYS · AWAIT CLAIM");
-        SetOutcomeBadgeStatus("SYNCED", live: true);
-        PopulateOutcomePanel();
-        HighlightOutcomeReels();
-        bool leverOn = TutorialGate == SlotTutorialGate.None
-                       || TutorialGate == SlotTutorialGate.RerollOnly;
+
+        bool finalReady = _session == null
+                          || !_session.useProgressiveReveal
+                          || SlotMachineBuffRoller.IsFinalRevealReady(_session);
+        bool stageHold = _session != null
+                         && _session.useProgressiveReveal
+                         && !finalReady
+                         && _session.revealedReelCount > 0;
+
+        if (finalReady)
+        {
+            SetStatusText("SYS · AWAIT CLAIM");
+            SetOutcomeBadgeStatus("SYNCED", live: true);
+            PopulateOutcomePanel(finalCombo: true);
+            HighlightOutcomeReels();
+        }
+        else if (stageHold)
+        {
+            SetStatusText($"SYS · REVEAL {_session.revealedReelCount:00}/03");
+            SetOutcomeBadgeStatus("HOLD", live: true);
+            ShowStageCashOutBanner();
+            PopulateOutcomePanel(finalCombo: false);
+            HighlightCashOutReels();
+        }
+        else
+        {
+            SetStatusText("SYS · READY");
+            SetOutcomeBadgeStatus("IDLE", live: false);
+            HideOutcomePanel();
+            ClearComboBanner();
+        }
+
+        // Stage1/2：拉杆仅重转；Continue 走按钮。Final：可重转。
+        bool leverOn = false;
+        if (TutorialGate == SlotTutorialGate.None || TutorialGate == SlotTutorialGate.RerollOnly)
+            leverOn = finalReady || (_selectedReel >= 0);
         SetLeverEnabled(leverOn);
         UpdateClaimButtonVisibility();
+        UpdateStageActionButtons();
         RefreshHints();
+        RefreshChipsLabel();
     }
 
-    private IEnumerator ApplyFlow()
+    private void ShowStageCashOutBanner()
+    {
+        if (_comboLabel != null)
+            _comboLabel.text = $"CURRENT · STAGE {_session.revealedReelCount}";
+        if (_comboRuleLabel != null)
+        {
+            int cost = SlotMachineBuffRoller.GetContinueChipCost(_session);
+            _comboRuleLabel.text = cost > 0
+                ? $"兑现拿当前奖励 · 或继续 -{cost} CHIPS 看下一轮"
+                : "兑现拿当前奖励";
+        }
+    }
+
+    private IEnumerator ApplyFlow(bool cashOut)
     {
         _phase = SlotUiPhase.Applying;
         SetPanelMotionState(spinning: false, reveal: false);
-        SetStatusText("SYS · CLAIMED");
+        SetStatusText(cashOut ? "SYS · CASH OUT" : "SYS · CLAIMED");
         SetOutcomeBadgeStatus("LOCKED", live: false);
         SetLeverEnabled(false);
         UpdateClaimButtonVisibility();
+        UpdateStageActionButtons();
 
-        var lines = SlotMachineBuffRoller.BuildOutcomePreview(_session);
+        var lines = cashOut
+            ? SlotMachineBuffRoller.BuildCashOutPreview(_session)
+            : SlotMachineBuffRoller.BuildOutcomePreview(_session);
         foreach (var line in lines)
         {
             if (line.reelIndex >= 0 && line.reelIndex < 3)
@@ -374,11 +512,19 @@ public class BuffSelectionController : MonoBehaviour
             yield return new WaitForSecondsRealtime(0.18f);
         }
 
-        var actions = SlotMachineBuffRoller.BuildApplyActions(_session, commitJackpotTax: true);
+        var actions = cashOut
+            ? SlotMachineBuffRoller.BuildCashOutActions(_session)
+            : SlotMachineBuffRoller.BuildApplyActions(_session, commitJackpotTax: true);
         _lastAppliedDebuffs = new List<DebuffId>(_session.pendingDebuffs);
 
         SlotMachineBuffRoller.ExecuteApplyActions(actions, BuffManager.Instance);
         SlotMachineBuffRoller.ApplyPendingDebuffs(_session);
+        SlotMachineBuffRoller.MarkCommitted(_session);
+
+        if (cashOut)
+            RunTelemetry.RecordCashOut(_session.revealedReelCount, RunSession.Chips);
+        else
+            RunTelemetry.RecordFinalClaim(_session.combo, RunSession.Chips);
 
         EnqueueTowerBuffs(actions);
 
@@ -447,12 +593,16 @@ public class BuffSelectionController : MonoBehaviour
         yield return new WaitForSecondsRealtime(0.45f);
     }
 
-    private void PopulateOutcomePanel()
+    private void PopulateOutcomePanel(bool finalCombo = true)
     {
         if (_outcomePanel == null || _outcomeList == null) return;
         _outcomeList.Clear();
 
-        foreach (var line in SlotMachineBuffRoller.BuildOutcomePreview(_session))
+        var lines = finalCombo
+            ? SlotMachineBuffRoller.BuildOutcomePreview(_session)
+            : SlotMachineBuffRoller.BuildCashOutPreview(_session);
+
+        foreach (var line in lines)
         {
             var entry = new VisualElement();
             entry.AddToClassList("outcome-entry");
@@ -479,13 +629,23 @@ public class BuffSelectionController : MonoBehaviour
 
     private void HighlightOutcomeReels()
     {
+        HighlightFromLines(SlotMachineBuffRoller.BuildOutcomePreview(_session));
+    }
+
+    private void HighlightCashOutReels()
+    {
+        HighlightFromLines(SlotMachineBuffRoller.BuildCashOutPreview(_session));
+    }
+
+    private void HighlightFromLines(List<OutcomePreviewLine> lines)
+    {
         for (int i = 0; i < 3; i++)
         {
             _reels[i].ClearOutcomeHighlight();
             _reels[i].SetOutcomeBadge(null);
         }
 
-        foreach (var line in SlotMachineBuffRoller.BuildOutcomePreview(_session))
+        foreach (var line in lines)
         {
             if (line.reelIndex < 0 || line.reelIndex >= 3) continue;
             bool canReroll = SlotMachineBuffRoller.CanRerollReel(_session, line.reelIndex);
@@ -552,6 +712,12 @@ public class BuffSelectionController : MonoBehaviour
             _statusText.text = text;
     }
 
+    private void RefreshChipsLabel()
+    {
+        if (_chipsLabel == null) return;
+        _chipsLabel.text = $"CHIPS {Mathf.Max(0, RunSession.Chips):00}";
+    }
+
     private void SetOutcomeBadgeStatus(string text, bool live)
     {
         if (_outcomeBadgeStatus == null) return;
@@ -583,9 +749,21 @@ public class BuffSelectionController : MonoBehaviour
 
     private void RefreshHints()
     {
+        bool progressiveHold = _session != null
+                               && _session.useProgressiveReveal
+                               && !SlotMachineBuffRoller.IsFinalRevealReady(_session)
+                               && _session.revealedReelCount > 0;
+        int continueCost = SlotMachineBuffRoller.GetContinueChipCost(_session);
+
         string main = _phase switch
         {
-            SlotUiPhase.IdleEmpty => "拉动右侧拉杆 · 开始转动",
+            SlotUiPhase.IdleEmpty => _session != null && _session.useProgressiveReveal
+                ? "拉动拉杆 · 免费揭示第 1 轮"
+                : "拉动右侧拉杆 · 开始转动",
+            SlotUiPhase.ResolvePreview when progressiveHold =>
+                SlotMachineBuffRoller.CanAffordContinue(_session)
+                    ? $"兑现当前奖励 · 或「继续 -{continueCost}」看下一轮"
+                    : $"筹码不足无法继续（需 {continueCost}）· 可兑现当前奖励",
             SlotUiPhase.ResolvePreview when _selectedReel >= 0 =>
                 $"已选 {SlotMachineBuffRoller.GetReelName(_selectedReel)} · 拉杆重转（或直接点领取）",
             SlotUiPhase.ResolvePreview when SlotMachineBuffRoller.HasFreeRerollAvailable(_session) =>
@@ -605,6 +783,7 @@ public class BuffSelectionController : MonoBehaviour
             _leverHint.text = _phase switch
             {
                 SlotUiPhase.IdleEmpty => "开转",
+                SlotUiPhase.ResolvePreview when progressiveHold => "—",
                 SlotUiPhase.ResolvePreview when _selectedReel >= 0 => "重转",
                 SlotUiPhase.ResolvePreview => "—",
                 _ => "拉杆"
@@ -620,17 +799,50 @@ public class BuffSelectionController : MonoBehaviour
     private void UpdateClaimButtonVisibility()
     {
         if (_confirmBtn == null) return;
+        bool finalReady = _session == null
+                          || !_session.useProgressiveReveal
+                          || SlotMachineBuffRoller.IsFinalRevealReady(_session);
         bool show = _phase == SlotUiPhase.ResolvePreview
+                    && finalReady
                     && (TutorialGate == SlotTutorialGate.None
                         || TutorialGate == SlotTutorialGate.ClaimOnly);
         _confirmBtn.text = "领取";
         _confirmBtn.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
+    private void UpdateStageActionButtons()
+    {
+        bool stageHold = _phase == SlotUiPhase.ResolvePreview
+                         && TutorialGate == SlotTutorialGate.None
+                         && _session != null
+                         && _session.useProgressiveReveal
+                         && _session.revealedReelCount > 0
+                         && !SlotMachineBuffRoller.IsFinalRevealReady(_session);
+
+        if (_stageActionRow != null)
+            _stageActionRow.style.display = stageHold ? DisplayStyle.Flex : DisplayStyle.None;
+
+        if (!stageHold) return;
+
+        if (_cashOutBtn != null)
+            _cashOutBtn.SetEnabled(true);
+
+        int cost = SlotMachineBuffRoller.GetContinueChipCost(_session);
+        bool canContinue = SlotMachineBuffRoller.CanAffordContinue(_session);
+        if (_continueBtn != null)
+        {
+            _continueBtn.text = $"继续 -{cost}";
+            _continueBtn.SetEnabled(canContinue);
+            _continueBtn.EnableInClassList("continue-disabled", !canContinue);
+        }
+    }
+
     private void HideClaimButton()
     {
         if (_confirmBtn != null)
             _confirmBtn.style.display = DisplayStyle.None;
+        if (_stageActionRow != null)
+            _stageActionRow.style.display = DisplayStyle.None;
     }
 
     private static string GetOutcomeLineClass(OutcomeLineKind kind) => kind switch
@@ -681,12 +893,12 @@ public class BuffSelectionController : MonoBehaviour
         if (_towerChoiceHint != null)
         {
             _towerChoiceHint.text = hasFree
-                ? "选择放置一座新塔，或升级已有同类型塔。"
-                : "场地已满：选择替换某座塔，或升级已有同类型塔。";
+                ? "选择放置一座新结构，或升级已有同类型结构。"
+                : "场地已满：选择替换某座结构，或升级已有同类型结构。";
         }
 
         if (_towerBtnPlace != null)
-            _towerBtnPlace.text = hasFree ? "放置新塔" : "替换塔";
+            _towerBtnPlace.text = hasFree ? "放置新结构" : "替换结构";
 
         if (_towerChoice != null)
             _towerChoice.style.display = DisplayStyle.Flex;
@@ -823,6 +1035,7 @@ public class BuffSelectionController : MonoBehaviour
             leverOn = false;
         SetLeverEnabled(leverOn);
         UpdateClaimButtonVisibility();
+        UpdateStageActionButtons();
         RefreshHints();
     }
 

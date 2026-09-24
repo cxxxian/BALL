@@ -1,14 +1,17 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Frost Rare 建筑分支：周期给附近小兵叠霜痕（主职），不再做纯减速/长冻 nova。
+/// 有霜爆时，塔叠痕可顺带触发冰爆。短冻由 FrostCombat 负责（≤1s）。
+/// </summary>
 public class FrostTower : MonoBehaviour
 {
     public int level = 1;
     public float attackRadius = 3.5f;
-    public float baseAttackInterval = 9.0f;
-    public float freezeDuration = 1.0f;
+    public float baseAttackInterval = 6.5f;
 
-    private float _timer = 0f;
+    private float _timer;
 
     private void Awake()
     {
@@ -24,56 +27,39 @@ public class FrostTower : MonoBehaviour
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
 
         _timer -= Time.deltaTime;
-        if (_timer <= 0f)
-        {
-            float interval = Mathf.Max(4.5f, baseAttackInterval - 0.4f * (level - 1));
-            if (DebuffManager.Instance != null)
-                interval *= DebuffManager.Instance.TowerAttackIntervalMultiplier;
-            _timer = interval;
-            AttackFrostNova();
-        }
+        if (_timer > 0f) return;
+
+        float interval = Mathf.Max(3.5f, baseAttackInterval - 0.5f * (level - 1));
+        if (DebuffManager.Instance != null)
+            interval *= DebuffManager.Instance.TowerAttackIntervalMultiplier;
+        _timer = interval;
+        PulseFrostMarks();
     }
 
-    private void AttackFrostNova()
+    private void PulseFrostMarks()
     {
-        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, attackRadius);
+        float radius = attackRadius + 0.25f * (level - 1);
+        // L1=1 层/跳；L2+=偶尔 2 层，保持塔非主 DPS
+        int marks = level >= 2 ? 2 : 1;
 
-        float currentFreezeDuration = freezeDuration + 0.25f * (level - 1);
-        bool hitAny = false;
+        FrostCombat.OnTowerPulse(transform.position, radius, marks, level);
 
-        foreach (var c in cols)
-        {
-            if (!c.CompareTag("Enemy")) continue;
-            // 仅 Minion；Boss 不冻（Balance 05）
-            var minion = c.GetComponent<Minion>();
-            if (minion == null || minion.IsDead) continue;
-            hitAny = true;
-            StartCoroutine(ApplyFreeze(minion, currentFreezeDuration));
-        }
-
-        JuiceRouter.TowerFire(transform.position, NeonRole.TowerFrost, hitAny);
-        StartCoroutine(SpawnFrostEffect());
+        bool anyMarked = HasEnemyInRadius(radius);
+        JuiceRouter.TowerFire(transform.position, NeonRole.TowerFrost, anyMarked);
+        StartCoroutine(SpawnFrostEffect(radius));
         StartCoroutine(TowerPulse());
     }
 
-    private IEnumerator ApplyFreeze(Minion minion, float duration)
+    private bool HasEnemyInRadius(float radius)
     {
-        if (minion.moveSpeed <= 0f) yield break;
-
-        float originalSpeed = minion.moveSpeed;
-        minion.moveSpeed = 0f;
-
-        var sr = minion.GetComponent<SpriteRenderer>();
-        Color origColor = sr != null ? sr.color : Color.white;
-        if (sr != null) sr.color = new Color(0.5f, 0.8f, 1f, 1f);
-
-        yield return new WaitForSeconds(duration);
-
-        if (minion != null && !minion.IsDead)
+        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, radius);
+        foreach (var c in cols)
         {
-            minion.moveSpeed = originalSpeed;
-            if (sr != null) sr.color = origColor;
+            if (!c.CompareTag("Enemy")) continue;
+            var minion = c.GetComponent<Minion>();
+            if (minion != null && !minion.IsDead) return true;
         }
+        return false;
     }
 
     private IEnumerator TowerPulse()
@@ -89,32 +75,30 @@ public class FrostTower : MonoBehaviour
         transform.localScale = Vector3.one;
     }
 
-    private IEnumerator SpawnFrostEffect()
+    private IEnumerator SpawnFrostEffect(float radius)
     {
-        GameObject nova = new GameObject("FrostNova");
+        GameObject nova = new GameObject("FrostMarkPulse");
         nova.transform.position = transform.position;
         var sr = nova.AddComponent<SpriteRenderer>();
         sr.sprite = CreateFrostNovaSprite();
-        sr.color = new Color(0.6f, 0.9f, 1f, 0.7f);
+        sr.color = new Color(0.6f, 0.9f, 1f, 0.55f);
         sr.material = new Material(Shader.Find("Sprites/Default"));
         sr.sortingOrder = 4;
 
-        float duration = 0.5f;
+        float duration = 0.4f;
         float elapsed = 0f;
-        Vector3 targetScale = new Vector3(attackRadius * 2, attackRadius * 2, 1f);
+        Vector3 targetScale = new Vector3(radius * 2, radius * 2, 1f);
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
-
             float easeOut = 1f - Mathf.Pow(1f - t, 3f);
             nova.transform.localScale = Vector3.Lerp(Vector3.zero, targetScale, easeOut);
 
             Color c = sr.color;
-            c.a = Mathf.Lerp(0.7f, 0f, t);
+            c.a = Mathf.Lerp(0.55f, 0f, t);
             sr.color = c;
-
             yield return null;
         }
 
@@ -156,13 +140,12 @@ public class FrostTower : MonoBehaviour
         {
             for (int x = 0; x < size; x++)
             {
-                float dx = (x - half);
-                float dy = (y - half);
+                float dx = x - half;
+                float dy = y - half;
                 float dist = Mathf.Sqrt(dx * dx + dy * dy);
-
                 if (dist <= r)
                 {
-                    float alpha = 1f - (dist / r);
+                    float alpha = 1f - dist / r;
                     tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha * 0.5f));
                 }
                 else tex.SetPixel(x, y, Color.clear);

@@ -93,7 +93,7 @@ public class ComboMilestoneRewards : MonoBehaviour
     }
 
     private int GetEffectiveFirstThreshold() =>
-        ComboSystem.GetEffectiveThreshold(GetPulseFirstThreshold());
+        ComboSystem.GetPulseEffectiveThreshold(GetPulseFirstThreshold());
 
     private int GetPulseFirstThreshold() =>
         Config != null ? Config.comboRewardThreshold25 : 25;

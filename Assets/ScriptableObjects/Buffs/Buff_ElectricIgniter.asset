@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8f396dbef234e4fab92cf3553ca545, type: 3}
+  m_Name: Buff_ElectricIgniter
+  m_EditorClassIdentifier: 
+  buffName: "\u6253\u706B\u5668"
+  description: "\u5F39\u73E0\u547D\u4E2D\u70B9\u71C3\u5C40\u90E8\u7535\u8377\u8FDE\u9501\uFF08\u7EA6
+    2\uFF5E3 \u8DF3\uFF0C\u5C0F\u534A\u5F84\uFF0C\u6709\u706B\u82B1 CD\uFF09\u3002\u9700\u5148\u79EF\u71C3\u6599\u3002\u5927\u8303\u56F4\u8FDE\u9501\u8BF7\u7528\u7279\u65AF\u62C9\u3002"
+  rarity: 1
+  category: 1
+  buildTags: 00000000
+  duplicateBehavior: 0
+  createsBuilding: 0
+  effectType: 6
+  effectValue: 1
+  maxStacks: 3
+  minWave: 1

@@ -15,6 +15,10 @@ MonoBehaviour:
   buffName: "\u529B\u91CF\u6838\u5FC3"
   description: "\u5F39\u73E0\u78B0\u649E\u4F24\u5BB3 +1\uFF08\u6BCF\u5C42\u53E0\u52A0\uFF09"
   rarity: 0
+  category: 0
+  buildTags: 
+  duplicateBehavior: 0
+  createsBuilding: 0
   effectType: 0
   effectValue: 1
   maxStacks: 3

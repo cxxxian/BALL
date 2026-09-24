@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8f396dbef234e4fab92cf3553ca545, type: 3}
+  m_Name: Buff_FrostBurst
+  m_EditorClassIdentifier: 
+  buffName: "\u971C\u7206"
+  description: "\u971C\u75D5\u6EE1\u5C42\uFF083\uFF0F\u9AD8\u53E0 2\uFF09\u65F6\u6D88\u8017\u5E76\u89E6\u53D1\u51B0\u7206\uFF1A\u8303\u56F4\u4F24
+    + \u5C0F\u5175\u77ED\u51BB\uFF08\u22641s\uFF09\u3002\u975E\u5168\u5C40\u65F6\u505C\u3002"
+  rarity: 1
+  category: 2
+  buildTags: 01000000
+  duplicateBehavior: 0
+  createsBuilding: 0
+  effectType: 11
+  effectValue: 1
+  maxStacks: 3
+  minWave: 1

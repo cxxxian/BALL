@@ -71,16 +71,21 @@ public class TowerManager : MonoBehaviour
         Instance = this;
     }
 
-    private void OnEnable()
-    {
-        if (GameManager.Instance != null)
-            GameManager.Instance.onGameStart.AddListener(ResetForNewGame);
-    }
+    private void OnEnable() => BindGameStart();
+
+    private void Start() => BindGameStart();
 
     private void OnDisable()
     {
         if (GameManager.Instance != null)
             GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
+    }
+
+    private void BindGameStart()
+    {
+        if (GameManager.Instance == null) return;
+        GameManager.Instance.onGameStart.RemoveListener(ResetForNewGame);
+        GameManager.Instance.onGameStart.AddListener(ResetForNewGame);
     }
 
     public bool HasTowerOfType(BuffEffectType type)
@@ -142,6 +147,47 @@ public class TowerManager : MonoBehaviour
             _upgradeActive = false;
             _pendingType = 0;
             CompleteInteraction();
+        }
+    }
+
+    /// <summary>
+    /// 测试沙盒：已有同类型则升级第一座；否则放到第一个空 Anchor（无需点选）。
+    /// </summary>
+    public bool DevAutoPlaceOrUpgrade(BuffEffectType type)
+    {
+        CancelActiveInteraction();
+
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            var slot = _slots[i];
+            if (slot != null && slot.type == type && slot.instance != null)
+            {
+                _pendingType = type;
+                UpgradeTowerAtSlot(i);
+                _pendingType = 0;
+                return true;
+            }
+        }
+
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i] != null) continue;
+            PlaceTowerAtSlot(i, type);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>测试沙盒：清掉所有已部署塔。</summary>
+    public void DevClearAllTowers()
+    {
+        CancelActiveInteraction();
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i]?.instance != null)
+                Destroy(_slots[i].instance);
+            _slots[i] = null;
         }
     }
 
@@ -218,13 +264,18 @@ public class TowerManager : MonoBehaviour
             tower.level = level;
             SpawnPlacementEffect(pos, new Color(0.2f, 0.9f, 1f));
         }
-        else
+        else if (type == BuffEffectType.DeployFrostTower)
         {
             go = new GameObject("FrostTower_Built");
             go.transform.position = pos;
             var tower = go.AddComponent<FrostTower>();
             tower.level = level;
             SpawnPlacementEffect(pos, new Color(0.6f, 0.9f, 1f));
+        }
+        else
+        {
+            Debug.LogWarning($"[TowerManager] Refused unknown tower type: {type}");
+            return;
         }
 
         TowerLevelDisplay.Attach(go, level);

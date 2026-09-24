@@ -248,8 +248,10 @@ public class SkillManager : MonoBehaviour
             case ActiveSkillType.CorePulse:
                 if (IsAiming) return false;
                 if (BallController.Instance != null && BallController.Instance.IsWaitingForLaunch) return false;
-                CorePulse.EnsureInstance().Activate();
+                float pulseRefund = CorePulse.EnsureInstance().Activate();
                 StartCooldown(slotIndex);
+                if (pulseRefund > 0f)
+                    ReduceCooldownForType(ActiveSkillType.CorePulse, pulseRefund);
                 onSlotActivated.Invoke(slotIndex);
                 break;
 
@@ -368,6 +370,18 @@ public class SkillManager : MonoBehaviour
             slot.currentCD = Mathf.Max(0f, slot.currentCD - seconds);
             onSlotCooldownChanged.Invoke(i, slot.CooldownRatio);
         }
+    }
+
+    /// <summary>按技能类型回退 CD（Pulse Recycle 等）。</summary>
+    public void ReduceCooldownForType(ActiveSkillType type, float seconds)
+    {
+        if (slots == null || seconds <= 0f) return;
+        int idx = FindSlotIndex(type);
+        if (idx < 0) return;
+        var slot = slots[idx];
+        if (slot == null || slot.IsReady) return;
+        slot.currentCD = Mathf.Max(0f, slot.currentCD - seconds);
+        onSlotCooldownChanged.Invoke(idx, slot.CooldownRatio);
     }
 
     public bool TryActivate() => TryActivate(0);

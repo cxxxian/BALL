@@ -70,10 +70,14 @@ public static class SlotMachineBuffRoller
     public static SlotSpinSession CreateEmptySession(int waveIndex)
     {
         DebuffManager.EnsureExists();
-        return new SlotSpinSession { waveIndex = waveIndex };
+        return new SlotSpinSession
+        {
+            waveIndex = waveIndex,
+            useProgressiveReveal = !RunSession.IsTutorial
+        };
     }
 
-    [System.Obsolete("Use CreateEmptySession + SpinAllReels from UI")]
+    [System.Obsolete("Use CreateEmptySession + SpinAllReels / RevealNextReel from UI")]
     public static SlotSpinSession CreateSession(int waveIndex)
     {
         var session = CreateEmptySession(waveIndex);
@@ -81,14 +85,228 @@ public static class SlotMachineBuffRoller
         return session;
     }
 
+    /// <summary>
+    /// 旧路径：一次三 Reel。渐进模式下请用 <see cref="RevealNextReel"/>。
+    /// Mystery 仅解析结果，不立刻 ApplyBuff（Commit 时由 BuildApplyActions 生效）。
+    /// </summary>
     public static void SpinAllReels(SlotSpinSession session)
     {
-        for (int i = 0; i < 3; i++)
-            session.reels[i] = RollSingleReel(session.waveIndex, i);
+        if (session == null || session.isCommitted) return;
 
-        ResolveMysteryReels(session);
+        for (int i = 0; i < 3; i++)
+        {
+            session.reels[i] = RollSingleReel(session.waveIndex, i);
+            var reel = session.reels[i];
+            reel.isRevealed = true;
+            session.reels[i] = reel;
+        }
+
+        ResolveMysteryReels(session, applyBuffImmediately: false);
+        session.revealedReelCount = 3;
+        session.revealStage = SlotRevealStage.Stage3;
         session.hasSpunOnce = true;
         EvaluateSession(session, grantFreeRerolls: true);
+    }
+
+    /// <summary>
+    /// 渐进揭示：只 Roll 下一张未揭示 Reel。返回揭示的 reel 下标，失败返回 -1。
+    /// 仅 revealedCount==3 时跑 Final Combo。
+    /// </summary>
+    public static int RevealNextReel(SlotSpinSession session)
+    {
+        if (session == null || session.isCommitted) return -1;
+        if (session.revealedReelCount >= 3) return -1;
+
+        int index = session.revealedReelCount;
+        session.reels[index] = RollSingleReel(session.waveIndex, index);
+        var reel = session.reels[index];
+        reel.isRevealed = true;
+        session.reels[index] = reel;
+
+        if (session.reels[index].rarity == ReelRarity.Mystery)
+            ResolveMysteryReel(session, index, applyBuffImmediately: false);
+
+        session.revealedReelCount = index + 1;
+        session.hasSpunOnce = true;
+        session.revealStage = session.revealedReelCount switch
+        {
+            1 => SlotRevealStage.Stage1,
+            2 => SlotRevealStage.Stage2,
+            _ => SlotRevealStage.Stage3
+        };
+
+        if (session.revealedReelCount == 3)
+            EvaluateSession(session, grantFreeRerolls: true);
+        else
+            session.combo = SlotCombo.Smooth; // Stage1/2 不展示 Final Combo 名
+
+        return index;
+    }
+
+    public static bool CanRevealNext(SlotSpinSession session) =>
+        session != null
+        && !session.isCommitted
+        && session.useProgressiveReveal
+        && session.revealedReelCount < 3;
+
+    public static bool IsFinalRevealReady(SlotSpinSession session) =>
+        session != null && session.revealedReelCount >= 3;
+
+    /// <summary>Stage1→2 花费 1；Stage2→3 花费 2；否则 0。</summary>
+    public static int GetContinueChipCost(SlotSpinSession session)
+    {
+        if (session == null || !session.useProgressiveReveal || session.isCommitted)
+            return 0;
+        return session.revealedReelCount switch
+        {
+            1 => 1,
+            2 => 2,
+            _ => 0
+        };
+    }
+
+    public static bool CanAffordContinue(SlotSpinSession session)
+    {
+        int cost = GetContinueChipCost(session);
+        return cost > 0 && CanRevealNext(session) && RunSession.Chips >= cost;
+    }
+
+    /// <summary>扣除 Continue 筹码；不足返回 false（不改状态）。</summary>
+    public static bool TryPayContinue(SlotSpinSession session)
+    {
+        if (!CanRevealNext(session)) return false;
+        int cost = GetContinueChipCost(session);
+        if (cost <= 0) return false;
+        return RunSession.TrySpendChips(cost);
+    }
+
+    /// <summary>Stage1/2 兑现动作（非 Final Combo）。Stage3 请用 <see cref="BuildApplyActions"/>。</summary>
+    public static List<ApplyAction> BuildCashOutActions(SlotSpinSession session)
+    {
+        var actions = new List<ApplyAction>();
+        if (session == null || session.isCommitted) return actions;
+        if (session.revealedReelCount <= 0 || session.revealedReelCount >= 3)
+            return actions;
+
+        if (session.revealedReelCount == 1)
+        {
+            TryAddFullBuff(actions, session.reels, 0);
+            return actions;
+        }
+
+        // Stage 2：最高稀有度全额；同稀有度对子 +1 层（MVP；满层由 ApplyBuff 夹紧 / Phase 7 折现）
+        int best = ResolveHighestRevealedReel(session.reels, session.revealedReelCount);
+        if (best < 0) return actions;
+
+        bool samePair = IsSameRarityPair(session.reels, session.revealedReelCount);
+        TryAddFullBuff(actions, session.reels, best, extraStacks: samePair ? 1 : 0);
+        return actions;
+    }
+
+    public static List<OutcomePreviewLine> BuildCashOutPreview(SlotSpinSession session)
+    {
+        var lines = new List<OutcomePreviewLine>();
+        if (session == null) return lines;
+
+        var actions = BuildCashOutActions(session);
+        var covered = new HashSet<int>();
+
+        foreach (var action in actions)
+        {
+            if (action.kind != ApplyActionKind.FullBuff || action.buff == null) continue;
+            covered.Add(action.reelIndex);
+            var extra = action.extraStacks > 0 ? $" · 对子 +{action.extraStacks} 层" : string.Empty;
+            lines.Add(new OutcomePreviewLine
+            {
+                kind = OutcomeLineKind.FullApply,
+                reelIndex = action.reelIndex,
+                text = $"✓ {GetReelName(action.reelIndex)} · {action.buff.buffName} · 兑现{extra}",
+                detail = FormatOutcomeDetail(action.buff.GetBriefDescription())
+            });
+        }
+
+        for (int i = 0; i < session.revealedReelCount && i < 3; i++)
+        {
+            var reel = session.reels[i];
+            if (!reel.isRevealed || reel.isEmptySpin || reel.buff == null) continue;
+            if (covered.Contains(i)) continue;
+            lines.Add(new OutcomePreviewLine
+            {
+                kind = OutcomeLineKind.Ignored,
+                reelIndex = i,
+                text = $"— {GetReelName(i)} · {reel.buff.buffName} · 未兑现",
+                detail = FormatOutcomeDetail(reel.buff.GetBriefDescription())
+            });
+        }
+
+        foreach (var id in session.pendingDebuffs)
+        {
+            lines.Add(new OutcomePreviewLine
+            {
+                kind = OutcomeLineKind.DebuffPending,
+                reelIndex = -1,
+                text = $"⚠ {DebuffManager.GetDisplayName(id)}（{DebuffManager.GetTierLabel(id)}）",
+                detail = FormatOutcomeDetail(DebuffManager.GetDescription(id))
+            });
+        }
+
+        if (lines.Count == 0)
+        {
+            lines.Add(new OutcomePreviewLine
+            {
+                kind = OutcomeLineKind.Ignored,
+                reelIndex = -1,
+                text = "— 当前无可兑现 Buff"
+            });
+        }
+
+        return lines;
+    }
+
+    private static bool IsSameRarityPair(ReelResult[] reels, int revealedCount)
+    {
+        if (revealedCount < 2) return false;
+        var a = reels[0];
+        var b = reels[1];
+        if (!a.isRevealed || !b.isRevealed) return false;
+        if (a.isEmptySpin || b.isEmptySpin || a.buff == null || b.buff == null) return false;
+        if (a.rarity == ReelRarity.Mystery || b.rarity == ReelRarity.Mystery) return false;
+        return a.rarity == b.rarity;
+    }
+
+    private static int ResolveHighestRevealedReel(ReelResult[] reels, int revealedCount)
+    {
+        int bestRarity = -1;
+        var candidates = new List<int>();
+        int n = Mathf.Min(3, revealedCount);
+        for (int i = 0; i < n; i++)
+        {
+            if (!reels[i].isRevealed || reels[i].isEmptySpin || reels[i].buff == null) continue;
+            if (reels[i].rarity == ReelRarity.Mystery) continue;
+            int r = (int)reels[i].rarity;
+            if (r > bestRarity)
+            {
+                bestRarity = r;
+                candidates.Clear();
+                candidates.Add(i);
+            }
+            else if (r == bestRarity)
+            {
+                candidates.Add(i);
+            }
+        }
+
+        if (candidates.Count == 0) return -1;
+        if (candidates.Count == 1) return candidates[0];
+        // 对子同稀有度：优先左轮（稳定）
+        return candidates[0];
+    }
+
+    public static void MarkCommitted(SlotSpinSession session)
+    {
+        if (session == null) return;
+        session.isCommitted = true;
+        session.revealStage = SlotRevealStage.Resolved;
     }
 
     public static bool HasFreeRerollAvailable(SlotSpinSession session) =>
@@ -103,6 +321,8 @@ public static class SlotMachineBuffRoller
     public static bool CanRerollReel(SlotSpinSession session, int index)
     {
         if (session == null || index < 0 || index >= 3) return false;
+        if (session.isCommitted) return false;
+        if (!session.reels[index].isRevealed) return false;
         if (session.reelRerollCount[index] >= 2) return false;
         return HasRerollAvailable(session);
     }
@@ -145,9 +365,15 @@ public static class SlotMachineBuffRoller
 
         session.reelRerollCount[reelIndex]++;
         session.reels[reelIndex] = RollSingleReel(session.waveIndex, reelIndex);
+        var rolled = session.reels[reelIndex];
+        rolled.isRevealed = true;
+        session.reels[reelIndex] = rolled;
         if (session.reels[reelIndex].rarity == ReelRarity.Mystery)
-            ResolveMysteryReel(session, reelIndex);
-        EvaluateSession(session, grantFreeRerolls: false);
+            ResolveMysteryReel(session, reelIndex, applyBuffImmediately: false);
+
+        // 未满三 Reel 不跑 Final Combo（避免 Stage1/2 误判 DoubleEpic）
+        if (session.revealedReelCount >= 3)
+            EvaluateSession(session, grantFreeRerolls: false);
         return true;
     }
 
@@ -158,6 +384,13 @@ public static class SlotMachineBuffRoller
 
     public static void EvaluateSession(SlotSpinSession session, bool grantFreeRerolls = false)
     {
+        if (session == null) return;
+        if (session.revealedReelCount < 3)
+        {
+            session.combo = SlotCombo.Smooth;
+            return;
+        }
+
         session.combo = DetectCombo(session.reels);
         if (grantFreeRerolls)
             session.freeRerollsRemaining = GetFreeRerollsForCombo(session.combo);
@@ -361,19 +594,23 @@ public static class SlotMachineBuffRoller
         return new ReelResult { rarity = resolvedRarity, buff = buff, isEmptySpin = false };
     }
 
-    private static void ResolveMysteryReels(SlotSpinSession session)
+    private static void ResolveMysteryReels(SlotSpinSession session, bool applyBuffImmediately)
     {
         for (int i = 0; i < 3; i++)
         {
-            if (session.reels[i].rarity == ReelRarity.Mystery)
-                ResolveMysteryReel(session, i);
+            if (session.reels[i].rarity == ReelRarity.Mystery && session.reels[i].isRevealed)
+                ResolveMysteryReel(session, i, applyBuffImmediately);
         }
     }
 
-    private static void ResolveMysteryReel(SlotSpinSession session, int reelIndex)
+    /// <summary>
+    /// 解析 ? 轮结果。Phase 1：默认不 ApplyBuff；Commit / Claim 时由 BuildApplyActions 生效。
+    /// </summary>
+    private static void ResolveMysteryReel(SlotSpinSession session, int reelIndex, bool applyBuffImmediately)
     {
         DebuffManager.EnsureExists();
         var bm = BuffManager.Instance;
+        bool wasRevealed = session.reels[reelIndex].isRevealed;
 
         if (Random.value < 0.7f)
         {
@@ -385,10 +622,12 @@ public static class SlotMachineBuffRoller
                 rarity = resolved,
                 buff = buff,
                 isEmptySpin = buff == null,
-                mysteryResolved = true
+                mysteryResolved = true,
+                alreadyApplied = false,
+                isRevealed = wasRevealed
             };
 
-            if (buff != null && bm != null)
+            if (applyBuffImmediately && buff != null && bm != null)
             {
                 bm.ApplyBuff(buff);
                 var applied = session.reels[reelIndex];
@@ -403,7 +642,9 @@ public static class SlotMachineBuffRoller
                 rarity = ReelRarity.Mystery,
                 buff = null,
                 isEmptySpin = true,
-                mysteryResolved = true
+                mysteryResolved = true,
+                alreadyApplied = false,
+                isRevealed = wasRevealed
             };
 
             if (DebuffManager.Instance != null)
@@ -518,7 +759,7 @@ public static class SlotMachineBuffRoller
         epic = rare = common = mystery = active = 0;
         foreach (var reel in reels)
         {
-            if (reel.isEmptySpin) continue;
+            if (!reel.isRevealed || reel.isEmptySpin) continue;
             active++;
             switch (reel.rarity)
             {

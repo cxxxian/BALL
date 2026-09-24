@@ -59,11 +59,20 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
+        onWaveStart.AddListener(OnWaveStartedForChips);
         if (GameManager.Instance != null)
         {
             GameManager.Instance.onGameStart.AddListener(OnGameStart);
             GameManager.Instance.onBallLost.AddListener(OnBallLost);
         }
+    }
+
+    private void OnWaveStartedForChips(int waveIndex)
+    {
+        if (GameManager.Instance == null) return;
+        int score = GameManager.Instance.Score;
+        RunSession.SnapshotWaveScore(score);
+        RunTelemetry.OnWaveStarted(waveIndex, score);
     }
 
     private void OnDestroy()

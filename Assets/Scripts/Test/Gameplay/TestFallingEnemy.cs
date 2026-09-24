@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Buff / 塔测试用下落敌人。外观对齐正式 Minion，不依赖 GameManager。
+/// Buff / 塔测试用下落敌人。外观对齐正式 Minion，不依赖 WaveManager。
+/// 触底：默认不扣血；Harness 可将 damageToPlayer&gt;0 打开以测护心/生命。
 /// </summary>
 public class TestFallingEnemy : EnemyBase
 {
@@ -15,9 +16,9 @@ public class TestFallingEnemy : EnemyBase
 
         maxHits = Mathf.Max(1, hp);
         moveSpeed = Mathf.Max(0.05f, speed);
-        scoreOnHit = 0;
-        scoreOnKill = 0;
-        damageToPlayer = 0;
+        scoreOnHit = Mathf.Max(1, def.scoreOnHit);
+        scoreOnKill = Mathf.Max(1, def.scoreOnKill > 0 ? def.scoreOnKill : def.scoreOnHit * 5);
+        damageToPlayer = 0; // Harness 可再打开
         isBomber = def.isBomber;
         checkBottomLine = true;
 
@@ -43,6 +44,27 @@ public class TestFallingEnemy : EnemyBase
         if (IsDead) return;
         IsDead = true;
         if (_rb != null) _rb.velocity = Vector2.zero;
+
+        // 可选：测护心符 / 最大生命（Harness 设 damageToPlayer>0）
+        if (damageToPlayer > 0 && GameManager.Instance != null)
+        {
+            if (BuffManager.Instance != null &&
+                BuffManager.Instance.TryConsumeHeartGuard(out bool showShieldVfx))
+            {
+                if (showShieldVfx)
+                    Debug.Log("[BuffSandbox] HeartGuard blocked bottom damage");
+            }
+            else
+            {
+                // 沙盒保底 1 命，避免进 GameOver 打断测试
+                var gm = GameManager.Instance;
+                if (gm.Lives <= 1)
+                    Debug.Log("[BuffSandbox] Bottom hit at 1 HP (sandbox keeps you alive)");
+                else
+                    gm.TakeDamage(damageToPlayer);
+            }
+        }
+
         GetComponent<MinionHealthBar>()?.OnEnemyDeath();
         onDeath.Invoke(this);
         Destroy(gameObject);
@@ -57,7 +79,9 @@ public class TestFallingEnemy : EnemyBase
         if (sr == null)
             sr = gameObject.AddComponent<SpriteRenderer>();
 
-        sr.material = CyberVisualFactory.UnlitMaterial;
+        sr.material = EnemyBuildStackVisual.SharedMaterial != null
+            ? EnemyBuildStackVisual.SharedMaterial
+            : CyberVisualFactory.UnlitMaterial;
 
         if (def.sprite != null)
         {
@@ -87,6 +111,14 @@ public class TestFallingEnemy : EnemyBase
         MainSR = sr;
         sr.color = baseColor;
         sr.sortingOrder = 2;
+
+        EnemyBuildStackVisual.EnsureOn(this);
+        if (TryGetComponent(out EnemyElectricState elec))
+            elec.ClearCharge();
+        if (TryGetComponent(out EnemyFrostState frost))
+            frost.ClearMarks();
+        if (TryGetComponent(out EnemyBuildStackVisual buildVis))
+            buildVis.ForceRefresh();
 
         var healthBar = GetComponent<MinionHealthBar>();
         if (healthBar == null)

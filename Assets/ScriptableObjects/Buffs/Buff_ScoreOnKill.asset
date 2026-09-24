@@ -13,9 +13,14 @@ MonoBehaviour:
   m_Name: Buff_ScoreOnKill
   m_EditorClassIdentifier: 
   buffName: "\u8D4F\u91D1\u730E\u4EBA"
-  description: "\u51FB\u6740\u5F97\u5206 +15%\uFF08\u6BCF\u5C42\u53E0\u52A0\uFF09"
+  description: "\u51FB\u6740\u5F97\u5206 +10%\uFF08\u6BCF\u5C42\uFF0C\u6700\u9AD8
+    +30%\uFF09"
   rarity: 0
+  category: 0
+  buildTags: 
+  duplicateBehavior: 0
+  createsBuilding: 0
   effectType: 8
-  effectValue: 0.15
-  maxStacks: 5
+  effectValue: 0.1
+  maxStacks: 3
   minWave: 1

@@ -118,8 +118,8 @@ public class ComboDisplay : MonoBehaviour
 
     private static bool IsMilestoneCombo(int combo)
     {
-        int shake = ComboSystem.GetEffectiveThreshold(ComboSystem.BaseShakeThreshold);
-        int heavy = ComboSystem.GetEffectiveThreshold(ComboSystem.BaseHeavyShakeThreshold);
+        int shake = ComboSystem.GetShakeThreshold(ComboSystem.BaseShakeThreshold);
+        int heavy = ComboSystem.GetShakeThreshold(ComboSystem.BaseHeavyShakeThreshold);
         if (combo == shake || combo == heavy) return true;
         return combo > heavy && (combo - heavy) % 5 == 0;
     }

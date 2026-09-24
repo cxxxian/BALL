@@ -584,6 +584,67 @@
     transition-property: background-color, border-color, color, translate;
 }
 
+.stage-action-row {
+    flex-direction: row;
+    width: 100%;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    display: none;
+}
+
+.cashout-btn,
+.continue-btn {
+    flex-grow: 1;
+    flex-shrink: 1;
+    border-width: 1px;
+    border-radius: 2px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    padding: 8px 4px;
+    margin: 0 3px;
+    cursor: link;
+    transition-duration: 0.12s;
+    transition-property: background-color, border-color, color, translate, opacity;
+}
+
+.cashout-btn {
+    background-color: rgb(18, 28, 36);
+    border-color: rgb(0, 242, 255);
+    color: rgb(0, 242, 255);
+}
+
+.cashout-btn:hover {
+    background-color: rgb(0, 242, 255);
+    color: rgb(3, 16, 24);
+}
+
+.cashout-btn:active {
+    translate: 2px -1px;
+}
+
+.continue-btn {
+    background-color: rgb(255, 0, 200);
+    border-color: rgb(255, 160, 230);
+    color: rgb(12, 4, 16);
+}
+
+.continue-btn:hover {
+    background-color: rgb(255, 160, 230);
+    color: rgb(12, 4, 16);
+}
+
+.continue-btn:active {
+    translate: 2px -1px;
+}
+
+.continue-btn.continue-disabled {
+    opacity: 0.35;
+    background-color: rgb(40, 44, 52);
+    border-color: rgb(90, 96, 110);
+    color: rgb(160, 168, 180);
+}
+
 .confirm-btn:hover {
     background-color: rgb(160, 255, 255);
     color: rgb(3, 16, 24);
