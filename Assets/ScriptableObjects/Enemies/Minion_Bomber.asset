@@ -14,11 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minionName: Bomber
   baseColor: {r: 1, g: 0.35, b: 0, a: 1}
-  sprite: {fileID: 21300000, guid: bbe35a2a43f5bcd4f95e93cbb173508b, type: 3}
+  sprite: {fileID: 21300000, guid: 37fbb5eb04562c14a95c4ff58952001a, type: 3}
   maxHP: 1
   moveSpeed: 1.35
   scoreOnHit: 15
   scoreOnKill: 80
   damageToPlayer: 1
+  showHealthBarOnSpawn: 0
+  healthBarVisibleDuration: 1.2
+  healthBarYOffset: 0.52
+  healthBarWidthScale: 1
   isBomber: 1
   bomberDisableDuration: 5

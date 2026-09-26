@@ -90,7 +90,8 @@ public class Boss : EnemyBase
         _baseColor   = def.baseColor;
         BaseColor    = _baseColor;
         MainSR       = _sr;
-        _sr.color    = _baseColor;
+        // Authored sprites already carry their faction colors; retain the palette for effects.
+        _sr.color    = def.sprite != null ? Color.white : _baseColor;
         _sr.sortingOrder = 2;
 
         _baseScale   = transform.localScale;

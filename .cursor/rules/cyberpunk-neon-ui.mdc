@@ -6,8 +6,8 @@ alwaysApply: false
 
 When editing or creating game UI (UITK/uGUI menus, settlement, shop, pause):
 
-1. Read and follow: `Notes/UIStyle/CyberpunkNeon_HardPrompt.md`
-2. Offline StyleKit showcase: `Notes/UIStyle/index.html`
+1. Read and follow: `Notes/02_视听与界面/UI与美术风格/风格规范/CyberpunkNeon_HardPrompt.md`
+2. Offline StyleKit showcase: `Notes/02_视听与界面/UI与美术风格/风格规范/index.html`
 3. Match existing tokens in `Assets/UI/MainMenu.uss` (`--neon-*`)
 4. Buttons: **micro-glow** like StyleKit VIEW_DEMO — not thick JACK_IN halos
 5. Active = Glitch Press (`translate`), never `scale`

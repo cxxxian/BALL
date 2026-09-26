@@ -76,7 +76,8 @@ public class Minion : EnemyBase
         _baseColor   = NeonColors.ApplyMinionBase(def.baseColor);
         BaseColor    = _baseColor;
         MainSR       = _sr;
-        _sr.color    = _baseColor;
+        // Authored sprites already carry their faction colors; retain the palette for effects.
+        _sr.color    = def.sprite != null ? Color.white : _baseColor;
         _sr.sortingOrder = 2;
 
         EnemyBuildStackVisual.EnsureOn(this);

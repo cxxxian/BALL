@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minionName: Armored
   baseColor: {r: 0.55, g: 1, b: 0.1, a: 1}
-  sprite: {fileID: 21300000, guid: 22430fb837293d64cbcef399dab06864, type: 3}
+  sprite: {fileID: 21300000, guid: fb844d00bc8da584cb544d594a405dfd, type: 3}
   maxHP: 4
   moveSpeed: 0.35
   scoreOnHit: 20
   scoreOnKill: 150
   damageToPlayer: 1
-  isBomber: 0
-  bomberDisableDuration: 5
   showHealthBarOnSpawn: 1
   healthBarVisibleDuration: 2
   healthBarYOffset: 0.55
   healthBarWidthScale: 0.95
+  isBomber: 0
+  bomberDisableDuration: 5
