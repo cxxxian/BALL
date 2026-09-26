@@ -32,6 +32,8 @@ public class PlayfieldCornerPrototype : MonoBehaviour
     public Material artMaterial;
     [Tooltip("精灵相对碰撞包围盒的放大系数，略大于 1 可盖住碰撞")]
     public float artFitPadding = 1.0f;
+    [Tooltip("弹射角视觉的本地 X 坐标；右侧自动镜像为负值")]
+    public float slingshotVisualLocalX = 0.4f;
 
     [Header("Refs")]
     public PhysicsMaterial2D physicsMaterial;
@@ -127,6 +129,9 @@ public class PlayfieldCornerPrototype : MonoBehaviour
             sr.color = Color.white;
             sr.sharedMaterial = artMaterial != null ? artMaterial : CyberVisualFactory.UnlitMaterial;
             FitChildSprite(visual, sr, LocalAabb(pts), artFitPadding);
+            Vector3 visualPosition = visual.localPosition;
+            visualPosition.x = mirrorX ? -Mathf.Abs(slingshotVisualLocalX) : Mathf.Abs(slingshotVisualLocalX);
+            visual.localPosition = visualPosition;
         }
         else
         {

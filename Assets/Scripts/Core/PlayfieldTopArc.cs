@@ -40,6 +40,8 @@ public class PlayfieldTopArc : MonoBehaviour
     public float tileWorldLength = 0f;
     [Tooltip("贴图里墙带左右裁切（归一化 U）；默认按 wall_segment 中间条带")]
     public Vector2 textureURange = new Vector2(0.418f, 0.581f);
+    [Tooltip("隐藏程序化墙框的渲染，但保留顶弧 EdgeCollider2D；用于整体台面底图已包含墙体外观时。")]
+    public bool hideFrameVisual;
 
     [Header("Physics")]
     public PhysicsMaterial2D physicsMaterial;
@@ -88,6 +90,8 @@ public class PlayfieldTopArc : MonoBehaviour
         CacheCenterline(center);
         BuildRibbonMesh(center, halfThick, ResolveTileLength());
         BuildInnerEdgeCollider(center, halfThick);
+        if (_renderer != null)
+            _renderer.enabled = !hideFrameVisual;
     }
 
     private void CacheCenterline(List<Vector2> center)

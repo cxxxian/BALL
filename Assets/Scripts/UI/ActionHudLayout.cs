@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 底部 Action HUD：左武器条 + 右双技能芯片，并让出全面屏安全区。
+/// 底部 Action HUD：左右弹珠技能芯片 + 中央挡板武器进度条，并让出全面屏安全区。
 /// 只排版，不改技能/武器逻辑。
 /// </summary>
 public class ActionHudLayout : MonoBehaviour
@@ -57,27 +57,18 @@ public class ActionHudLayout : MonoBehaviour
         var weaponGo = new GameObject("WeaponAnchor");
         weaponGo.transform.SetParent(_bar, false);
         _weaponSlot = weaponGo.AddComponent<RectTransform>();
-        _weaponSlot.anchorMin = new Vector2(0f, 0f);
-        _weaponSlot.anchorMax = new Vector2(0.42f, 1f);
-        _weaponSlot.offsetMin = new Vector2(16f, 8f);
-        _weaponSlot.offsetMax = new Vector2(-8f, -10f);
+        _weaponSlot.anchorMin = new Vector2(0.30f, 0f);
+        _weaponSlot.anchorMax = new Vector2(0.70f, 1f);
+        _weaponSlot.offsetMin = new Vector2(0f, 8f);
+        _weaponSlot.offsetMax = new Vector2(0f, -10f);
 
         var skillGo = new GameObject("SkillRow");
         skillGo.transform.SetParent(_bar, false);
         _skillRow = skillGo.AddComponent<RectTransform>();
-        // 略靠右、与左武器条呼应，但不顶到场墙（介于居中与贴右之间）
-        _skillRow.anchorMin = new Vector2(0.50f, 0f);
-        _skillRow.anchorMax = new Vector2(0.96f, 1f);
-        _skillRow.offsetMin = new Vector2(4f, 4f);
-        _skillRow.offsetMax = new Vector2(-8f, -6f);
-
-        var layout = skillGo.AddComponent<HorizontalLayoutGroup>();
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.spacing = 10f;
-        layout.childControlWidth = false;
-        layout.childControlHeight = false;
-        layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = false;
+        _skillRow.anchorMin = Vector2.zero;
+        _skillRow.anchorMax = Vector2.one;
+        _skillRow.offsetMin = Vector2.zero;
+        _skillRow.offsetMax = Vector2.zero;
 
         HideLegacyFlipperKeyHint();
     }
@@ -150,8 +141,10 @@ public class ActionHudLayout : MonoBehaviour
             var rt = _slots[i].GetComponent<RectTransform>();
             if (rt == null) continue;
             rt.SetParent(_skillRow, false);
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            float sideAnchor = i == 0 ? 0.12f : 0.88f;
+            rt.anchorMin = rt.anchorMax = new Vector2(sideAnchor, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
             rt.sizeDelta = new Vector2(118f, 88f);
             var le = rt.GetComponent<LayoutElement>();
             if (le == null) le = rt.gameObject.AddComponent<LayoutElement>();

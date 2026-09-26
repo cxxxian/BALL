@@ -47,6 +47,8 @@ public class PlayfieldSideShoulder : MonoBehaviour
     [Tooltip("精灵相对碰撞包围盒的放大系数")]
     public float artFitPadding = 1.02f;
     public int sortingOrder = 3;
+    [Tooltip("隐藏墙肩精灵，但保留对应 EdgeCollider2D；用于整体台面底图已包含侧墙外观时。")]
+    public bool hideShoulderVisuals;
 
     private const string LeftChildName = "WallShoulder_Left";
     private const string RightChildName = "WallShoulder_Right";
@@ -254,7 +256,7 @@ public class PlayfieldSideShoulder : MonoBehaviour
         EnsureVisual(go, out var visual, out var sr);
         if (shoulderSprite != null)
         {
-            sr.enabled = true;
+            sr.enabled = !hideShoulderVisuals;
             sr.sprite = shoulderSprite;
             sr.flipX = side == Side.Right;
             sr.color = Color.white;
