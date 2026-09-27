@@ -70,6 +70,8 @@ public class MainMenuController : MonoBehaviour
         _summaryBallLabel = root.Q<Label>("SummaryBallLabel");
         _summarySkillsLabel = root.Q<Label>("SummarySkillsLabel");
 
+        HideAllPanelsImmediately();
+
         root.Q<Button>("BtnCampaign")?.RegisterCallback<ClickEvent>(_ => ShowCampaign());
         root.Q<Button>("BtnLoadout")?.RegisterCallback<ClickEvent>(_ => ShowLoadout(LoadoutReturnTarget.MainMenu));
         root.Q<Button>("BtnHomeEditLoadout")?.RegisterCallback<ClickEvent>(_ => ShowLoadout(LoadoutReturnTarget.MainMenu));
@@ -115,6 +117,11 @@ public class MainMenuController : MonoBehaviour
     private void OnDestroy()
     {
         StopMenuBgm();
+        UiPanelMotion.Kill(_mainPanel);
+        UiPanelMotion.Kill(_campaignPanel);
+        UiPanelMotion.Kill(_loadoutPanel);
+        UiPanelMotion.Kill(_shopPanel);
+        UiPanelMotion.Kill(_settingsPanel);
         if (Instance == this) Instance = null;
         if (LoadoutPanelController.Instance != null)
             LoadoutPanelController.Instance.LoadoutChanged -= OnLoadoutChanged;
@@ -302,6 +309,15 @@ public class MainMenuController : MonoBehaviour
 
     private void HideAllPanels()
     {
+        UiPanelMotion.Hide(_mainPanel, new Vector2(0f, 8f), 0.12f);
+        UiPanelMotion.Hide(_campaignPanel, new Vector2(0f, 8f), 0.12f);
+        UiPanelMotion.Hide(_loadoutPanel, new Vector2(0f, 8f), 0.12f);
+        UiPanelMotion.Hide(_shopPanel, new Vector2(0f, 8f), 0.12f);
+        UiPanelMotion.Hide(_settingsPanel, new Vector2(0f, 8f), 0.12f);
+    }
+
+    private void HideAllPanelsImmediately()
+    {
         if (_mainPanel != null) _mainPanel.style.display = DisplayStyle.None;
         if (_campaignPanel != null) _campaignPanel.style.display = DisplayStyle.None;
         if (_loadoutPanel != null) _loadoutPanel.style.display = DisplayStyle.None;
@@ -313,7 +329,7 @@ public class MainMenuController : MonoBehaviour
     {
         HideAllPanels();
         if (panel != null)
-            panel.style.display = DisplayStyle.Flex;
+            UiPanelMotion.Show(panel, new Vector2(0f, 16f), 0.20f);
     }
 
     private void RefreshCampaignSummary()

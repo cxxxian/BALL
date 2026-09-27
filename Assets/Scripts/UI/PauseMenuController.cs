@@ -12,6 +12,7 @@ public class PauseMenuController : MonoBehaviour
 
     private UIDocument _doc;
     private VisualElement _overlay;
+    private VisualElement _pausePanel;
     private VisualElement _confirmBar;
     private Label _confirmText;
 
@@ -29,6 +30,7 @@ public class PauseMenuController : MonoBehaviour
 
     private enum PendingConfirm { None, MainMenu, Quit }
     private PendingConfirm _pendingConfirm = PendingConfirm.None;
+    private bool _restoreTimeScaleAfterClose;
 
     private static readonly SlotCombo[] RuleCombos =
     {
@@ -51,6 +53,13 @@ public class PauseMenuController : MonoBehaviour
 
     private void OnDestroy()
     {
+        UiPanelMotion.Kill(_overlay);
+        UiPanelMotion.Kill(_pausePanel);
+        if (_restoreTimeScaleAfterClose)
+        {
+            _restoreTimeScaleAfterClose = false;
+            RestoreTimeScaleIfAllowed();
+        }
         if (Instance == this) Instance = null;
         if (GameManager.Instance != null)
             GameManager.Instance.onGameOver.RemoveListener(Close);
@@ -63,6 +72,7 @@ public class PauseMenuController : MonoBehaviour
 
         var root = _doc.rootVisualElement;
         _overlay = root.Q<VisualElement>("overlay");
+        _pausePanel = root.Q<VisualElement>("pause-panel");
         _confirmBar = root.Q<VisualElement>("confirm-bar");
         _confirmText = root.Q<Label>("confirm-text");
 
@@ -91,6 +101,8 @@ public class PauseMenuController : MonoBehaviour
         PopulateSlotRulesStatic();
 
         _overlay.style.display = DisplayStyle.None;
+        UiPanelMotion.MarkHidden(_overlay);
+        UiPanelMotion.MarkHidden(_pausePanel);
         IsOpen = false;
     }
 
@@ -135,7 +147,9 @@ public class PauseMenuController : MonoBehaviour
         RefreshAllTabs();
 
         if (_overlay == null) return;
-        _overlay.style.display = DisplayStyle.Flex;
+        _restoreTimeScaleAfterClose = false;
+        UiPanelMotion.Show(_overlay, Vector2.zero, 0.16f, move: false);
+        UiPanelMotion.Show(_pausePanel, new Vector2(0f, 14f), 0.20f, fade: false, manageDisplay: false);
         IsOpen = true;
         Time.timeScale = 0f;
     }
@@ -145,9 +159,15 @@ public class PauseMenuController : MonoBehaviour
         if (!IsOpen) return;
 
         HideConfirm();
-        _overlay.style.display = DisplayStyle.None;
         IsOpen = false;
-        RestoreTimeScaleIfAllowed();
+        UiPanelMotion.Hide(_pausePanel, new Vector2(0f, 14f), 0.14f, fade: false, hideElement: false);
+        _restoreTimeScaleAfterClose = true;
+        UiPanelMotion.Hide(_overlay, Vector2.zero, 0.14f, () =>
+        {
+            if (!_restoreTimeScaleAfterClose) return;
+            _restoreTimeScaleAfterClose = false;
+            RestoreTimeScaleIfAllowed();
+        }, move: false);
     }
 
     private bool CanOpen()

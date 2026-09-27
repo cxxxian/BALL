@@ -13,6 +13,7 @@ public class LoadoutPanelController : MonoBehaviour
     public event Action LoadoutChanged;
 
     private VisualElement _panel;
+    private bool _panelVisible;
     private VisualElement _ballPreviewHost;
     private VisualElement _ballPreviewOrb;
     private VisualElement _ballPagerDots;
@@ -42,6 +43,7 @@ public class LoadoutPanelController : MonoBehaviour
 
     private void OnDestroy()
     {
+        UiPanelMotion.Kill(_panel);
         if (Instance == this) Instance = null;
     }
 
@@ -72,7 +74,10 @@ public class LoadoutPanelController : MonoBehaviour
         BindBallSwipe(_ballPreviewHost);
 
         if (_panel != null)
+        {
             _panel.style.display = DisplayStyle.None;
+            UiPanelMotion.MarkHidden(_panel);
+        }
 
         _catalog = RunCatalog.Load();
         RunLoadout.Load();
@@ -90,8 +95,11 @@ public class LoadoutPanelController : MonoBehaviour
         if (_catalog != null)
             RunLoadout.EnsureDefaults(_catalog);
 
-        if (_panel != null)
-            _panel.style.display = DisplayStyle.Flex;
+        if (_panel != null && !_panelVisible)
+        {
+            _panelVisible = true;
+            UiPanelMotion.Show(_panel, new Vector2(0f, 16f), 0.20f);
+        }
 
         if (_equipBtn != null)
             NeonHoverGlow.Attach(_equipBtn);
@@ -101,8 +109,11 @@ public class LoadoutPanelController : MonoBehaviour
 
     public void Hide()
     {
-        if (_panel != null)
-            _panel.style.display = DisplayStyle.None;
+        if (_panel != null && _panelVisible)
+        {
+            _panelVisible = false;
+            UiPanelMotion.Hide(_panel, new Vector2(0f, 8f), 0.12f);
+        }
 
         if (MainMenuController.Instance != null)
             MainMenuController.Instance.OnLoadoutClosed(_returnTarget);

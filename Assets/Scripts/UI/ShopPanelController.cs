@@ -23,6 +23,7 @@ public class ShopPanelController : MonoBehaviour
     }
 
     private VisualElement _panel;
+    private bool _panelVisible;
     private Label _creditsLabel;
     private VisualElement _directTab;
     private VisualElement _crateTab;
@@ -78,6 +79,7 @@ public class ShopPanelController : MonoBehaviour
 
     private void OnDestroy()
     {
+        UiPanelMotion.Kill(_panel);
         if (Instance == this) Instance = null;
         StopRitualTicker();
         CrateOpenVfx.Instance?.StopAll();
@@ -135,7 +137,10 @@ public class ShopPanelController : MonoBehaviour
         });
 
         if (_panel != null)
+        {
             _panel.style.display = DisplayStyle.None;
+            UiPanelMotion.MarkHidden(_panel);
+        }
         ResetRitualVisuals();
     }
 
@@ -143,8 +148,11 @@ public class ShopPanelController : MonoBehaviour
     {
         _returnTarget = returnTarget;
         PlayerProfile.Load();
-        if (_panel != null)
-            _panel.style.display = DisplayStyle.Flex;
+        if (_panel != null && !_panelVisible)
+        {
+            _panelVisible = true;
+            UiPanelMotion.Show(_panel, new Vector2(0f, 16f), 0.20f);
+        }
         ShowDirectTab();
         RefreshAll();
     }
@@ -153,8 +161,11 @@ public class ShopPanelController : MonoBehaviour
     {
         AbortRitual();
         HideResultPopup();
-        if (_panel != null)
-            _panel.style.display = DisplayStyle.None;
+        if (_panel != null && _panelVisible)
+        {
+            _panelVisible = false;
+            UiPanelMotion.Hide(_panel, new Vector2(0f, 8f), 0.12f);
+        }
 
         if (MainMenuController.Instance != null)
             MainMenuController.Instance.OnShopClosed(_returnTarget);
