@@ -169,39 +169,4 @@ public static class PlayerProfile
     private static string GetSavePath() =>
         Path.Combine(Application.persistentDataPath, SaveFileName);
 
-#if UNITY_EDITOR
-    [UnityEditor.MenuItem("Ball/Meta/Add 9999 Credits (Debug)")]
-    private static void DebugAddCredits()
-    {
-        Load();
-        AddCredits(9999);
-        Save();
-        Debug.Log($"[PlayerProfile] Debug credits = {Credits}");
-    }
-
-    [UnityEditor.MenuItem("Ball/Meta/Unlock All Balls (Debug)")]
-    private static void DebugUnlockAllBalls()
-    {
-        Load();
-        UnlockAllCatalogBalls();
-        Save();
-        Debug.Log($"[PlayerProfile] Unlocked balls = {Data.unlockedBallIds.Count}");
-    }
-
-    [UnityEditor.MenuItem("Ball/Meta/Reset Profile")]
-    private static void DebugResetProfile()
-    {
-        _data = CreateDefault();
-        Save();
-        Debug.Log("[PlayerProfile] Profile reset.");
-    }
-
-    [UnityEditor.MenuItem("Ball/Meta/Reset Tutorial Flag")]
-    private static void DebugResetTutorial()
-    {
-        Load();
-        ClearTutorialCompletedFlag();
-        Debug.Log("[PlayerProfile] Tutorial flag cleared.");
-    }
-#endif
 }

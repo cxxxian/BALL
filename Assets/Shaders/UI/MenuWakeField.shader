@@ -1,7 +1,7 @@
 Shader "Hidden/MenuWakeField"
 {
     // Stable Fluids + Vorticity Confinement（思路对齐 MagicStones23 / GPU Gems）
-    // Pass: 0 Advect  1 Curl  2 Vorticity  3 Divergence  4 Jacobi  5 Project  6 Damp  7 Splat
+    // Pass: 0 Advect  1 Curl  2 Vorticity  3 Divergence  4 Jacobi  5 Project  6 Damp  7 Splat  8 Transport
     Properties
     {
         _MainTex ("Source", 2D) = "black" {}
@@ -30,6 +30,9 @@ Shader "Hidden/MenuWakeField"
 
         float4 _MainTex_TexelSize;
         float4 _VelocityTex_TexelSize;
+        float4 _Domain; // xy domain size in screen-height units
+        float4 _SplatStart; // previous pointer UV
+        float _Recovery;
         float _Dt;
         float _Dissipation;
         float _Vorticity;
@@ -59,7 +62,10 @@ Shader "Hidden/MenuWakeField"
 
         float2 SampleVel(float2 uv)
         {
-            return SAMPLE_TEXTURE2D(_VelocityTex, sampler_VelocityTex, saturate(uv)).rg;
+            float2 texel = abs(_VelocityTex_TexelSize.xy);
+            return float2(
+                SAMPLE_TEXTURE2D(_VelocityTex, sampler_VelocityTex, saturate(uv - float2(0.5 * texel.x, 0))).r,
+                SAMPLE_TEXTURE2D(_VelocityTex, sampler_VelocityTex, saturate(uv - float2(0, 0.5 * texel.y))).g);
         }
 
         float2 SampleVelMain(float2 uv)
@@ -72,11 +78,22 @@ Shader "Hidden/MenuWakeField"
             return SAMPLE_TEXTURE2D(tex, s, saturate(uv)).r;
         }
 
+        // Face velocities: x on the right face, y on the top face.
+        // Backward divergence + forward gradient compose the Jacobi Laplacian.
+        float2 CellSize() { return abs(_MainTex_TexelSize.xy) * _Domain.xy; }
+        float2 WallVelocity(float2 uv, float2 v)
+        {
+            float2 edge = 1.0 - 0.5 * abs(_MainTex_TexelSize.xy);
+            if (uv.x >= edge.x - 1e-6) v.x = 0;
+            if (uv.y >= edge.y - 1e-6) v.y = 0;
+            return v;
+        }
+
         float2 ClampVel(float2 v)
         {
             float m = length(v);
-            if (m > 8.0)
-                v *= 8.0 / m;
+            if (m > 3.0)
+                v *= 3.0 / m;
             return v;
         }
         ENDHLSL
@@ -86,15 +103,19 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Advect"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragAdvect
             float4 FragAdvect(Varyings IN) : SV_Target
             {
-                float2 texel = _MainTex_TexelSize.xy;
-                float2 vel = SampleVelMain(IN.uv);
-                float2 coord = IN.uv - _Dt * vel * texel * 80.0;
-                float2 outV = SampleVelMain(coord) * _Dissipation;
-                return float4(ClampVel(outV), 0, 1);
+                float2 texel = abs(_MainTex_TexelSize.xy);
+                float2 face = SampleVelMain(IN.uv);
+                float2 vx = float2(face.x, SampleVelMain(IN.uv + float2(0.5 * texel.x, -0.5 * texel.y)).y);
+                float2 vy = float2(SampleVelMain(IN.uv + float2(-0.5 * texel.x, 0.5 * texel.y)).x, face.y);
+                float2 outV = float2(
+                    SampleVelMain(IN.uv - _Dt * vx / _Domain.xy).x,
+                    SampleVelMain(IN.uv - _Dt * vy / _Domain.xy).y) * _Dissipation;
+                return float4(WallVelocity(IN.uv, outV), 0, 1);
             }
             ENDHLSL
         }
@@ -104,17 +125,18 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Curl"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragCurl
             float4 FragCurl(Varyings IN) : SV_Target
             {
-                float2 texel = _MainTex_TexelSize.xy;
+                float2 texel = abs(_MainTex_TexelSize.xy);
+                float2 h = CellSize();
                 float2 L = SampleVelMain(IN.uv - float2(texel.x, 0));
                 float2 R = SampleVelMain(IN.uv + float2(texel.x, 0));
                 float2 B = SampleVelMain(IN.uv - float2(0, texel.y));
                 float2 T = SampleVelMain(IN.uv + float2(0, texel.y));
-                float curl = R.y - L.y - (T.x - B.x);
-                return float4(curl * 0.5, 0, 0, 1);
+                return float4((R.y - L.y) / (2 * h.x) - (T.x - B.x) / (2 * h.y), 0, 0, 1);
             }
             ENDHLSL
         }
@@ -124,26 +146,22 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Vorticity"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragVorticity
             float4 FragVorticity(Varyings IN) : SV_Target
             {
-                float2 texel = _MainTex_TexelSize.xy;
+                float2 texel = abs(_MainTex_TexelSize.xy);
+                float2 h = CellSize();
                 float L = SampleR(_CurlTex, sampler_CurlTex, IN.uv - float2(texel.x, 0));
                 float R = SampleR(_CurlTex, sampler_CurlTex, IN.uv + float2(texel.x, 0));
                 float B = SampleR(_CurlTex, sampler_CurlTex, IN.uv - float2(0, texel.y));
                 float T = SampleR(_CurlTex, sampler_CurlTex, IN.uv + float2(0, texel.y));
                 float C = SampleR(_CurlTex, sampler_CurlTex, IN.uv);
-
-                float2 force = float2(abs(T) - abs(B), abs(R) - abs(L));
-                float len = length(force) + 1e-5;
-                force = force / len * _Vorticity;
-                // 2D cross: force × curl
-                force = float2(force.y * C, -force.x * C);
-
-                float2 vel = SampleVelMain(IN.uv);
-                vel += force * _Dt;
-                return float4(ClampVel(vel), 0, 1);
+                float2 gradient = float2(abs(R) - abs(L), abs(T) - abs(B)) / (2 * h);
+                float2 n = gradient / max(length(gradient), 1e-5);
+                float2 force = _Vorticity * min(h.x, h.y) * C * float2(n.y, -n.x);
+                return float4(WallVelocity(IN.uv, ClampVel(SampleVelMain(IN.uv) + _Dt * force)), 0, 1);
             }
             ENDHLSL
         }
@@ -153,17 +171,19 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Divergence"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragDiv
             float4 FragDiv(Varyings IN) : SV_Target
             {
-                float2 texel = _MainTex_TexelSize.xy;
+                float2 texel = abs(_MainTex_TexelSize.xy);
+                float2 h = CellSize();
+                float2 C = WallVelocity(IN.uv, SampleVelMain(IN.uv));
                 float2 L = SampleVelMain(IN.uv - float2(texel.x, 0));
-                float2 R = SampleVelMain(IN.uv + float2(texel.x, 0));
                 float2 B = SampleVelMain(IN.uv - float2(0, texel.y));
-                float2 T = SampleVelMain(IN.uv + float2(0, texel.y));
-                float div = 0.5 * (R.x - L.x + T.y - B.y);
-                return float4(div, 0, 0, 1);
+                if (IN.uv.x < texel.x) L.x = 0;
+                if (IN.uv.y < texel.y) B.y = 0;
+                return float4((C.x - L.x) / h.x + (C.y - B.y) / h.y, 0, 0, 1);
             }
             ENDHLSL
         }
@@ -173,18 +193,20 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Jacobi"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragJacobi
             float4 FragJacobi(Varyings IN) : SV_Target
             {
-                float2 texel = _MainTex_TexelSize.xy;
+                float2 texel = abs(_MainTex_TexelSize.xy);
+                float2 h = CellSize();
+                float2 w = 1.0 / (h * h);
                 float L = SampleR(_MainTex, sampler_MainTex, IN.uv - float2(texel.x, 0));
                 float R = SampleR(_MainTex, sampler_MainTex, IN.uv + float2(texel.x, 0));
                 float B = SampleR(_MainTex, sampler_MainTex, IN.uv - float2(0, texel.y));
                 float T = SampleR(_MainTex, sampler_MainTex, IN.uv + float2(0, texel.y));
                 float b = SampleR(_DivTex, sampler_DivTex, IN.uv);
-                float p = (L + R + B + T - b) * 0.25;
-                return float4(p, 0, 0, 1);
+                return float4(((L + R) * w.x + (B + T) * w.y - b) / (2 * (w.x + w.y)), 0, 0, 1);
             }
             ENDHLSL
         }
@@ -194,18 +216,18 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Project"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragProject
             float4 FragProject(Varyings IN) : SV_Target
             {
-                float2 texel = _MainTex_TexelSize.xy;
-                float2 vel = SampleVelMain(IN.uv);
-                float L = SampleR(_PressureTex, sampler_PressureTex, IN.uv - float2(texel.x, 0));
+                float2 texel = abs(_MainTex_TexelSize.xy);
+                float2 h = CellSize();
+                float C = SampleR(_PressureTex, sampler_PressureTex, IN.uv);
                 float R = SampleR(_PressureTex, sampler_PressureTex, IN.uv + float2(texel.x, 0));
-                float B = SampleR(_PressureTex, sampler_PressureTex, IN.uv - float2(0, texel.y));
                 float T = SampleR(_PressureTex, sampler_PressureTex, IN.uv + float2(0, texel.y));
-                float2 grad = float2(R - L, T - B) * 0.5;
-                return float4(ClampVel(vel - grad), 0, 1);
+                float2 vel = SampleVelMain(IN.uv) - float2(R - C, T - C) / h;
+                return float4(WallVelocity(IN.uv, vel), 0, 1);
             }
             ENDHLSL
         }
@@ -215,15 +237,12 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Damp"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragDamp
             float4 FragDamp(Varyings IN) : SV_Target
             {
-                float2 vel = SampleVelMain(IN.uv) * _Damping;
-                // 边界轻微贴壁，减少边缘炸开
-                float edge = min(min(IN.uv.x, 1.0 - IN.uv.x), min(IN.uv.y, 1.0 - IN.uv.y));
-                float wall = smoothstep(0.0, 0.02, edge);
-                return float4(ClampVel(vel * wall), 0, 1);
+                return float4(WallVelocity(IN.uv, SampleVelMain(IN.uv) * _Damping), 0, 1);
             }
             ENDHLSL
         }
@@ -233,37 +252,43 @@ Shader "Hidden/MenuWakeField"
         {
             Name "Splat"
             HLSLPROGRAM
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment FragSplat
             float4 FragSplat(Varyings IN) : SV_Target
             {
-                float2 vel = SampleVelMain(IN.uv);
-                float strength = _SplatUV.w;
-                float2 inj = _SplatVel.xy;
-                float injSpeed = length(inj);
-
-                if (strength > 1e-5 && injSpeed > 1e-5)
-                {
-                    float2 d = IN.uv - _SplatUV.xy;
-                    float aspect = _MainTex_TexelSize.z / max(_MainTex_TexelSize.w, 1.0);
-                    d.x *= aspect;
-
-                    float2 fwd = inj / injSpeed;
-                    float2 side = float2(-fwd.y, fwd.x);
-                    float along = dot(d, fwd);
-                    float lateral = dot(d, side);
-                    float r = max(_SplatUV.z, 1e-4);
-
-                    // 细长尾迹：顺着运动方向拉长，横向收窄（像拨水，而不是圆盘）
-                    float fall = exp(-(along * along) / (r * r * 2.8) - (lateral * lateral) / (r * r * 0.28));
-
-                    // 主要推前方与脚下，背后减弱，减少回流“吸进去”的错觉
-                    float forwardBias = smoothstep(-0.35, 0.65, along / r);
-
-                    vel += inj * (fall * strength * forwardBias);
-                }
-
-                return float4(ClampVel(vel), 0, 1);
+                float2 a = _SplatStart.xy * _Domain.xy;
+                float2 b = _SplatUV.xy * _Domain.xy;
+                float2 x = IN.uv * _Domain.xy;
+                float2 segment = b - a;
+                float t = saturate(dot(x - a, segment) / max(dot(segment, segment), 1e-8));
+                float2 d = x - lerp(a, b, t);
+                float r = max(_SplatUV.z, 1e-4);
+                float weight = exp(-dot(d, d) / (r * r));
+                float2 vel = SampleVelMain(IN.uv) + _SplatVel.xy * weight * _SplatUV.w;
+                return float4(WallVelocity(IN.uv, ClampVel(vel)), 0, 1);
+            }
+            ENDHLSL
+        }
+        // Inverse material map: d(x,t+dt) = d(x-dt*u,t) + dt*u.
+        // Relaxation is an artistic return to the original digital rain.
+        Pass
+        {
+            Name "Transport"
+            HLSLPROGRAM
+            #pragma target 3.0
+            #pragma vertex Vert
+            #pragma fragment FragTransport
+            float4 FragTransport(Varyings IN) : SV_Target
+            {
+                float2 velUv = SampleVel(IN.uv) / _Domain.xy;
+                float2 back = IN.uv - _Dt * velUv;
+                float2 displacement = (SampleVelMain(back) + _Dt * velUv) * exp(-_Recovery * _Dt);
+                float2 physical = displacement * _Domain.xy;
+                displacement *= min(1.0, 0.12 / max(length(physical), 1e-6));
+                float2 edge = min(IN.uv, 1.0 - IN.uv) * _Domain.xy;
+                displacement *= smoothstep(0.0, 0.03, min(edge.x, edge.y));
+                return float4(displacement, 0, 1);
             }
             ENDHLSL
         }

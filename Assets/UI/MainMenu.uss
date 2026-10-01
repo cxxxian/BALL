@@ -1231,22 +1231,6 @@
     color: var(--neon-fuchsia);
 }
 
-/* ── 战役面板 ── */
-.campaign-left {
-    flex-grow: 1;
-    padding: 40px;
-    padding-left: 67px;
-}
-
-.campaign-right {
-    width: 400px; /* 澧炲ぇ鍙充晶璇︽儏鏉跨殑瀹藉害 */
-    background-color: rgba(20, 25, 40, 0.95);
-    border-left-width: 3px;
-    border-left-color: rgb(0, 240, 255);
-    padding: 33px;
-    justify-content: flex-start;
-}
-
 .header-title {
     font-size: 40px;
     color: rgb(255, 0, 128);
@@ -2587,4 +2571,973 @@
     font-size: 12px;
     color: rgba(156, 163, 175, 0.65);
     margin-top: 14px;
+}
+
+/* ── 协议商店 · 克制的数字展厅 ── */
+.shop-panel {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    align-self: stretch;
+    align-items: stretch;
+    padding: 24px 5.2% 30px;
+    background-color: rgba(2, 7, 13, 0.96);
+    overflow: hidden;
+}
+
+.shop-panel > .shop-header {
+    height: 72px;
+    min-height: 72px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 0 4px 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(57, 232, 255, 0.26);
+}
+
+.shop-back-btn {
+    min-width: 112px;
+    height: 42px;
+    margin: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    color: rgba(221, 247, 255, 0.78);
+    background-color: rgba(5, 18, 29, 0.72);
+    border-width: 1px;
+    border-color: rgba(57, 232, 255, 0.26);
+    border-radius: 2px;
+    font-size: 15px;
+    transition-duration: 0.14s;
+}
+
+.shop-back-btn:hover {
+    color: rgb(221, 247, 255);
+    border-color: rgba(57, 232, 255, 0.72);
+    background-color: rgba(10, 40, 55, 0.8);
+}
+
+.shop-title-group {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.shop-title {
+    color: rgb(221, 247, 255);
+    font-size: 30px;
+    letter-spacing: 4px;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 7px rgba(57, 232, 255, 0.2);
+}
+
+.shop-subtitle {
+    margin-top: 2px;
+    color: rgba(143, 169, 184, 0.78);
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.shop-currency-chip {
+    min-width: 176px;
+    height: 42px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    background-color: rgba(7, 22, 34, 0.82);
+    border-width: 1px;
+    border-color: rgba(57, 232, 255, 0.36);
+    border-radius: 2px;
+}
+
+.shop-currency-icon {
+    margin-right: 10px;
+    color: rgb(57, 232, 255);
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.shop-credits-label {
+    color: rgb(221, 247, 255);
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.shop-panel > .shop-tabs {
+    min-height: 46px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    margin: 12px 0 10px;
+}
+
+.shop-tab {
+    min-width: 172px;
+    height: 42px;
+    margin: 0 5px;
+    padding: 0 18px;
+    color: rgba(143, 169, 184, 0.82);
+    background-color: rgba(4, 14, 23, 0.72);
+    border-width: 1px;
+    border-color: rgba(57, 232, 255, 0.18);
+    border-radius: 2px;
+    font-size: 15px;
+    letter-spacing: 2px;
+    transition-duration: 0.14s;
+}
+
+.shop-tab:hover {
+    color: rgb(221, 247, 255);
+    border-color: rgba(57, 232, 255, 0.48);
+}
+
+.shop-tab-active {
+    color: rgb(221, 247, 255);
+    background-color: rgba(15, 67, 86, 0.48);
+    border-color: rgba(57, 232, 255, 0.86);
+}
+
+.shop-tab-content {
+    min-height: 0;
+}
+
+.shop-direct-tab {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.shop-direct-main {
+    min-height: 0;
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.shop-orb-stage {
+    position: relative;
+    min-width: 0;
+    min-height: 300px;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: rgba(3, 12, 20, 0.28);
+    border-right-width: 1px;
+    border-right-color: rgba(57, 232, 255, 0.13);
+}
+
+.shop-orbit {
+    position: absolute;
+    align-self: center;
+    border-radius: 50%;
+    border-width: 1px;
+    border-color: rgba(57, 232, 255, 0.16);
+}
+
+.shop-orbit-outer {
+    left: 18%;
+    right: 18%;
+    bottom: 15%;
+    height: 74px;
+}
+
+.shop-orbit-inner {
+    left: 25%;
+    right: 25%;
+    bottom: 18%;
+    height: 46px;
+    border-color: rgba(57, 232, 255, 0.3);
+}
+
+.shop-direct-orb {
+    width: 220px;
+    height: 220px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(2, 8, 14, 0.94);
+    border-width: 2px;
+    border-color: rgba(57, 232, 255, 0.92);
+    border-radius: 110px;
+}
+
+.shop-direct-orb-core {
+    width: 154px;
+    height: 154px;
+    border-width: 1px;
+    border-color: rgba(221, 247, 255, 0.6);
+    border-radius: 77px;
+}
+
+.shop-direct-orb-glint {
+    position: absolute;
+    left: 26%;
+    top: 23%;
+    width: 11px;
+    height: 11px;
+    background-color: rgba(221, 247, 255, 0.86);
+    border-radius: 6px;
+}
+
+.shop-orbit-tick {
+    position: absolute;
+    bottom: 26%;
+    width: 20px;
+    height: 2px;
+    background-color: rgba(57, 232, 255, 0.72);
+}
+
+.shop-orbit-tick-left {
+    left: 14%;
+}
+
+.shop-orbit-tick-right {
+    right: 14%;
+}
+
+.shop-stage-caption {
+    position: absolute;
+    right: 18px;
+    bottom: 14px;
+    color: rgba(143, 169, 184, 0.68);
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.shop-product-info {
+    width: 38%;
+    min-width: 280px;
+    max-width: 470px;
+    flex-shrink: 0;
+    justify-content: center;
+    padding: 22px 0 22px 42px;
+}
+
+.shop-eyebrow,
+.shop-price-caption {
+    color: rgba(143, 169, 184, 0.72);
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.shop-product-rarity {
+    margin-top: 12px;
+    color: rgb(57, 232, 255);
+    font-size: 12px;
+    letter-spacing: 3px;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+}
+
+.shop-product-name {
+    margin-top: 8px;
+    color: rgb(221, 247, 255);
+    font-size: 32px;
+    -unity-font-style: bold;
+}
+
+.shop-product-description {
+    max-width: 420px;
+    margin-top: 12px;
+    color: rgba(185, 207, 219, 0.82);
+    font-size: 16px;
+    white-space: normal;
+}
+
+.shop-product-divider {
+    height: 1px;
+    margin: 22px 0 16px;
+    background-color: rgba(57, 232, 255, 0.2);
+}
+
+.shop-product-state {
+    color: rgb(57, 232, 255);
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.shop-product-state-owned {
+    color: rgba(185, 207, 219, 0.78);
+}
+
+.shop-product-state-unavailable {
+    color: rgb(185, 126, 230);
+}
+
+.shop-price-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.shop-product-price {
+    color: rgb(221, 247, 255);
+    font-size: 24px;
+    -unity-font-style: bold;
+}
+
+.shop-primary-action {
+    height: 50px;
+    margin-top: 20px;
+    color: rgb(221, 247, 255);
+    background-color: rgba(15, 89, 112, 0.62);
+    border-width: 1px;
+    border-color: rgba(57, 232, 255, 0.88);
+    border-radius: 2px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    transition-duration: 0.14s;
+}
+
+.shop-primary-action:hover {
+    background-color: rgba(20, 112, 137, 0.78);
+}
+
+.shop-primary-action:active {
+    translate: 2px -1px;
+    color: rgb(2, 7, 13);
+    background-color: rgb(57, 232, 255);
+}
+
+.shop-primary-action:disabled {
+    color: rgba(143, 169, 184, 0.62);
+    background-color: rgba(7, 19, 28, 0.72);
+    border-color: rgba(143, 169, 184, 0.22);
+}
+
+.shop-carousel-shell {
+    height: 142px;
+    min-height: 142px;
+    flex-shrink: 0;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(57, 232, 255, 0.2);
+}
+
+.shop-carousel-heading {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.shop-carousel-title {
+    color: rgb(221, 247, 255);
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+
+.shop-carousel-hint {
+    margin-left: 14px;
+    color: rgba(143, 169, 184, 0.64);
+    font-size: 11px;
+}
+
+.shop-scroll {
+    min-height: 0;
+    flex-grow: 1;
+}
+
+.shop-offer-list {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.shop-ball-option {
+    width: 204px;
+    min-width: 204px;
+    height: 78px;
+    flex-direction: row;
+    align-items: center;
+    margin: 0 10px 0 0;
+    padding: 10px 12px;
+    background-color: rgba(4, 14, 23, 0.76);
+    border-width: 1px;
+    border-color: rgba(57, 232, 255, 0.19);
+    border-radius: 2px;
+    transition-duration: 0.14s;
+}
+
+.shop-ball-option:hover {
+    background-color: rgba(8, 28, 40, 0.92);
+    border-color: rgba(57, 232, 255, 0.5);
+}
+
+.shop-ball-option-selected {
+    background-color: rgba(9, 38, 51, 0.94);
+    border-color: rgba(57, 232, 255, 0.92);
+}
+
+.shop-ball-option-owned {
+    opacity: 0.66;
+}
+
+.shop-offer-orb {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    margin-right: 12px;
+    border-radius: 23px;
+    border-width: 1px;
+    border-color: rgba(221, 247, 255, 0.42);
+}
+
+.shop-offer-info {
+    min-width: 0;
+    flex-grow: 1;
+}
+
+.shop-offer-name {
+    color: rgb(221, 247, 255);
+    font-size: 14px;
+    -unity-font-style: bold;
+    white-space: nowrap;
+}
+
+.shop-offer-state {
+    margin-top: 5px;
+    color: rgba(57, 232, 255, 0.82);
+    font-size: 11px;
+}
+
+.shop-offer-state-owned {
+    color: rgba(185, 207, 219, 0.72);
+}
+
+.shop-empty-label {
+    align-self: center;
+    margin: 18px;
+    color: rgba(143, 169, 184, 0.76);
+    font-size: 14px;
+}
+
+/* 宝箱信息页：保留现有仪式逻辑，减少静态页面装饰 */
+.shop-crate-tab {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.shop-crate-layout {
+    flex-direction: row;
+    align-items: stretch;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.shop-crate-stage {
+    min-width: 0;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 5%;
+    border-right-width: 1px;
+    border-right-color: rgba(57, 232, 255, 0.18);
+}
+
+.shop-panel .crate-eyebrow {
+    margin-bottom: 10px;
+    color: rgba(143, 169, 184, 0.72);
+    font-size: 10px;
+    letter-spacing: 3px;
+}
+
+.shop-panel .crate-preview {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    height: 280px;
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+.shop-panel .crate-glow-ring {
+    width: 190px;
+    height: 190px;
+    border-radius: 95px;
+    border-color: rgba(57, 232, 255, 0.22);
+    background-color: rgba(57, 232, 255, 0.025);
+}
+
+.shop-panel .crate-body-idle {
+    width: 154px;
+    height: 110px;
+    align-items: center;
+    background-color: rgb(5, 16, 25);
+    border-color: rgba(57, 232, 255, 0.72);
+    border-radius: 2px;
+}
+
+.shop-panel .crate-lid-idle {
+    width: 162px;
+    height: 18px;
+    margin-top: -8px;
+    background-color: rgb(7, 24, 36);
+    border-color: rgba(57, 232, 255, 0.72);
+    border-radius: 2px;
+}
+
+.shop-panel .crate-seal-idle {
+    width: 28px;
+    height: 28px;
+    margin-top: 26px;
+    background-color: rgba(57, 232, 255, 0.16);
+    border-color: rgba(57, 232, 255, 0.9);
+    border-radius: 14px;
+}
+
+.shop-panel .crate-title {
+    margin-top: 4px;
+    margin-bottom: 6px;
+    color: rgb(221, 247, 255);
+    font-size: 28px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 6px rgba(57, 232, 255, 0.16);
+}
+
+.shop-panel .crate-desc {
+    max-width: 440px;
+    margin: 0;
+    color: rgba(185, 207, 219, 0.78);
+    font-size: 14px;
+    -unity-text-align: middle-center;
+}
+
+.shop-crate-info {
+    width: 40%;
+    min-width: 300px;
+    max-width: 480px;
+    flex-shrink: 0;
+    justify-content: center;
+    padding: 24px 0 24px 40px;
+}
+
+.shop-crate-heading {
+    margin-bottom: 18px;
+    color: rgb(221, 247, 255);
+    font-size: 22px;
+    -unity-font-style: bold;
+}
+
+.shop-panel .crate-cost {
+    margin-bottom: 20px;
+    color: rgb(57, 232, 255);
+    font-size: 20px;
+}
+
+.crate-pity-block {
+    padding: 14px 0;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-color: rgba(57, 232, 255, 0.2);
+    border-bottom-color: rgba(57, 232, 255, 0.2);
+}
+
+.crate-pity-heading {
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.crate-pity-caption {
+    margin-bottom: 6px;
+    color: rgb(221, 247, 255);
+    font-size: 13px;
+}
+
+.shop-panel .crate-pity {
+    margin: 0;
+    color: rgba(143, 169, 184, 0.86);
+    font-size: 12px;
+}
+
+.crate-pity-track {
+    height: 5px;
+    overflow: hidden;
+    background-color: rgba(143, 169, 184, 0.16);
+    border-radius: 3px;
+}
+
+.crate-pity-fill {
+    width: 0%;
+    height: 100%;
+    background-color: rgb(57, 232, 255);
+    border-radius: 3px;
+}
+
+.shop-panel .crate-open-btn {
+    height: 50px;
+    margin: 20px 0 0;
+    color: rgb(221, 247, 255);
+    background-color: rgba(15, 89, 112, 0.62);
+    border-color: rgba(57, 232, 255, 0.88);
+    border-radius: 2px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-shadow: none;
+    transition-duration: 0.14s;
+}
+
+.shop-panel .crate-open-btn:hover {
+    background-color: rgba(20, 112, 137, 0.78);
+}
+
+.shop-panel .crate-open-btn:active {
+    translate: 2px -1px;
+}
+
+.shop-panel .crate-open-btn:disabled {
+    opacity: 0.42;
+}
+
+.shop-crate-footnote {
+    margin-top: 10px;
+    color: rgba(143, 169, 184, 0.66);
+    font-size: 11px;
+    white-space: normal;
+}
+
+.shop-panel .crate-result-popup {
+    background-color: rgba(2, 7, 13, 0.95);
+}
+
+.shop-panel .crate-light-pillar {
+    background-color: rgba(57, 232, 255, 0.07);
+}
+
+.shop-panel .crate-glow {
+    background-color: rgba(57, 232, 255, 0.035);
+    border-color: rgba(57, 232, 255, 0.2);
+}
+
+.shop-panel .crate-lid-face,
+.shop-panel .crate-body-face {
+    border-color: rgba(57, 232, 255, 0.78);
+}
+
+.shop-panel .crate-lid-band,
+.shop-panel .crate-body-band {
+    background-color: rgba(57, 232, 255, 0.52);
+}
+
+.shop-panel .crate-seal {
+    background-color: rgb(57, 232, 255);
+    border-color: rgb(221, 247, 255);
+}
+
+.shop-panel .crate-core {
+    background-color: rgba(144, 239, 255, 0.68);
+}
+
+.shop-panel .crate-reveal-card {
+    background-color: rgba(3, 12, 20, 0.96);
+    border-color: rgba(57, 232, 255, 0.46);
+}
+
+.shop-panel .crate-rarity-rare {
+    color: rgb(57, 232, 255);
+    text-shadow: 0 0 6px rgba(57, 232, 255, 0.28);
+}
+
+.shop-panel .crate-rarity-epic {
+    color: rgb(210, 128, 255);
+    text-shadow: 0 0 6px rgba(190, 90, 255, 0.28);
+}
+
+.shop-panel .crate-rarity-legendary {
+    color: rgb(180, 229, 255);
+    text-shadow: 0 0 6px rgba(120, 210, 255, 0.28);
+}
+
+.shop-panel .crate-result-title {
+    color: rgb(221, 247, 255);
+    text-shadow: 0 0 6px rgba(57, 232, 255, 0.2);
+}
+
+.shop-panel .crate-result-ok {
+    color: rgb(221, 247, 255);
+    background-color: rgba(15, 89, 112, 0.62);
+    border-color: rgba(57, 232, 255, 0.88);
+    border-radius: 2px;
+}
+
+.shop-panel .crate-result-ok:hover {
+    background-color: rgba(20, 112, 137, 0.78);
+}
+
+/* 竖屏商店：主预览、商品信息、商品列表按阅读顺序纵向排列 */
+.shop-panel.shop-portrait {
+    padding: 18px 22px 22px;
+    background-color: rgb(2, 7, 13);
+}
+
+.shop-portrait > .shop-header {
+    height: 92px;
+    min-height: 92px;
+    margin-bottom: 4px;
+    padding: 0 0 10px;
+}
+
+.shop-portrait .shop-back-btn {
+    min-width: 118px;
+    height: 58px;
+    font-size: 22px;
+}
+
+.shop-portrait .shop-title {
+    font-size: 46px;
+    letter-spacing: 2px;
+}
+
+.shop-portrait .shop-subtitle {
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+.shop-portrait .shop-currency-chip {
+    min-width: 208px;
+    height: 58px;
+    padding: 0 12px;
+}
+
+.shop-portrait .shop-currency-icon {
+    margin-right: 7px;
+    font-size: 16px;
+}
+
+.shop-portrait .shop-credits-label {
+    font-size: 22px;
+    letter-spacing: 0;
+}
+
+.shop-portrait > .shop-tabs {
+    min-height: 76px;
+    margin: 8px 0 12px;
+}
+
+.shop-portrait .shop-tab {
+    min-width: 240px;
+    height: 66px;
+    margin: 0 8px;
+    padding: 0 16px;
+    font-size: 26px;
+    letter-spacing: 1px;
+}
+
+.shop-portrait .shop-direct-main {
+    flex-direction: column;
+}
+
+.shop-portrait .shop-orb-stage {
+    min-height: 300px;
+    flex-grow: 1;
+    border-right-width: 0;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(57, 232, 255, 0.16);
+}
+
+.shop-portrait .shop-direct-orb {
+    width: 350px;
+    height: 350px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+}
+
+.shop-portrait .shop-orbit-outer {
+    left: 16%;
+    right: 16%;
+    bottom: 9%;
+    height: 88px;
+}
+
+.shop-portrait .shop-orbit-inner {
+    left: 25%;
+    right: 25%;
+    bottom: 11%;
+    height: 54px;
+}
+
+.shop-portrait .shop-orbit-tick {
+    bottom: 16%;
+    width: 30px;
+    height: 3px;
+}
+
+.shop-portrait .shop-stage-caption {
+    right: 10px;
+    bottom: 8px;
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+
+.shop-portrait .shop-product-info {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex-shrink: 0;
+    padding: 18px 16px 20px;
+}
+
+.shop-portrait .shop-eyebrow,
+.shop-portrait .shop-price-caption {
+    font-size: 15px;
+    letter-spacing: 2px;
+}
+
+.shop-portrait .shop-product-rarity {
+    margin-top: 8px;
+    font-size: 18px;
+    letter-spacing: 2px;
+}
+
+.shop-portrait .shop-product-name {
+    margin-top: 4px;
+    font-size: 40px;
+}
+
+.shop-portrait .shop-product-description {
+    max-width: none;
+    margin-top: 6px;
+    font-size: 25px;
+}
+
+.shop-portrait .shop-product-divider {
+    margin: 12px 0 10px;
+}
+
+.shop-portrait .shop-product-state {
+    font-size: 20px;
+}
+
+.shop-portrait .shop-price-row {
+    margin-top: 4px;
+}
+
+.shop-portrait .shop-product-price {
+    font-size: 34px;
+}
+
+.shop-portrait .shop-primary-action {
+    height: 66px;
+    margin-top: 12px;
+    font-size: 25px;
+}
+
+.shop-portrait .shop-carousel-shell {
+    height: 212px;
+    min-height: 212px;
+    padding-top: 12px;
+}
+
+.shop-portrait .shop-carousel-heading {
+    margin-bottom: 10px;
+}
+
+.shop-portrait .shop-carousel-title {
+    font-size: 22px;
+    letter-spacing: 1px;
+}
+
+.shop-portrait .shop-carousel-hint {
+    margin-left: 10px;
+    font-size: 17px;
+}
+
+.shop-portrait .shop-ball-option {
+    width: 264px;
+    min-width: 264px;
+    height: 132px;
+    margin-right: 12px;
+    padding: 10px 12px;
+}
+
+.shop-portrait .shop-offer-orb {
+    width: 84px;
+    min-width: 84px;
+    height: 84px;
+    margin-right: 10px;
+    border-width: 0;
+}
+
+.shop-portrait .shop-offer-name {
+    font-size: 23px;
+    white-space: normal;
+}
+
+.shop-portrait .shop-offer-state {
+    margin-top: 7px;
+    font-size: 19px;
+}
+
+/* 宝箱在竖屏下采用同样的视觉层级 */
+.shop-portrait .shop-crate-layout {
+    flex-direction: column;
+}
+
+.shop-portrait .shop-crate-stage {
+    min-height: 0;
+    flex-grow: 1;
+    padding: 12px 5%;
+    border-right-width: 0;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(57, 232, 255, 0.16);
+}
+
+.shop-panel.shop-portrait .crate-eyebrow {
+    font-size: 14px;
+}
+
+.shop-panel.shop-portrait .crate-preview {
+    height: 340px;
+    flex-shrink: 1;
+}
+
+.shop-panel.shop-portrait .crate-title {
+    font-size: 34px;
+}
+
+.shop-panel.shop-portrait .crate-desc {
+    font-size: 19px;
+}
+
+.shop-portrait .shop-crate-info {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex-shrink: 0;
+    padding: 18px 18px 24px;
+}
+
+.shop-portrait .shop-crate-heading {
+    margin-bottom: 12px;
+    font-size: 28px;
+}
+
+.shop-panel.shop-portrait .crate-cost {
+    margin-bottom: 14px;
+    font-size: 23px;
+}
+
+.shop-portrait .crate-pity-caption {
+    font-size: 19px;
+}
+
+.shop-panel.shop-portrait .crate-pity {
+    font-size: 17px;
+}
+
+.shop-panel.shop-portrait .crate-open-btn {
+    height: 66px;
+    margin-top: 14px;
+    font-size: 22px;
+}
+
+.shop-portrait .shop-crate-footnote {
+    font-size: 15px;
 }

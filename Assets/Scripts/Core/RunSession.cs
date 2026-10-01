@@ -7,7 +7,6 @@ public enum RunMode
 {
     None = 0,
     Endless = 1,
-    Campaign = 2,
     Tutorial = 3
 }
 
@@ -41,11 +40,6 @@ public static class RunSession
     public static void BeginEndless()
     {
         Mode = RunMode.Endless;
-    }
-
-    public static void BeginCampaign()
-    {
-        Mode = RunMode.Campaign;
     }
 
     public static void BeginTutorial()

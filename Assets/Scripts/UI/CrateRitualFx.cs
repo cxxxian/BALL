@@ -39,26 +39,26 @@ public static class CrateRitualFx
         if (intensity <= 0.01f) return;
 
         var center = new Vector2(rect.width * 0.5f, rect.height * 0.56f);
-        Color warm = Color.Lerp(color, new Color(1f, 0.95f, 0.75f), 0.45f);
+        Color ice = Color.Lerp(color, new Color(0.72f, 0.94f, 1f), 0.28f);
 
         // 多层软光晕（由外到内渐亮）
         float baseR = Mathf.Lerp(70f, 210f, intensity);
-        DrawSoftDisc(ctx, center, baseR * 1.15f, WithAlpha(warm, intensity * 0.05f));
-        DrawSoftDisc(ctx, center, baseR * 0.78f, WithAlpha(warm, intensity * 0.10f));
-        DrawSoftDisc(ctx, center, baseR * 0.48f, WithAlpha(Color.Lerp(warm, Color.white, 0.35f), intensity * 0.18f));
+        DrawSoftDisc(ctx, center, baseR * 1.15f, WithAlpha(ice, intensity * 0.04f));
+        DrawSoftDisc(ctx, center, baseR * 0.78f, WithAlpha(ice, intensity * 0.08f));
+        DrawSoftDisc(ctx, center, baseR * 0.48f, WithAlpha(Color.Lerp(ice, Color.white, 0.3f), intensity * 0.14f));
         DrawSoftDisc(ctx, center, baseR * 0.22f, WithAlpha(Color.white, intensity * 0.28f));
 
         // 蓄力脉冲环：随强度外扩
         float ringPulse = 0.55f + 0.45f * Mathf.Sin(Time.realtimeSinceStartup * (2.2f + intensity * 3.5f));
         float ringR = Mathf.Lerp(36f, 150f, intensity) * (0.85f + 0.15f * ringPulse);
         float ringW = Mathf.Lerp(10f, 22f, intensity);
-        DrawSoftRing(ctx, center, ringR, ringR + ringW, WithAlpha(warm, intensity * 0.22f * ringPulse));
+        DrawSoftRing(ctx, center, ringR, ringR + ringW, WithAlpha(ice, intensity * 0.16f * ringPulse));
 
         if (intensity > 0.55f)
         {
             float ring2 = ringR * 0.62f;
             DrawSoftRing(ctx, center, ring2, ring2 + ringW * 0.7f,
-                WithAlpha(Color.Lerp(warm, Color.white, 0.4f), (intensity - 0.55f) * 0.35f));
+                WithAlpha(Color.Lerp(ice, Color.white, 0.4f), (intensity - 0.55f) * 0.28f));
         }
     }
 

@@ -192,6 +192,7 @@ public class WaveManager : MonoBehaviour
     {
         if (_breachClearArmed) return;
         _breachClearArmed = true;
+        Phase6SplitSpawn.CancelAll();
         FreezeActiveMinions();
         _breachClearRoutine = StartCoroutine(ClearMinionsWithBreachFx());
     }
@@ -269,25 +270,8 @@ public class WaveManager : MonoBehaviour
     {
         if (def == null) return null;
         if (GameManager.Instance == null || GameManager.Instance.State == GameState.GameOver) return null;
-
-        var go = new GameObject($"Minion_{def.minionName}");
-        go.transform.position = position;
-        go.tag = "Enemy";
-
-        var rb              = go.AddComponent<Rigidbody2D>();
-        rb.gravityScale     = 0f;
-        rb.mass             = 80f;
-        rb.freezeRotation   = true;
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        rb.interpolation    = RigidbodyInterpolation2D.Interpolate;
-
-        var col             = go.AddComponent<CircleCollider2D>();
-        col.radius          = 0.42f;
-
-        var minion = go.AddComponent<Minion>();
-        minion.Initialize(def, waveIndex);
-        RegisterMinion(minion);
-        minion.onDeath.AddListener(_ => UnregisterMinion(minion));
+        var minion = Phase6EnemyFactory.Spawn(def, position, waveIndex);
+        var col = minion.GetComponent<Collider2D>();
 
         // 新小兵与当前 Boss 忽略物理碰撞，防止小兵被 Boss 压住
         if (_currentBoss != null)
@@ -389,6 +373,7 @@ public class WaveManager : MonoBehaviour
 
     private void ClearAll()
     {
+        Phase6SplitSpawn.CancelAll();
         ClearMinions();
         if (_currentBoss != null) { Destroy(_currentBoss.gameObject); _currentBoss = null; }
 

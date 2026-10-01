@@ -119,7 +119,7 @@ public static class NeonHoverGlow
 
     private static Color ResolveGlowColor(Button button)
     {
-        if (button.ClassListContains("btn-outline-magenta") || button.ClassListContains("campaign-btn"))
+        if (button.ClassListContains("btn-outline-magenta"))
             return new Color(1f, 0.15f, 1f, 1f);
         if (button.ClassListContains("btn-outline-yellow") || button.ClassListContains("shop-btn"))
             return new Color(1f, 0.88f, 0.2f, 1f);

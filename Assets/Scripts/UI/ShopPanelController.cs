@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public enum ShopReturnTarget { MainMenu, Campaign }
+public enum ShopReturnTarget { MainMenu }
 
 [RequireComponent(typeof(UIDocument))]
 public class ShopPanelController : MonoBehaviour
@@ -10,6 +10,28 @@ public class ShopPanelController : MonoBehaviour
     public static ShopPanelController Instance { get; private set; }
 
     public event Action ShopChanged;
+    [SerializeField] private ShopCanvasView canvasView;
+    private bool canvasShopOpen;
+
+    public void PurchaseFromCanvas(string ballId) => OnPurchaseClicked(ballId);
+    public void HideCanvasForNavigation()
+    {
+        canvasShopOpen = false;
+        canvasView?.Hide();
+    }
+    private void PresentCanvasResult()
+    {
+        if (canvasView == null) return;
+        canvasView.Hide();
+        if (_panel != null)
+        {
+            UiPanelMotion.Kill(_panel);
+            _panel.style.display = DisplayStyle.Flex;
+            _panel.style.opacity = 1;
+        }
+        if (_directTab != null) _directTab.style.display = DisplayStyle.None;
+        if (_crateTab != null) _crateTab.style.display = DisplayStyle.None;
+    }
 
     private enum RitualPhase
     {
@@ -30,8 +52,16 @@ public class ShopPanelController : MonoBehaviour
     private Button _tabDirectBtn;
     private Button _tabCrateBtn;
     private VisualElement _directList;
+    private Image _directPreviewOrb;
+    private Label _directBallRarity;
+    private Label _directBallName;
+    private Label _directBallDescription;
+    private Label _directBallState;
+    private Label _directBallPrice;
+    private Button _directPurchaseBtn;
     private Label _crateCostLabel;
     private Label _pityLabel;
+    private VisualElement _pityProgressFill;
     private Button _openCrateBtn;
 
     private VisualElement _resultPopup;
@@ -57,6 +87,8 @@ public class ShopPanelController : MonoBehaviour
     private ShopReturnTarget _returnTarget = ShopReturnTarget.MainMenu;
     private bool _showingDirect = true;
     private bool _ritualBusy;
+    private string _selectedDirectBallId;
+    private Texture2D _ballPreviewTexture;
 
     private RitualPhase _ritualPhase = RitualPhase.Idle;
     private float _phaseElapsed;
@@ -69,7 +101,7 @@ public class ShopPanelController : MonoBehaviour
     private float _rayIntensity;
     private float _flashAlpha;
     private float _vignetteStrength = 0.65f;
-    private Color _rayColor = new Color(1f, 0.86f, 0.35f, 1f);
+    private Color _rayColor = new Color(0.12f, 0.78f, 1f, 1f);
 
     private void Awake()
     {
@@ -98,8 +130,22 @@ public class ShopPanelController : MonoBehaviour
         _tabDirectBtn = root.Q<Button>("BtnTabDirect");
         _tabCrateBtn = root.Q<Button>("BtnTabCrate");
         _directList = root.Q<VisualElement>("DirectOffersList");
+        _directPreviewOrb = root.Q<Image>("DirectPreviewOrb");
+        _ballPreviewTexture = Resources.Load<Texture2D>("UI/shop_ball_preview");
+        if (_directPreviewOrb != null && _ballPreviewTexture != null)
+        {
+            _directPreviewOrb.image = _ballPreviewTexture;
+            _directPreviewOrb.scaleMode = ScaleMode.ScaleToFit;
+        }
+        _directBallRarity = root.Q<Label>("DirectBallRarity");
+        _directBallName = root.Q<Label>("DirectBallName");
+        _directBallDescription = root.Q<Label>("DirectBallDescription");
+        _directBallState = root.Q<Label>("DirectBallState");
+        _directBallPrice = root.Q<Label>("DirectBallPrice");
+        _directPurchaseBtn = root.Q<Button>("BtnDirectPurchase");
         _crateCostLabel = root.Q<Label>("CrateCostLabel");
         _pityLabel = root.Q<Label>("CratePityLabel");
+        _pityProgressFill = root.Q<VisualElement>("CratePityFill");
         _openCrateBtn = root.Q<Button>("BtnOpenCrate");
 
         _resultPopup = root.Q<VisualElement>("CrateResultPopup");
@@ -128,6 +174,7 @@ public class ShopPanelController : MonoBehaviour
         root.Q<Button>("BtnShopBack")?.RegisterCallback<ClickEvent>(_ => Hide());
         _tabDirectBtn?.RegisterCallback<ClickEvent>(_ => ShowDirectTab());
         _tabCrateBtn?.RegisterCallback<ClickEvent>(_ => ShowCrateTab());
+        _directPurchaseBtn?.RegisterCallback<ClickEvent>(_ => OnPurchaseClicked(_selectedDirectBallId));
         _openCrateBtn?.RegisterCallback<ClickEvent>(_ => OnOpenCrateClicked());
         _resultOkBtn?.RegisterCallback<ClickEvent>(_ => HideResultPopup());
         _resultPopup?.RegisterCallback<PointerDownEvent>(_ =>
@@ -140,6 +187,7 @@ public class ShopPanelController : MonoBehaviour
         {
             _panel.style.display = DisplayStyle.None;
             UiPanelMotion.MarkHidden(_panel);
+            _panel.RegisterCallback<GeometryChangedEvent>(OnShopGeometryChanged);
         }
         ResetRitualVisuals();
     }
@@ -148,6 +196,13 @@ public class ShopPanelController : MonoBehaviour
     {
         _returnTarget = returnTarget;
         PlayerProfile.Load();
+        if (canvasView != null)
+        {
+            canvasShopOpen = true;
+            if (_panel != null) _panel.style.display = DisplayStyle.None;
+            canvasView.Show();
+            return;
+        }
         if (_panel != null && !_panelVisible)
         {
             _panelVisible = true;
@@ -159,6 +214,7 @@ public class ShopPanelController : MonoBehaviour
 
     public void Hide()
     {
+        HideCanvasForNavigation();
         AbortRitual();
         HideResultPopup();
         if (_panel != null && _panelVisible)
@@ -174,8 +230,12 @@ public class ShopPanelController : MonoBehaviour
     public void RefreshCredits()
     {
         PlayerProfile.Load();
+        if (canvasView != null && canvasView.Visible) canvasView.Refresh();
         if (_creditsLabel != null)
-            _creditsLabel.text = $"协议币 {PlayerProfile.Credits}";
+            _creditsLabel.text = $"协议币 {PlayerProfile.Credits:N0}";
+
+        if (_showingDirect && !string.IsNullOrEmpty(_selectedDirectBallId))
+            SelectDirectOffer(_selectedDirectBallId);
     }
 
     private void RefreshAll()
@@ -214,14 +274,30 @@ public class ShopPanelController : MonoBehaviour
 
         var shop = ShopCatalog.Load();
         var run = RunCatalog.Load();
-        if (shop == null || run == null) return;
+        if (shop == null || run == null)
+        {
+            RefreshDirectDetails(null, 0);
+            return;
+        }
+
+        string firstBallId = null;
+        BallDefinition selectedBall = null;
+        int selectedPrice = 0;
 
         foreach (var offer in shop.directOffers)
         {
             if (offer == null || string.IsNullOrEmpty(offer.ballId)) continue;
             var ball = run.GetBall(offer.ballId);
             if (ball == null || ball.acquisitionType != BallAcquisitionType.DirectPurchase) continue;
-            _directList.Add(BuildDirectOfferRow(ball, shop.GetDirectPrice(ball)));
+
+            int price = shop.GetDirectPrice(ball);
+            if (firstBallId == null) firstBallId = ball.ballId;
+            _directList.Add(BuildDirectOfferRow(ball, price));
+            if (ball.ballId == _selectedDirectBallId)
+            {
+                selectedBall = ball;
+                selectedPrice = price;
+            }
         }
 
         if (_directList.childCount == 0)
@@ -229,19 +305,48 @@ public class ShopPanelController : MonoBehaviour
             var empty = new Label("暂无直购弹珠");
             empty.AddToClassList("shop-empty-label");
             _directList.Add(empty);
+            _selectedDirectBallId = null;
+            RefreshDirectDetails(null, 0);
+            return;
         }
+
+        if (selectedBall == null)
+        {
+            _selectedDirectBallId = firstBallId;
+            selectedBall = run.GetBall(_selectedDirectBallId);
+            if (selectedBall != null) selectedPrice = shop.GetDirectPrice(selectedBall);
+        }
+
+        RefreshDirectDetails(selectedBall, selectedPrice);
+    }
+
+    private void OnShopGeometryChanged(GeometryChangedEvent evt)
+    {
+        if (_panel == null) return;
+        bool portrait = evt.newRect.height > 0f && evt.newRect.width / evt.newRect.height < 0.9f;
+        _panel.EnableInClassList("shop-portrait", portrait);
     }
 
     private VisualElement BuildDirectOfferRow(BallDefinition ball, int price)
     {
         bool owned = PlayerProfile.IsBallUnlocked(ball.ballId);
 
-        var row = new VisualElement();
+        var row = new Button();
+        row.text = string.Empty;
         row.AddToClassList("shop-offer-row");
+        row.AddToClassList("shop-ball-option");
+        row.userData = ball.ballId;
+        if (ball.ballId == _selectedDirectBallId)
+            row.AddToClassList("shop-ball-option-selected");
+        if (owned)
+            row.AddToClassList("shop-ball-option-owned");
+        row.RegisterCallback<ClickEvent>(_ => SelectDirectOffer(ball.ballId));
 
-        var orb = new VisualElement();
+        var orb = new Image();
         orb.AddToClassList("shop-offer-orb");
-        orb.style.backgroundColor = ball.glowColor;
+        orb.image = _ballPreviewTexture;
+        orb.scaleMode = ScaleMode.ScaleToFit;
+        orb.tintColor = Color.Lerp(Color.white, ball.glowColor, 0.28f);
         row.Add(orb);
 
         var info = new VisualElement();
@@ -251,25 +356,72 @@ public class ShopPanelController : MonoBehaviour
         name.AddToClassList("shop-offer-name");
         info.Add(name);
 
-        var desc = new Label(ball.loadoutDescription);
-        desc.AddToClassList("shop-offer-desc");
-        info.Add(desc);
+        var state = new Label(owned ? "已拥有" : $"{price} 币");
+        state.AddToClassList("shop-offer-state");
+        if (owned) state.AddToClassList("shop-offer-state-owned");
+        info.Add(state);
         row.Add(info);
 
-        if (owned)
+        return row;
+    }
+
+    private void SelectDirectOffer(string ballId)
+    {
+        if (string.IsNullOrEmpty(ballId) || _ritualBusy) return;
+
+        _selectedDirectBallId = ballId;
+        var shop = ShopCatalog.Load();
+        var ball = RunCatalog.Load()?.GetBall(ballId);
+        int price = ball != null && shop != null ? shop.GetDirectPrice(ball) : 0;
+        RefreshDirectDetails(ball, price);
+    }
+
+    private void RefreshDirectDetails(BallDefinition ball, int price)
+    {
+        foreach (var option in _directList.Children())
         {
-            var ownedLbl = new Label("已拥有");
-            ownedLbl.AddToClassList("shop-owned-label");
-            row.Add(ownedLbl);
-        }
-        else
-        {
-            var btn = new Button(() => OnPurchaseClicked(ball.ballId)) { text = $"{price} 币" };
-            btn.AddToClassList("shop-buy-btn");
-            row.Add(btn);
+            bool selected = option.userData is string id && ball != null && id == ball.ballId;
+            option.EnableInClassList("shop-ball-option-selected", selected);
         }
 
-        return row;
+        if (ball == null)
+        {
+            if (_directBallRarity != null) _directBallRarity.text = string.Empty;
+            if (_directBallName != null) _directBallName.text = "暂无可购弹珠";
+            if (_directBallDescription != null) _directBallDescription.text = "当前没有可直接购买的弹珠。";
+            if (_directBallState != null) _directBallState.text = "商店库存为空";
+            if (_directBallPrice != null) _directBallPrice.text = "— 币";
+            if (_directPurchaseBtn != null)
+            {
+                _directPurchaseBtn.text = "暂无商品";
+                _directPurchaseBtn.SetEnabled(false);
+            }
+            return;
+        }
+
+        bool owned = PlayerProfile.IsBallUnlocked(ball.ballId);
+        bool canAfford = PlayerProfile.Credits >= price;
+        if (_directPreviewOrb != null)
+            _directPreviewOrb.tintColor = Color.Lerp(Color.white, ball.glowColor, 0.22f);
+        if (_directBallRarity != null)
+        {
+            _directBallRarity.text = RarityText(ball.crateRarity);
+            _directBallRarity.style.color = RarityColor(ball.crateRarity);
+        }
+        if (_directBallName != null) _directBallName.text = ball.displayName;
+        if (_directBallDescription != null) _directBallDescription.text = ball.loadoutDescription;
+        if (_directBallState != null)
+        {
+            _directBallState.text = owned ? "已拥有" : canAfford ? "可购买" : "协议币不足";
+            _directBallState.EnableInClassList("shop-product-state-owned", owned);
+            _directBallState.EnableInClassList("shop-product-state-unavailable", !owned && !canAfford);
+        }
+        if (_directBallPrice != null) _directBallPrice.text = $"{price} 币";
+        if (_directPurchaseBtn != null)
+        {
+            _directPurchaseBtn.text = owned ? "已拥有" : canAfford ? "购买弹珠" : "协议币不足";
+            _directPurchaseBtn.SetEnabled(!owned && canAfford);
+        }
     }
 
     private void OnPurchaseClicked(string ballId)
@@ -296,6 +448,11 @@ public class ShopPanelController : MonoBehaviour
             int sinceEpic = PlayerProfile.CrateOpensSinceLastEpic;
             int toHard = Mathf.Max(0, ShopCatalog.HardPityOpens - sinceEpic);
             _pityLabel.text = $"距史诗保底 {toHard} 抽 · 已连续 {sinceEpic} 抽无史诗";
+            if (_pityProgressFill != null)
+            {
+                float progress = Mathf.Clamp01(sinceEpic / (float)ShopCatalog.HardPityOpens);
+                _pityProgressFill.style.width = new StyleLength(new Length(progress * 100f, LengthUnit.Percent));
+            }
         }
 
         if (_openCrateBtn != null)
@@ -326,6 +483,7 @@ public class ShopPanelController : MonoBehaviour
         }
 
         _ritualBusy = true;
+        PresentCanvasResult();
         _openCrateBtn?.SetEnabled(false);
 
         ResetRitualVisuals();
@@ -346,8 +504,8 @@ public class ShopPanelController : MonoBehaviour
         _rayIntensity = 0f;
         _flashAlpha = 0f;
         _vignetteStrength = 0.55f;
-        _rayColor = new Color(1f, 0.86f, 0.35f, 1f);
-        CrateOpenVfx.EnsureExists().PlayCharge(new Color(1f, 0.86f, 0.35f, 0.9f));
+        _rayColor = new Color(0.12f, 0.78f, 1f, 1f);
+        CrateOpenVfx.EnsureExists().PlayCharge(new Color(0.12f, 0.78f, 1f, 0.9f));
 
         EnterPhase(RitualPhase.DropIn, 0.4f);
         StartRitualTicker();
@@ -443,7 +601,7 @@ public class ShopPanelController : MonoBehaviour
                 _pendingResult = result;
                 _pendingRarityColor = RarityColor(result.Rarity);
                 _pendingBallColor = ResolveBallColor(result.BallId);
-                _rayColor = Color.Lerp(new Color(1f, 0.86f, 0.35f), _pendingRarityColor, 0.55f);
+                _rayColor = Color.Lerp(new Color(0.12f, 0.78f, 1f), _pendingRarityColor, 0.55f);
 
                 SetStatus("");
                 CrateOpenVfx.Instance?.PlayOpen(_pendingRarityColor, _pendingBallColor);
@@ -654,7 +812,7 @@ public class ShopPanelController : MonoBehaviour
         _rayIntensity = 0f;
         _flashAlpha = 0f;
         _vignetteStrength = 0.65f;
-        _rayColor = new Color(1f, 0.86f, 0.35f, 1f);
+        _rayColor = new Color(0.12f, 0.78f, 1f, 1f);
 
         if (_screenFlash != null)
             _screenFlash.style.opacity = 0f;
@@ -720,6 +878,7 @@ public class ShopPanelController : MonoBehaviour
 
     private void ShowSimpleError(string title, string body)
     {
+        PresentCanvasResult();
         AbortRitual();
         ResetRitualVisuals();
         if (_resultPopup != null)
@@ -752,6 +911,11 @@ public class ShopPanelController : MonoBehaviour
             _revealOrb.style.display = DisplayStyle.Flex;
         ResetRitualVisuals();
         RefreshCrateTab();
+        if (canvasView != null)
+        {
+            if (_panel != null) _panel.style.display = DisplayStyle.None;
+            if (canvasShopOpen) canvasView.Resume();
+        }
     }
 
     private static Color ResolveBallColor(string ballId)
@@ -762,9 +926,9 @@ public class ShopPanelController : MonoBehaviour
 
     private static Color RarityColor(BallCrateRarity rarity) => rarity switch
     {
-        BallCrateRarity.Epic => new Color(1f, 0f, 1f, 1f),
-        BallCrateRarity.Legendary => new Color(1f, 1f, 0f, 1f),
-        _ => new Color(0f, 1f, 1f, 1f)
+        BallCrateRarity.Epic => new Color(0.78f, 0.38f, 1f, 1f),
+        BallCrateRarity.Legendary => new Color(0.68f, 0.9f, 1f, 1f),
+        _ => new Color(0.12f, 0.78f, 1f, 1f)
     };
 
     private static string RarityText(BallCrateRarity rarity) => rarity switch

@@ -220,7 +220,7 @@ public class CrateOpenVfx : MonoBehaviour
         _burst.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         _beam.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         SetStartColor(_burst, Color.Lerp(mix, Color.white, 0.55f));
-        SetStartColor(_beam, Color.Lerp(mix, new Color(1f, 1f, 0.7f), 0.4f));
+        SetStartColor(_beam, Color.Lerp(mix, new Color(0.75f, 0.96f, 1f), 0.4f));
         _burst.Play(true);
         _beam.Play(true);
     }

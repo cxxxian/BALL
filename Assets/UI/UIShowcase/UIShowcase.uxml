@@ -1,12 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="../ProtocolNeonTheme.uss" />
-    <Style src="UIShowcase.uss" />
+    <ui:Style src="../ProtocolNeonTheme.uss" />
+    <ui:Style src="UIShowcase.uss" />
     <ui:VisualElement name="ShowcaseRoot" class="showcase-root">
         <ui:VisualElement class="dock">
             <ui:Label text="UI SHOWCASE" class="dock-title" />
             <ui:VisualElement class="dock-group">
                 <ui:Button name="BtnMain" text="主菜单" class="dock-btn" />
-                <ui:Button name="BtnCampaign" text="战役" class="dock-btn" />
                 <ui:Button name="BtnLoadout" text="配置" class="dock-btn" />
                 <ui:Button name="BtnShop" text="商店" class="dock-btn" />
                 <ui:Button name="BtnSettings" text="设置" class="dock-btn" />

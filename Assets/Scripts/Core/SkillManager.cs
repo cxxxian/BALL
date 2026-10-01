@@ -121,7 +121,8 @@ public class SkillManager : MonoBehaviour
     private void OnComboChanged(int combo)
     {
         if (combo <= 0) return;
-        float reduce = Config != null ? Config.skillComboCDReduce : 0.28f;
+        float reduce = (Config != null ? Config.skillComboCDReduce : 0.28f)
+            * Phase6EnemyBehaviour.JammerComboMultiplier;
         for (int i = 0; i < slots.Length; i++)
         {
             var slot = slots[i];

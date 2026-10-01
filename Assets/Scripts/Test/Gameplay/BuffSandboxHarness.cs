@@ -42,6 +42,7 @@ public class BuffSandboxHarness : MonoBehaviour
     public float bottomWallY = -8.6f;
 
     [Header("Sandbox Rules")]
+    public bool showControls = true;
     [Tooltip("触底扣 1 血（测护心符 / 最大生命）。默认关。")]
     public bool bottomDamagesPlayer;
 
@@ -77,17 +78,17 @@ public class BuffSandboxHarness : MonoBehaviour
         if (_ball != null && _ball.IsWaitingForLaunch)
             _ball.ForceTestInPlay(Vector2.up * Mathf.Max(6f, ballLaunchSpeed * 0.5f));
 
-        if (Input.GetKeyDown(KeyCode.C)) ClearEnemies();
+        if (showControls && Input.GetKeyDown(KeyCode.C)) ClearEnemies();
         if (Input.GetKeyDown(KeyCode.B)) SpawnOrResetBall();
-        if (Input.GetKeyDown(KeyCode.Space)) autoSpawn = !autoSpawn;
-        if (Input.GetKeyDown(KeyCode.X)) ClearAllBuffsAndTowers();
-        if (Input.GetKeyDown(KeyCode.H))
+        if (showControls && Input.GetKeyDown(KeyCode.Space)) autoSpawn = !autoSpawn;
+        if (showControls && Input.GetKeyDown(KeyCode.X)) ClearAllBuffsAndTowers();
+        if (showControls && Input.GetKeyDown(KeyCode.H))
         {
             bottomDamagesPlayer = !bottomDamagesPlayer;
             SyncBottomDamageFlag();
             PushEvent(bottomDamagesPlayer ? "Bottom damage ON" : "Bottom damage OFF");
         }
-        if (Input.GetKeyDown(KeyCode.R)) ResetRunStats();
+        if (showControls && Input.GetKeyDown(KeyCode.R)) ResetRunStats();
 
         HandleBallLaunchInput();
 
@@ -466,6 +467,7 @@ public class BuffSandboxHarness : MonoBehaviour
 
     private void OnGUI()
     {
+        if (!showControls) return;
         DrawPlayfieldHud();
 
         const float panelW = 420f;

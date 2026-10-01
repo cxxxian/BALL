@@ -1,5 +1,7 @@
 using UnityEngine;
 
+public enum MinionSpecialType { None, Splitter, Mini, Charger, Conductor, Jammer }
+
 [CreateAssetMenu(fileName = "MinionDef", menuName = "PinballGame/MinionDefinition")]
 public class MinionDefinition : ScriptableObject
 {
@@ -7,6 +9,13 @@ public class MinionDefinition : ScriptableObject
     public string minionName = "Grunt";
     public Color  baseColor  = new Color(0.9f, 0.3f, 0.3f);
     public Sprite sprite;
+
+    [Header("Phase 6")]
+    public MinionSpecialType specialType = MinionSpecialType.None;
+    [Tooltip("Splitter 死亡后生成的专用 Mini；其他敌人留空")]
+    public MinionDefinition splitChild;
+    [Tooltip("完整生命周期 Threat；Splitter 已包含两个 Mini")]
+    public float threatCost = 1f;
 
     [Header("Stats")]
     public int   maxHP         = 1;

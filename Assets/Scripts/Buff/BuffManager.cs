@@ -646,6 +646,8 @@ public static class ElectricCombat
             var st = GetOrAddState(current);
             if (!st.TryConsumeCharge(1)) break;
 
+            Phase6EnemyBehaviour.NotifyEffectiveIgnition(current);
+
             visited.Add(current);
             Vector2 pos = current.transform.position;
             if (hops > 0)

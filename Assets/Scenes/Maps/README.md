@@ -3,7 +3,7 @@
 基于 `SampleScene` 完整玩法底板，只重排场景机关。
 
 路径：`Assets/Scenes/Maps/`  
-重新生成：菜单 **Ball → Build Mechanism Maps**
+这些场景目前作为独立资产保留，可在 Project 窗口中打开编辑。
 
 | 场景 | 主题 |
 |------|------|

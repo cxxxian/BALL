@@ -12,7 +12,6 @@ public class UIShowcaseController : MonoBehaviour
     public enum PanelId
     {
         MainMenu,
-        Campaign,
         Loadout,
         Shop,
         Settings,
@@ -86,7 +85,6 @@ public class UIShowcaseController : MonoBehaviour
         var root = _hubDoc.rootVisualElement;
 
         Bind("BtnMain", PanelId.MainMenu);
-        Bind("BtnCampaign", PanelId.Campaign);
         Bind("BtnLoadout", PanelId.Loadout);
         Bind("BtnShop", PanelId.Shop);
         Bind("BtnSettings", PanelId.Settings);
@@ -111,6 +109,7 @@ public class UIShowcaseController : MonoBehaviour
         HideOverlays();
 
         bool menuOn = IsMenuFamily(id);
+        if (!menuOn) MainMenuController.Instance?.HideMenuPresentation();
         // 主菜单族互斥；叠加面板 UIDocument 常开，靠各自 Hide/Show，避免 Start 绑定时序问题
         SetDocEnabled(mainMenuHost, menuOn);
         SetDocEnabled(slotHost, true);
@@ -120,7 +119,6 @@ public class UIShowcaseController : MonoBehaviour
         switch (id)
         {
             case PanelId.MainMenu:
-            case PanelId.Campaign:
             case PanelId.Loadout:
             case PanelId.Shop:
             case PanelId.Settings:
@@ -141,7 +139,7 @@ public class UIShowcaseController : MonoBehaviour
     }
 
     private static bool IsMenuFamily(PanelId id) =>
-        id is PanelId.MainMenu or PanelId.Campaign or PanelId.Loadout or PanelId.Shop or PanelId.Settings;
+        id is PanelId.MainMenu or PanelId.Loadout or PanelId.Shop or PanelId.Settings;
 
     private void OpenMenuPanel(PanelId id)
     {
@@ -152,7 +150,6 @@ public class UIShowcaseController : MonoBehaviour
 
         string key = id switch
         {
-            PanelId.Campaign => "campaign",
             PanelId.Loadout => "loadout",
             PanelId.Shop => "shop",
             PanelId.Settings => "settings",
@@ -200,7 +197,6 @@ public class UIShowcaseController : MonoBehaviour
         string activeName = _current switch
         {
             PanelId.MainMenu => "BtnMain",
-            PanelId.Campaign => "BtnCampaign",
             PanelId.Loadout => "BtnLoadout",
             PanelId.Shop => "BtnShop",
             PanelId.Settings => "BtnSettings",

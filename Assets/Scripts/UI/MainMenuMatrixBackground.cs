@@ -27,9 +27,9 @@ public class MainMenuMatrixBackground : MonoBehaviour
     private static readonly int PressureTexId = Shader.PropertyToID("_PressureTex");
 
     private const string MidRainShaderName = "Custom/TronArenaMidRain";
-    private const string MidRainShaderPath = "Assets/Shaders/TronArenaMidRain.shader";
+    private const string MidRainShaderPath = "Assets/Shaders/Arena/TronArenaMidRain.shader";
     private const string FluidShaderName = "Hidden/MenuWakeField";
-    private const string FluidShaderPath = "Assets/Shaders/MenuWakeField.shader";
+    private const string FluidShaderPath = "Assets/Shaders/UI/MenuWakeField.shader";
 
     private const int PassAdvect = 0;
     private const int PassCurl = 1;
@@ -39,20 +39,26 @@ public class MainMenuMatrixBackground : MonoBehaviour
     private const int PassProject = 5;
     private const int PassDamp = 6;
     private const int PassSplat = 7;
+    private const int PassTransport = 8;
+    private static readonly int DomainId = Shader.PropertyToID("_Domain");
+    private static readonly int SplatStartId = Shader.PropertyToID("_SplatStart");
+    private static readonly int VelocityTexId = Shader.PropertyToID("_VelocityTex");
+    private static readonly int RecoveryId = Shader.PropertyToID("_Recovery");
 
     [SerializeField] private Camera targetCamera;
     [SerializeField] private float padding = 0.5f;
     [SerializeField] private Shader midRainShader;
     [SerializeField] private Shader fluidShader;
     [SerializeField] private int resolution = 256;
-    [SerializeField] [Range(4, 40)] private int pressureIterations = 24;
+    [SerializeField] [Range(8, 120)] private int pressureIterations = 64;
     [SerializeField] [Range(0f, 40f)] private float vorticity = 8f;
     [SerializeField] [Range(0.9f, 1f)] private float velocityDissipation = 0.982f;
-    [SerializeField] [Range(0.9f, 1f)] private float velocityDamping = 0.993f;
+    [SerializeField] [Range(0.9f, 1f)] private float velocityDamping = 0.97f;
     [SerializeField] private float splatRadius = 0.042f;
     [SerializeField] private float splatForce = 0.7f;
     [SerializeField] private float moveSpeedThreshold = 0.55f;
-    [SerializeField] private float wakeDisplaceScale = 0.28f;
+    [SerializeField] private float wakeDisplaceScale = 1f;
+    [SerializeField, Min(0f)] private float wakeRecovery = 3f;
     [SerializeField] private float velocitySmooth = 18f;
 
     private MeshFilter _rainFilter;
@@ -74,6 +80,8 @@ public class MainMenuMatrixBackground : MonoBehaviour
     private RenderTexture _pressureB;
     private RenderTexture _divRT;
     private RenderTexture _curlRT;
+    private RenderTexture _displacementA;
+    private RenderTexture _displacementB;
 
     private void Awake()
     {
@@ -101,14 +109,17 @@ public class MainMenuMatrixBackground : MonoBehaviour
         if (!_built)
             return;
 
+        if (targetCamera != null && (!Mathf.Approximately(targetCamera.aspect, _lastAspect)
+            || !Mathf.Approximately(targetCamera.orthographicSize * 2f + padding, _worldHeight)))
+            ResizeToCamera();
+
         if (_midMat != null)
         {
             _midMat.SetFloat(RainTimeId, Time.unscaledTime);
             UpdateFluid();
         }
 
-        if (targetCamera != null && !Mathf.Approximately(targetCamera.aspect, _lastAspect))
-            ResizeToCamera();
+
     }
 
     private void TryBuild()
@@ -127,101 +138,96 @@ public class MainMenuMatrixBackground : MonoBehaviour
         _built = transform.childCount > 0;
     }
 
+    private void OnDisable()
+    {
+        _hasMouseSample = false;
+        _smoothVelocity = Vector2.zero;
+        if (_midMat != null) _midMat.SetFloat(WakeEnabledId, 0f);
+        ClearAllFluidRTs();
+    }
+
     private void UpdateFluid()
     {
         if (targetCamera == null || _midMat == null || _fluidMat == null || _velA == null)
             return;
 
-        float dt = Mathf.Clamp(Time.unscaledDeltaTime, 0.001f, 0.033f);
-
+        float frameDt = Time.unscaledDeltaTime;
+        if (frameDt <= 0f) return;
+        float simulatedDt = Mathf.Min(frameDt, 0.1f); // bound work after a stall
         Vector3 screen = Input.mousePosition;
         screen.z = Mathf.Abs(targetCamera.transform.position.z);
         Vector2 mouseWorld = targetCamera.ScreenToWorldPoint(screen);
-
-        if (_hasMouseSample)
-        {
-            Vector2 rawVel = (mouseWorld - _lastMouseWorld) / dt;
-            float t = 1f - Mathf.Exp(-velocitySmooth * dt);
-            _smoothVelocity = Vector2.Lerp(_smoothVelocity, rawVel, t);
-        }
-        else
-        {
-            _hasMouseSample = true;
-            _smoothVelocity = Vector2.zero;
-        }
-
+        Vector2 previousWorld = _lastMouseWorld;
+        bool pointerValid = Application.isFocused && targetCamera.pixelRect.Contains(new Vector2(screen.x, screen.y));
+        bool canInject = pointerValid && _hasMouseSample && frameDt <= 0.1f;
+        if (!canInject) previousWorld = mouseWorld;
+        Vector2 rawVel = (mouseWorld - previousWorld) / frameDt;
+        _smoothVelocity = canInject
+            ? Vector2.Lerp(_smoothVelocity, rawVel, 1f - Mathf.Exp(-velocitySmooth * frameDt))
+            : Vector2.zero;
+        _hasMouseSample = pointerValid;
         _lastMouseWorld = mouseWorld;
 
         Vector2 origin = targetCamera.transform.position;
-        Vector2 uv = new Vector2(
-            (mouseWorld.x - origin.x) / Mathf.Max(_worldWidth, 0.001f) + 0.5f,
-            (mouseWorld.y - origin.y) / Mathf.Max(_worldHeight, 0.001f) + 0.5f);
-
-        // 鼠标速度 → UV 空间速度（与 Advect 一致）
-        Vector2 velUv = new Vector2(
-            _smoothVelocity.x / Mathf.Max(_worldWidth, 0.001f),
-            _smoothVelocity.y / Mathf.Max(_worldHeight, 0.001f));
-
-        float speed = _smoothVelocity.magnitude;
-        float splatStrength = 0f;
-        Vector2 injectVel = Vector2.zero;
-        if (speed >= moveSpeedThreshold)
-        {
-            injectVel = velUv;
-            float uvSpeed = injectVel.magnitude;
-            if (uvSpeed > 1e-5f)
-            {
-                float capped = Mathf.Min(uvSpeed, 2.5f);
-                injectVel = injectVel / uvSpeed * capped;
-                splatStrength = splatForce * Mathf.Clamp01(speed / 8f);
-            }
-        }
-
-        _fluidMat.SetFloat(DtId, dt);
-        _fluidMat.SetFloat(DissipationId, velocityDissipation);
+        Vector2 size = new Vector2(Mathf.Max(_worldWidth, 0.001f), Mathf.Max(_worldHeight, 0.001f));
+        Vector2 uv = (mouseWorld - origin) / size + Vector2.one * 0.5f;
+        Vector2 startUv = (previousWorld - origin) / size + Vector2.one * 0.5f;
+        // One physical unit = screen height. All differential operators use this metric.
+        _fluidMat.SetVector(DomainId, new Vector4(size.x / size.y, 1f, 0f, 0f));
+        Vector2 injectVel = Vector2.ClampMagnitude(_smoothVelocity / size.y, 2.5f);
+        float strength = canInject && rawVel.magnitude >= moveSpeedThreshold
+            ? splatForce * Mathf.Clamp01(_smoothVelocity.magnitude / 8f) : 0f;
         _fluidMat.SetFloat(VorticityId, vorticity);
-        _fluidMat.SetFloat(DampingId, velocityDamping);
+        _fluidMat.SetFloat(RecoveryId, wakeRecovery);
 
-        // 1) Advect
-        Graphics.Blit(_velA, _velB, _fluidMat, PassAdvect);
-        SwapVel();
-
-        // 2) Curl + Vorticity confinement（MagicStones 里让漩涡“活”起来的关键）
-        Graphics.Blit(_velA, _curlRT, _fluidMat, PassCurl);
-        _fluidMat.SetTexture(CurlTexId, _curlRT);
-        Graphics.Blit(_velA, _velB, _fluidMat, PassVorticity);
-        SwapVel();
-
-        // 3) Pressure projection
-        Graphics.Blit(_velA, _divRT, _fluidMat, PassDivergence);
-        ClearRT(_pressureA);
-        ClearRT(_pressureB);
-        _fluidMat.SetTexture(DivTexId, _divRT);
-        int iters = Mathf.Clamp(pressureIterations, 4, 40);
-        for (int i = 0; i < iters; i++)
+        int steps = Mathf.CeilToInt(simulatedDt * 60f);
+        float dt = simulatedDt / steps;
+        _fluidMat.SetFloat(DtId, dt);
+        // Existing controls remain retention-per-60-Hz-step, independent of frame rate.
+        _fluidMat.SetFloat(DissipationId, Mathf.Pow(velocityDissipation, dt * 60f));
+        _fluidMat.SetFloat(DampingId, Mathf.Pow(velocityDamping, dt * 60f));
+        for (int step = 0; step < steps; step++)
         {
-            Graphics.Blit(_pressureA, _pressureB, _fluidMat, PassJacobi);
-            (_pressureA, _pressureB) = (_pressureB, _pressureA);
+            Graphics.Blit(_velA, _velB, _fluidMat, PassAdvect);
+            SwapVel();
+            Graphics.Blit(_velA, _velB, _fluidMat, PassDamp);
+            SwapVel();
+
+            // Sweep the segment so fast strokes cannot leave isolated splat dots.
+            Vector2 from = Vector2.Lerp(startUv, uv, (float)step / steps);
+            Vector2 to = Vector2.Lerp(startUv, uv, (float)(step + 1) / steps);
+            _fluidMat.SetVector(SplatStartId, new Vector4(from.x, from.y, 0f, 0f));
+            _fluidMat.SetVector(SplatUVId, new Vector4(to.x, to.y, splatRadius, strength * dt * 60f));
+            _fluidMat.SetVector(SplatVelId, new Vector4(injectVel.x, injectVel.y, 0f, 0f));
+            Graphics.Blit(_velA, _velB, _fluidMat, PassSplat);
+            SwapVel();
+
+            Graphics.Blit(_velA, _curlRT, _fluidMat, PassCurl);
+            _fluidMat.SetTexture(CurlTexId, _curlRT);
+            Graphics.Blit(_velA, _velB, _fluidMat, PassVorticity);
+            SwapVel();
+
+            // Project AFTER every velocity force; no divergent splat reaches the rain.
+            Graphics.Blit(_velA, _divRT, _fluidMat, PassDivergence);
+            ClearRT(_pressureA);
+            _fluidMat.SetTexture(DivTexId, _divRT);
+            for (int i = 0; i < Mathf.Clamp(pressureIterations, 8, 120); i++)
+            {
+                Graphics.Blit(_pressureA, _pressureB, _fluidMat, PassJacobi);
+                (_pressureA, _pressureB) = (_pressureB, _pressureA);
+            }
+            _fluidMat.SetTexture(PressureTexId, _pressureA);
+            Graphics.Blit(_velA, _velB, _fluidMat, PassProject);
+            SwapVel();
+
+            _fluidMat.SetTexture(VelocityTexId, _velA);
+            Graphics.Blit(_displacementA, _displacementB, _fluidMat, PassTransport);
+            (_displacementA, _displacementB) = (_displacementB, _displacementA);
         }
 
-        _fluidMat.SetTexture(PressureTexId, _pressureA);
-        Graphics.Blit(_velA, _velB, _fluidMat, PassProject);
-        SwapVel();
-
-        // 4) Damping
-        Graphics.Blit(_velA, _velB, _fluidMat, PassDamp);
-        SwapVel();
-
-        // 5) Inject：沿滑动方向推水
-        _fluidMat.SetVector(SplatUVId, new Vector4(uv.x, uv.y, splatRadius, splatStrength));
-        _fluidMat.SetVector(SplatVelId, new Vector4(injectVel.x, injectVel.y, 0f, 0f));
-        Graphics.Blit(_velA, _velB, _fluidMat, PassSplat);
-        SwapVel();
-
-        _midMat.SetTexture(WakeMapId, _velA);
+        _midMat.SetTexture(WakeMapId, _displacementA);
         _midMat.SetVector(WakeOriginId, new Vector4(origin.x, origin.y, 0f, 0f));
-        float invRes = 1f / Mathf.Max(_velA.width, 1);
-        _midMat.SetVector(WakeSizeId, new Vector4(_worldWidth, _worldHeight, invRes, invRes));
+        _midMat.SetVector(WakeSizeId, new Vector4(size.x, size.y, 1f / _velA.width, 1f / _velA.height));
         _midMat.SetFloat(WakeScaleId, wakeDisplaceScale);
         _midMat.SetFloat(WakeEnabledId, 1f);
     }
@@ -262,27 +268,32 @@ public class MainMenuMatrixBackground : MonoBehaviour
         }
 
         _fluidMat = new Material(fluidShader);
-        EnsureRTs();
-        ClearAllFluidRTs();
     }
 
     private void EnsureRTs()
     {
         int res = Mathf.ClosestPowerOfTwo(Mathf.Clamp(resolution, 64, 512));
-        if (_velA != null && _velA.width == res) return;
+        float aspect = _worldWidth > 0f ? _worldWidth / Mathf.Max(_worldHeight, 0.001f) : targetCamera.aspect;
+        int width = aspect >= 1f ? res : Mathf.Max(32, Mathf.RoundToInt(res * aspect));
+        int height = aspect >= 1f ? Mathf.Max(32, Mathf.RoundToInt(res / aspect)) : res;
+        if (_velA != null && _velA.width == width && _velA.height == height) return;
 
         ReleaseRTs();
-        _velA = CreateRT(res, RenderTextureFormat.RGHalf, "MenuFluidVel");
-        _velB = CreateRT(res, RenderTextureFormat.RGHalf, "MenuFluidVelTmp");
-        _pressureA = CreateRT(res, RenderTextureFormat.RHalf, "MenuFluidPressure");
-        _pressureB = CreateRT(res, RenderTextureFormat.RHalf, "MenuFluidPressureTmp");
-        _divRT = CreateRT(res, RenderTextureFormat.RHalf, "MenuFluidDiv");
-        _curlRT = CreateRT(res, RenderTextureFormat.RHalf, "MenuFluidCurl");
+        _velA = CreateRT(width, height, RenderTextureFormat.RGHalf, "MenuFluidVel");
+        _velB = CreateRT(width, height, RenderTextureFormat.RGHalf, "MenuFluidVelTmp");
+        _pressureA = CreateRT(width, height, RenderTextureFormat.RHalf, "MenuFluidPressure");
+        _pressureB = CreateRT(width, height, RenderTextureFormat.RHalf, "MenuFluidPressureTmp");
+        _divRT = CreateRT(width, height, RenderTextureFormat.RHalf, "MenuFluidDiv");
+        _curlRT = CreateRT(width, height, RenderTextureFormat.RHalf, "MenuFluidCurl");
+        _displacementA = CreateRT(width, height, RenderTextureFormat.RGHalf, "MenuFluidDisplacement");
+        _displacementB = CreateRT(width, height, RenderTextureFormat.RGHalf, "MenuFluidDisplacementTmp");
+        ClearAllFluidRTs();
+        _hasMouseSample = false;
     }
 
-    private static RenderTexture CreateRT(int res, RenderTextureFormat format, string name)
+    private static RenderTexture CreateRT(int width, int height, RenderTextureFormat format, string name)
     {
-        var desc = new RenderTextureDescriptor(res, res, format, 0)
+        var desc = new RenderTextureDescriptor(width, height, format, 0)
         {
             msaaSamples = 1,
             useMipMap = false,
@@ -307,6 +318,8 @@ public class MainMenuMatrixBackground : MonoBehaviour
         ClearRT(_pressureB);
         ClearRT(_divRT);
         ClearRT(_curlRT);
+        ClearRT(_displacementA);
+        ClearRT(_displacementB);
     }
 
     private static void ClearRT(RenderTexture rt)
@@ -326,6 +339,8 @@ public class MainMenuMatrixBackground : MonoBehaviour
         ReleaseRT(ref _pressureB);
         ReleaseRT(ref _divRT);
         ReleaseRT(ref _curlRT);
+        ReleaseRT(ref _displacementA);
+        ReleaseRT(ref _displacementB);
     }
 
     private static void ReleaseRT(ref RenderTexture rt)
@@ -369,7 +384,8 @@ public class MainMenuMatrixBackground : MonoBehaviour
             targetCamera.transform.position.y,
             0f);
 
-        EnsureRTs();
+        if (_fluidMat != null) EnsureRTs();
+        _hasMouseSample = false;
     }
 
     private void CreateRainLayer()

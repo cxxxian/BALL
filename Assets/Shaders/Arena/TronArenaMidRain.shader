@@ -146,9 +146,9 @@ Shader "Custom/TronArenaMidRain"
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return worldXY;
 
-                // 速度场（RG）直接搅动字雨：对齐流体仿真可视化方式
+                // 累计的逆向材质位移（UV），字列随流移动而非瞬时速度扭曲。
                 float2 flowUv = SAMPLE_TEXTURE2D(_WakeMap, sampler_WakeMap, uv).rg;
-                return worldXY + flowUv * size * _WakeScale;
+                return worldXY - flowUv * size * _WakeScale;
             }
 
             float FloorGridLine(float2 g, float2 fw, float lineW)

@@ -6,6 +6,8 @@ public class Minion : EnemyBase
 
     private SpriteRenderer _sr;
     private Color _baseColor;
+    private Phase6EnemyBehaviour _phase6;
+    public int SpawnWaveIndex { get; private set; }
 
     // ── Steering 参数 ────────────────────────────────────────────────────
     private const float LookAhead   = 2.2f;
@@ -29,11 +31,13 @@ public class Minion : EnemyBase
 
     public void Initialize(MinionDefinition def, int waveIndex = 0)
     {
+        SpawnWaveIndex = waveIndex;
         definition              = def;
-        bool armored            = def != null && !def.isBomber && def.maxHP >= 3;
+        bool armored            = def.specialType == MinionSpecialType.None && !def.isBomber && def.maxHP >= 3;
         float hpMult            = EndlessWaveScaling.GetMinionHpMultiplier(waveIndex, armored);
         float spdMult           = EndlessWaveScaling.GetMinionSpeedMultiplier(waveIndex);
-        maxHits                 = Mathf.Max(1, Mathf.RoundToInt(def.maxHP * hpMult));
+        maxHits                 = def.specialType == MinionSpecialType.Mini
+            ? 1 : Mathf.Max(1, Mathf.RoundToInt(def.maxHP * hpMult));
         moveSpeed               = def.moveSpeed * spdMult;
         scoreOnHit              = def.scoreOnHit;
         scoreOnKill             = def.scoreOnKill;
@@ -97,11 +101,34 @@ public class Minion : EnemyBase
 
         if (GetComponent<MinionFallPreview>() == null)
             gameObject.AddComponent<MinionFallPreview>();
+
+        if (def.specialType != MinionSpecialType.None)
+        {
+            _phase6 = gameObject.AddComponent<Phase6EnemyBehaviour>();
+            _phase6.Initialize(this);
+        }
+    }
+
+    protected override void LateUpdate()
+    {
+        if (_phase6 != null && _phase6.SuppressBottomCheck) return;
+        base.LateUpdate();
+    }
+
+    protected override void OnDie()
+    {
+        _phase6?.OnKilled();
     }
 
     protected override void ApplyMovement()
     {
         if (_rb == null) return;
+
+        if (_phase6 != null && _phase6.TryGetSpecialVelocity(out Vector2 specialVelocity))
+        {
+            _rb.velocity = specialVelocity;
+            return;
+        }
 
         float speed = moveSpeed * WaveManager.MinionSpeedMultiplier;
         if (TimestopAura.Instance != null)
