@@ -123,13 +123,9 @@ public class ComboSystem : MonoBehaviour
         Mathf.Max(MinComboThreshold, baseThreshold);
 
     /// <summary>
-    /// 显示/通用门槛。4b-4 后不再被连击大师降低；Pulse 门槛见 <see cref="GetPulseEffectiveThreshold"/>。
+    /// 显示/通用门槛。4b-4 后不再被连击大师降低。
     /// </summary>
     public static int GetEffectiveThreshold(int baseThreshold) =>
-        Mathf.Max(MinComboThreshold, baseThreshold);
-
-    /// <summary>Pulse 里程碑门槛（固定；不再吃 Buff 减门槛）。</summary>
-    public static int GetPulseEffectiveThreshold(int baseThreshold) =>
         Mathf.Max(MinComboThreshold, baseThreshold);
 
     /// <summary>挡板严格断连：任意挡板接触即清零；未用 CD 券作废。</summary>

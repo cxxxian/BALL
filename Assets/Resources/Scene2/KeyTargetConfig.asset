@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74fb9ef37a40a9d47800fdf029a0cd3f, type: 3}
+  m_Name: KeyTargetConfig
+  m_EditorClassIdentifier: 
+  boss: {fileID: 11400000, guid: d66fa8f34a969274289376ade6409b80, type: 2}
+  grunt: {fileID: 11400000, guid: 97bf566123973594aa248ce9930c3c7a, type: 2}
+  armored: {fileID: 11400000, guid: 4c66eb1006d14554eb81a97ef0874ba5, type: 2}
+  bomber: {fileID: 11400000, guid: 4152f97e9a1c1e4478e965b12343abef, type: 2}
+  font: {fileID: 12800000, guid: 2d38c98a8fe77aa47b0b53a61214d57d, type: 3}
+  loopRule: 1
+  groupSize: 6
+  batchSize: 3
+  aliveCap: 8
+  openingDelay: 2
+  batchDelay: 4
+  groupRest: 3
+  spawnHalfWidth: 3.4
+  spawnVerticalStep: 0.65
+  weakDuration: 6
+  weakMultiplier: 1.5
+  bossHealth: 140000001c000000240000002c000000340000003c000000

@@ -52,11 +52,7 @@ public class GameConfig : ScriptableObject
     [Tooltip("每次 Combo 命中增加的能量（默认 4 → 约 25 连击充满，保留弹珠战主导）")]
     public float flipperWeaponEnergyPerCombo = 4f;
 
-    [Header("Combo Milestone — Bumper Pulse")]
-    [Tooltip("首次触发脉冲的连击数（测试 5，正式 25）")]
-    public int   comboRewardThreshold25 = 25;
-    [Tooltip("之后每隔 N 连击再触发一次（5→10→15… 或 25→30→35…）")]
-    public int   comboPulseInterval = 10;
+    [Header("Protocol Reward — Bumper Pulse")]
     public int   bumperPulseMilestoneDamage = 1;
     public float bumperPulseRadius          = 3.2f;
     public float bumperPulseRingDuration    = 1.0f;

@@ -66,6 +66,7 @@ public class BuffSelectionController : MonoBehaviour
     private bool _overlayVisible;
     private bool _allowRealtime;
     private Coroutine _flowCoroutine;
+    private SlotAssemblyTransition _assemblyTransition;
 
     private readonly Queue<BuffDefinition> _towerQueue = new Queue<BuffDefinition>();
     private BuffDefinition _pendingTowerBuff;
@@ -139,8 +140,11 @@ public class BuffSelectionController : MonoBehaviour
         }
     }
 
+    private void OnDisable() => _assemblyTransition?.Dispose();
+
     private void OnDestroy()
     {
+        _assemblyTransition?.Dispose();
         if (Instance == this) Instance = null;
         if (GameManager.Instance != null)
         {
@@ -218,6 +222,9 @@ public class BuffSelectionController : MonoBehaviour
         _allowRealtime = false;
         Time.timeScale = 0f;
         FitPanelToViewport();
+        _assemblyTransition?.Dispose();
+        _assemblyTransition = new SlotAssemblyTransition(_slotPanel);
+        _assemblyTransition.Play();
     }
 
     private void FitPanelToViewport()
@@ -245,7 +252,7 @@ public class BuffSelectionController : MonoBehaviour
 
     private void OnLeverPulled()
     {
-        if (!_overlayVisible || _flowCoroutine != null) return;
+        if (!_overlayVisible || _flowCoroutine != null || (_assemblyTransition?.IsPlaying ?? false)) return;
 
         switch (_phase)
         {
@@ -1051,6 +1058,7 @@ public class BuffSelectionController : MonoBehaviour
 
     public void Hide()
     {
+        _assemblyTransition?.Dispose();
         StopFlow();
         HideTowerChoice();
         HideOutcomePanel();

@@ -8,7 +8,6 @@ public static class ShopCanvasBuilder
     private static Font font;
     private static readonly Color Cyan = new Color(0.18f, 0.86f, 1f);
     private static readonly Color Muted = new Color(0.59f, 0.72f, 0.78f);
-    [MenuItem("Rebound Protocol/UI/Create editable shop")]
     public static void Build()
     {
         if (Application.isPlaying) throw new System.InvalidOperationException("Create shop in Edit mode.");

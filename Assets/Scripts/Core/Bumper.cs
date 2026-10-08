@@ -36,6 +36,8 @@ public class Bumper : MonoBehaviour
     private bool _flashing   = false;
     private bool _disabled   = false;
     private bool _passthrough = false;
+    public bool IsDisabled => _disabled;
+    public bool IsPassthrough => _passthrough;
 
     private MaterialPropertyBlock _mpb;
     private float _flashValue;
@@ -74,54 +76,50 @@ public class Bumper : MonoBehaviour
             _glowBaseScale = glowT.localScale;
             _glowBaseColor = _glowSR != null ? _glowSR.color : Color.white;
         }
+        ApplyAvailability();
     }
 
     // 斩杀连锁期间调用：碰撞体关闭，弹珠完全穿透，同时视觉暗化提示
     public void SetPassthrough(bool passthrough)
     {
         _passthrough = passthrough;
-        if (_col != null) _col.enabled = !passthrough;
-
-        if (_sr != null)
-            _sr.color = passthrough
-                ? (UsesTableArt ? new Color(0.2f, 0.2f, 0.2f, 1f) : NeonPalette.Dim(_baseColor, 0.15f))
-                : ResolveDisplayColor();
-        if (_glowSR != null) _glowSR.color = passthrough
-            ? new Color(_glowBaseColor.r, _glowBaseColor.g, _glowBaseColor.b, 0.08f)
-            : _glowBaseColor;
-
-        if (passthrough)
-        {
-            _flashValue = 0f;
-            ApplyHitFlash(0f);
-            if (_visual != null) _visual.localScale = _visualBaseScale;
-        }
+        if (passthrough) ResetHitJuice();
+        ApplyAvailability();
     }
 
     public void SetDisabled(bool disabled)
     {
         _disabled = disabled;
-        if (disabled)
-        {
-            StopAllCoroutines();
-            _flashing = false;
-            _flashValue = 0f;
-            ApplyHitFlash(0f);
-            if (_visual != null) _visual.localScale = _visualBaseScale;
-            if (_glowSR != null)
-            {
-                _glowSR.transform.localScale = _glowBaseScale;
-                _glowSR.color = _glowBaseColor;
-            }
-        }
+        if (disabled) ResetHitJuice();
+        ApplyAvailability();
+    }
+
+    private void ResetHitJuice()
+    {
+        StopAllCoroutines();
+        _flashing = false;
+        _flashValue = 0f;
+        ApplyHitFlash(0f);
+        if (_visual != null) _visual.localScale = _visualBaseScale;
+        if (_glowSR != null) _glowSR.transform.localScale = _glowBaseScale;
+    }
+
+    private void ApplyAvailability()
+    {
+        // Bomber disable and execute passthrough are independent blockers.
+        // Clearing either one cannot re-enable a still-blocked bumper.
+        if (_col != null) _col.enabled = !_disabled && !_passthrough;
         if (_sr != null) _sr.color = ResolveDisplayColor();
+        if (_glowSR != null)
+            _glowSR.color = _disabled || _passthrough
+                ? new Color(_glowBaseColor.r, _glowBaseColor.g, _glowBaseColor.b, 0.08f)
+                : _glowBaseColor;
     }
 
     public void RefreshFromPalette()
     {
         _baseColor = NeonColors.Active.GetBase(NeonRole.Bumper);
-        if (_sr != null && !_flashing && !_passthrough)
-            _sr.color = ResolveDisplayColor();
+        if (!_flashing) ApplyAvailability();
     }
 
     private bool UsesTableArt =>
@@ -129,6 +127,8 @@ public class Bumper : MonoBehaviour
 
     private Color ResolveDisplayColor()
     {
+        if (_passthrough)
+            return UsesTableArt ? new Color(0.2f, 0.2f, 0.2f, 1f) : NeonPalette.Dim(_baseColor, 0.15f);
         if (UsesTableArt)
         {
             // 贴图自带配色；禁用时压暗，正常保持白 tint 喂 SpriteNeonHDR
@@ -139,7 +139,7 @@ public class Bumper : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D col)
     {
-        if (_disabled) return;
+        if (_disabled || _passthrough) return;
         if (!col.gameObject.CompareTag("Ball")) return;
 
         // ── 碰撞冷却检测：防止穿模抖动 ─────────────────────────────────────

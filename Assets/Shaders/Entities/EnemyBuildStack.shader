@@ -6,6 +6,9 @@ Shader "Custom/EnemyBuildStack"
         _Color ("Tint", Color) = (1,1,1,1)
         _FrostColor ("Frost White", Color) = (0.70,0.82,0.88,1)
         _SpriteUVRect ("Sprite UV Rect", Vector) = (0,0,1,1)
+        _IceRoughness ("Ice Surface Frost", Range(0,1)) = 0.38
+        _IceDensity ("Ice Internal Density", Range(0,2)) = 0.7
+        _IceIOR ("Ice Refraction Index", Range(1.01,1.6)) = 1.31
     }
 
     SubShader
@@ -28,6 +31,7 @@ Shader "Custom/EnemyBuildStack"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
             #pragma multi_compile_instancing
             #include "UnityCG.cginc"
 
@@ -49,6 +53,7 @@ Shader "Custom/EnemyBuildStack"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
             fixed4 _Color;
             fixed4 _FrostColor;
             float4 _SpriteUVRect;
@@ -57,6 +62,24 @@ Shader "Custom/EnemyBuildStack"
             float _EventPulse;
             float _ConsumePulse;
             float _FreezeAmount;
+            float _IceRoughness, _IceDensity, _IceIOR;
+
+            float IceHash(float2 p)
+            {
+                return frac(sin(dot(p, float2(127.1,311.7))) * 43758.5453);
+            }
+            float IceNoise(float2 p)
+            {
+                float2 cell = floor(p), f = frac(p);
+                f = f*f*(3.0-2.0*f);
+                return lerp(lerp(IceHash(cell), IceHash(cell+float2(1,0)), f.x),
+                    lerp(IceHash(cell+float2(0,1)), IceHash(cell+1.0), f.x), f.y);
+            }
+            float IceRelief(float2 uv)
+            {
+                float2 p = uv + _PatternSeed * float2(2.7,5.3);
+                return IceNoise(p*15.0)*0.7 + IceNoise(p*39.0)*0.3;
+            }
 
             float SegmentLine(float2 p, float2 a, float2 b, float width)
             {
@@ -117,14 +140,16 @@ Shader "Custom/EnemyBuildStack"
                     cos(_PatternSeed * 21.0)) * 0.025;
 
                 float p0 = Patch(uv, float2(0.70, 0.64) + shift,
-                    float2(0.16, 0.14) * (1.0 + tier2 * 0.10 + tier3 * 0.10),
+                    float2(0.24, 0.22) * (1.0 + tier2 * 0.15 + tier3 * 0.15),
                     _PatternSeed * 7.0) * tier1;
                 float p1 = Patch(uv, float2(0.29, 0.35) - shift,
-                    float2(0.15, 0.17) * (1.0 + tier3 * 0.10),
+                    float2(0.23, 0.26) * (1.0 + tier3 * 0.15),
                     _PatternSeed * 9.0 + 3.0) * tier2;
                 float p2 = Patch(uv, float2(0.49, 0.78) + shift * 0.5,
-                    float2(0.18, 0.12), _PatternSeed * 11.0 + 5.0) * tier3;
+                    float2(0.28, 0.20), _PatternSeed * 11.0 + 5.0) * tier3;
                 float frost = saturate(max(p0, max(p1, p2)));
+                // Short freeze retains a shell even when a frost burst has consumed all marks.
+                frost = max(frost, saturate(_FreezeAmount) * .9);
                 float rim = max(PatchRim(p0), max(PatchRim(p1), PatchRim(p2)));
 
                 float cracks = 0.0;
@@ -145,15 +170,35 @@ Shader "Custom/EnemyBuildStack"
                     float2(0.66, 0.88) + shift * 0.5,
                     float2(0.57, 0.91) + shift * 0.5) * tier3);
 
-                float3 frostSurface = _FrostColor.rgb + tex.rgb * 0.18;
-                float strength = frost * (0.70 + tier2 * 0.05 + tier3 * 0.05);
-                float3 rgb = lerp(tex.rgb, frostSurface, saturate(strength));
-                rgb += float3(0.24, 0.31, 0.33) * rim *
-                    (0.25 + saturate(_EventPulse) * 0.20);
-                rgb = lerp(rgb, float3(0.83, 0.94, 0.98), cracks * 0.62);
-                rgb = lerp(rgb, float3(0.77, 0.91, 0.96), crystals * 0.58);
-                rgb = lerp(rgb, frostSurface,
-                    saturate(_FreezeAmount) * frost * 0.07);
+                // A local Sprite ice shell: approximate optics without scene copies or raymarching.
+                // Sample only inside this sprite's atlas rectangle; preserve its original silhouette.
+                float relief = IceRelief(uv);
+                float2 gradient = float2(IceRelief(uv+float2(.006,0))-relief,
+                    IceRelief(uv+float2(0,.006))-relief)/.006;
+                float3 normal = normalize(float3(-gradient * (.035 + _IceRoughness*.06), 1.0));
+                float thickness = frost * (.35 + relief*.65 + tier3*.15 + saturate(_FreezeAmount)*.18);
+                float3 ray = refract(float3(0,0,-1), normal, 1.0/max(_IceIOR,1.01));
+                float2 localRefracted = uv + ray.xy * thickness * .075;
+                float2 atlasInset = _MainTex_TexelSize.xy * .5;
+                float2 refractedUV = clamp(lerp(_SpriteUVRect.xy,_SpriteUVRect.zw,localRefracted),
+                    _SpriteUVRect.xy+atlasInset, _SpriteUVRect.zw-atlasInset);
+                float4 refracted = tex2D(_MainTex, TRANSFORM_TEX(refractedUV,_MainTex)) * i.color;
+                float3 transmitted = lerp(tex.rgb,refracted.rgb,saturate(refracted.a)*.8);
+                float scattering = 1.0-exp(-thickness * _IceDensity * 1.7);
+                float3 ice = lerp(transmitted*float3(.85,.95,1.0),
+                    lerp(_FrostColor.rgb,float3(.95,.98,1.0),.5), scattering);
+                float frostGrain = smoothstep(.38,.78,relief)*_IceRoughness;
+                ice = lerp(ice,float3(.89,.95,.97),frostGrain*.48);
+                float3 halfDir = normalize(float3(-.55,.75,1.6));
+                float specular = pow(saturate(dot(normal,halfDir)),lerp(90.0,18.0,_IceRoughness));
+                float fresnel = .018 + .982*pow(1.0-saturate(normal.z),5.0);
+                ice += specular * float3(.7,.78,.8) + fresnel * float3(.45,.6,.7);
+                float grainAA = 1.0-smoothstep(.035,.09,max(length(ddx(uv)),length(ddy(uv))));
+                ice += smoothstep(.84,.97,relief)*grainAA*float3(.15,.2,.22);
+                float3 rgb = lerp(tex.rgb,ice,saturate(frost*.92));
+                rgb += float3(.18,.26,.3)*rim*(.35+saturate(_EventPulse)*.35);
+                rgb = lerp(rgb,float3(.83,.94,.98),cracks*.55);
+                rgb = lerp(rgb,float3(.85,.96,1.0),crystals*.62);
                 rgb += float3(0.08, 0.12, 0.14) * saturate(_ConsumePulse) * rim;
 
                 fixed4 outC;

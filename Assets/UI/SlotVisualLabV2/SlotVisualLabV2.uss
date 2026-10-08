@@ -1,0 +1,71 @@
+.lab-root { flex-grow: 1; background-color: transparent; overflow: hidden; }
+.stage { position: absolute; left: 50%; top: 50%; margin-left: -360px; margin-top: -640px; width: 720px; height: 1280px; transform-origin: 0% 0%; }
+.machine-backplate { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-image: url("/Assets/Art/SlotVisualLabV2/terminal_portrait_clean_transparent.png"); -unity-background-scale-mode: stretch-to-fill; }
+Label { color: #bdf9ff; -unity-text-align: middle-center; white-space: normal; }
+.caption, .live-button { -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf"); }
+.caption, .live-button, .roll-control, .reel-window, .test-dock, .outcome-panel, .inspect-overlay { position: absolute; }
+.reel-window { overflow: hidden; }
+.protocol-cell { position: absolute; left: 16px; width: 92px; height: 92px; -unity-background-scale-mode: scale-to-fit; }
+.glass-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-image: url("/Assets/Art/SlotVisualLab/glass_edge_shade.png"); -unity-background-scale-mode: stretch-to-fill; }
+.selection-glow { position: absolute; left: 0; top: 159px; width: 100%; height: 118px; background-image: url("/Assets/Art/SlotVisualLab/selection_glow.png"); -unity-background-scale-mode: stretch-to-fill; }
+.lock-line { position: absolute; left: 0; width: 100%; height: 1px; background-color: rgba(143, 240, 255, 0.35); }
+.buff-divider { position: absolute; width: 1px; height: 82px; background-color: rgba(112, 184, 196, 0.34); }
+.roll-frame, .fill-parent { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.roll-frame { display: none; }
+.live-button, .live-button:hover, .live-button:focus, .live-button:active, .live-button:disabled {
+    margin: 0; padding: 0; border-width: 0; border-color: transparent; border-radius: 0;
+    background-image: none; background-color: transparent;
+    color: #eafdff; font-size: 32px; -unity-font-style: bold; -unity-text-align: middle-center;
+}
+.live-button:hover, .live-button:focus { color: #bdf9ff; }
+.live-button:active { color: #70e7ff; }
+.live-button:disabled { color: #67939a; }
+.lab-button { font-size: 20px; }
+.reel-result, .reel-result:hover, .reel-result:focus, .reel-result:active, .cash-out-button, .cash-out-button:hover, .cash-out-button:focus, .cash-out-button:active {
+    margin: 0; padding: 0 6px; border-width: 0; border-color: transparent; border-radius: 0;
+    background-image: none; background-color: transparent; color: #bdf9ff;
+    -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
+    -unity-text-align: middle-center; white-space: pre-wrap;
+}
+.reel-result { font-size: 22px; }
+.reel-result:hover { color: white; background-color: transparent; }
+.reel-result:focus { color: white; background-color: transparent; }
+.reel-result:disabled { color: #b4d2d6; opacity: 1; }
+.reel-outcome { font-size: 16px; -unity-font-style: bold; -unity-text-align: middle-center; color: #b4d2d6; }
+.reel-result.outcome-full, .reel-result.outcome-applied {
+    background-color: rgba(18, 104, 111, 0.24);
+    border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px;
+    border-color: #57f0e6; color: #d9ffff;
+}
+.reel-result.outcome-scrap {
+    background-color: rgba(126, 76, 24, 0.24);
+    border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px;
+    border-color: #ffbd69; color: #ffe0ad;
+}
+.reel-result.outcome-ignored {
+    background-color: rgba(51, 68, 73, 0.25);
+    border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px;
+    border-color: #78939a; color: #bacbd0;
+}
+.reel-result.outcome-empty {
+    background-color: rgba(41, 47, 51, 0.24);
+    border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px;
+    border-color: #65757a; color: #aab8bc;
+}
+.reel-outcome.outcome-full, .reel-outcome.outcome-applied { color: #65fff0; }
+.reel-outcome.outcome-scrap { color: #ffbd69; }
+.reel-outcome.outcome-ignored, .reel-outcome.outcome-empty { color: #a8b8bd; }
+.selection-glow.outcome-full, .selection-glow.outcome-applied { -unity-background-image-tint-color: rgba(50, 255, 229, 1); }
+.selection-glow.outcome-scrap { -unity-background-image-tint-color: rgba(255, 176, 72, 1); }
+.selection-glow.outcome-ignored, .selection-glow.outcome-empty { -unity-background-image-tint-color: rgba(140, 160, 166, 0.58); }
+.reel-window.outcome-full > .lock-line, .reel-window.outcome-applied > .lock-line { background-color: rgba(87, 240, 230, 0.88); }
+.reel-window.outcome-scrap > .lock-line { background-color: rgba(255, 189, 105, 0.88); }
+.reel-window.outcome-ignored > .lock-line, .reel-window.outcome-empty > .lock-line { background-color: rgba(145, 165, 170, 0.66); }
+.outcome-panel { overflow: hidden; background-color: rgba(2, 10, 14, 0.82); }
+.outcome-line { font-size: 22px; color: #d2f4f7; -unity-text-align: middle-left; white-space: nowrap; overflow: hidden; }
+.cash-out-button { font-size: 22px; background-color: rgba(4, 18, 24, 0.9); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-color: #d88946; }
+.cash-out-button:hover, .cash-out-button:focus { color: white; background-color: #10242a; }
+.inspect-overlay { background-color: rgba(2, 9, 13, 0.97); border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-color: #42d8f5; }
+.test-dock { display: none; background-color: rgba(5, 10, 15, 0.98); }
+.test-button, .test-button:hover, .test-button:focus, .test-button:active { font-size: 18px; background-color: rgba(3, 9, 14, 0.94); }
+.test-button:hover, .test-button:focus { color: white; background-color: #10242a; }

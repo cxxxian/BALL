@@ -7,13 +7,11 @@ using UnityEngine.Rendering;
 public class EnemyChargeArcVisual : MonoBehaviour
 {
     private const int MaxSlots = 5;
-    private const int PointCount = 6;
+    private const int PointCount = 24;
     private const float TwoPi = Mathf.PI * 2f;
 
     [Header("Charge Appearance")]
-    [SerializeField] private Color glowColor = new Color(0.02f, 0.52f, 0.78f, 0.28f);
-    [SerializeField] private Color bodyColor = new Color(0f, 0.91f, 1f, 0.95f);
-    [SerializeField] private Color coreColor = new Color(0.84f, 0.98f, 1f, 1f);
+    [SerializeField] private Color bodyColor = Color.white;
     [SerializeField, Range(2f, 5f)] private float bodyWidthPixels = 3f;
 
     private sealed class ArcSlot
@@ -28,6 +26,7 @@ public class EnemyChargeArcVisual : MonoBehaviour
     private readonly ArcSlot[] _slots = new ArcSlot[MaxSlots];
     private readonly List<Vector3> _vertices = new List<Vector3>(512);
     private readonly List<Vector2> _uvs = new List<Vector2>(512);
+    private readonly List<Vector2> _noiseSeeds = new List<Vector2>(512);
     private readonly List<Color> _colors = new List<Color>(512);
     private readonly List<int> _triangles = new List<int>(768);
     private SpriteRenderer _sprite;
@@ -38,7 +37,7 @@ public class EnemyChargeArcVisual : MonoBehaviour
     private Transform _root;
     private Camera _camera;
     private int _level;
-    private float _nodeAngle, _pulseWait, _pulseLeft;
+    private float _pulseWait, _pulseLeft;
 
     public static EnemyChargeArcVisual EnsureOn(EnemyBase enemy)
     {
@@ -52,7 +51,6 @@ public class EnemyChargeArcVisual : MonoBehaviour
 private void Awake()
     {
         EnsureSlots();
-        _nodeAngle = Random.Range(0f, TwoPi);
         EnsureSetup();
     }
 
@@ -190,6 +188,7 @@ private void LateUpdate()
 
     private void Spawn(ArcSlot s)
     {
+        s.seed = Random.Range(0f, 100f);
         Bounds bounds = SpriteBounds();
         Vector2 center = bounds.center;
         float hx = Mathf.Max(bounds.extents.x, 0.15f);
@@ -211,7 +210,7 @@ private void LateUpdate()
             {
                 float t = j / (float)(PointCount - 1);
                 float kink = j == 0 || j == PointCount - 1 ? 0f
-                    : Random.Range(-0.07f, 0.07f) * unit;
+                    : (Mathf.PerlinNoise(t * 12f, s.seed) * 2f - 1f) * .09f * unit * Mathf.Sin(t * Mathf.PI);
                 s.points[j] = Vector2.Lerp(a, b, t) + side * kink;
             }
         }
@@ -224,7 +223,7 @@ private void LateUpdate()
                 float a = angle + span * j / (PointCount - 1);
                 Vector2 radial = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
                 float kink = j == 0 || j == PointCount - 1 ? 0f
-                    : Random.Range(-0.10f, 0.10f) * unit;
+                    : (Mathf.PerlinNoise(j * .65f, s.seed) * 2f - 1f) * .055f * unit;
                 s.points[j] = OrbitPoint(center, hx * radius, hy * radius, a)
                     + radial * kink;
             }
@@ -232,7 +231,7 @@ private void LateUpdate()
         s.hasBranch = _level >= 2 && Random.value < (_level == 2 ? 0.12f : 0.27f);
         if (s.hasBranch)
         {
-            Vector2 root = s.points[3];
+            Vector2 root = s.points[PointCount / 2];
             Vector2 outward = (root - center).normalized;
             Vector2 tangent = new Vector2(-outward.y, outward.x);
             s.branch[0] = root;
@@ -242,8 +241,6 @@ private void LateUpdate()
         s.active = true;
         s.elapsed = 0f;
         s.duration = Random.Range(0.30f, 0.44f);
-        s.seed = Random.Range(0f, 100f);
-        _nodeAngle = angle;
     }
 
     private Bounds SpriteBounds() => _sprite.sprite != null
@@ -257,6 +254,7 @@ private void LateUpdate()
     {
         _vertices.Clear();
         _uvs.Clear();
+        _noiseSeeds.Clear();
         _colors.Clear();
         _triangles.Clear();
 
@@ -278,31 +276,20 @@ private void LateUpdate()
             float opacity = Mathf.Min(Mathf.Clamp01(s.elapsed / 0.045f),
                 Mathf.Clamp01((s.duration - s.elapsed) / 0.15f)) * pulse;
             if (opacity < 0.01f) continue;
-            Color glow = glowColor, body = bodyColor, core = coreColor;
-            glow.a *= opacity;
+            Color body = bodyColor;
             body.a *= opacity;
-            core.a *= opacity;
-            AddPolyline(s.points, PointCount, bodyHalf * 1.9f, glow, s.seed);
-            AddPolyline(s.points, PointCount, bodyHalf, body, s.seed);
-            AddPolyline(s.points, PointCount, bodyHalf * 0.48f, core, s.seed);
-            AddNode(s.points[PointCount - 1], bodyHalf, opacity * 0.85f);
+            AddPolyline(s.points, PointCount, bodyHalf * 7f, body, s.seed);
             if (s.hasBranch)
             {
                 body.a *= 0.65f;
-                core.a *= 0.65f;
-                AddPolyline(s.branch, 3, bodyHalf * 0.65f, body, s.seed);
-                AddPolyline(s.branch, 3, bodyHalf * 0.31f, core, s.seed);
+                AddPolyline(s.branch, 3, bodyHalf * 4.5f, body, s.seed);
             }
         }
-
-        Bounds bounds = SpriteBounds();
-        Vector2 idle = OrbitPoint(bounds.center, bounds.extents.x * 1.02f,
-            bounds.extents.y * 1.02f, _nodeAngle);
-        AddNode(idle, bodyHalf * 0.90f, 0.70f);
 
         _mesh.Clear();
         _mesh.SetVertices(_vertices);
         _mesh.SetUVs(0, _uvs);
+        _mesh.SetUVs(1, _noiseSeeds);
         _mesh.SetColors(_colors);
         _mesh.SetTriangles(_triangles, 0);
         _mesh.RecalculateBounds();
@@ -310,61 +297,24 @@ private void LateUpdate()
 
     private void AddPolyline(Vector2[] points, int count, float halfWidth, Color color, float seed)
     {
-        for (int i = 0; i < count - 1; i++)
+        // Shared vertices and smoothed normals prevent cracks at adjacent ribbon segments.
+        int first = _vertices.Count;
+        for (int i = 0; i < count; i++)
         {
-            Vector2 a = Jitter(points[i], i, count, halfWidth, seed);
-            Vector2 b = Jitter(points[i + 1], i + 1, count, halfWidth, seed);
-            AddSegment(a, b, halfWidth, color,
-                i == 0 ? 0.35f : 1f, i == count - 2 ? 0.35f : 1f,
-                i / (float)(count - 1), (i + 1f) / (count - 1));
+            Vector2 tangent = (points[Mathf.Min(count - 1, i + 1)] - points[Mathf.Max(0, i - 1)]).normalized;
+            Vector2 normal = new Vector2(-tangent.y, tangent.x) * halfWidth;
+            _vertices.Add(points[i] + normal); _vertices.Add(points[i] - normal);
+            float u = i / (float)(count - 1);
+            // One 0–1 coordinate along the complete ribbon, with no per-segment reset.
+            _uvs.Add(new Vector2(u, 1f)); _uvs.Add(new Vector2(u, 0f));
+            _noiseSeeds.Add(new Vector2(seed,0)); _noiseSeeds.Add(new Vector2(seed,0));
+            Color c = color; c.a *= Mathf.SmoothStep(0f, 1f, Mathf.Min(u, 1f-u)*12f);
+            _colors.Add(c); _colors.Add(c);
+            if (i == count - 1) continue;
+            int v = first + i * 2;
+            _triangles.Add(v); _triangles.Add(v+2); _triangles.Add(v+1);
+            _triangles.Add(v+1); _triangles.Add(v+2); _triangles.Add(v+3);
         }
     }
 
-    private static Vector2 Jitter(Vector2 p, int i, int count, float width, float seed)
-    {
-        if (i == 0 || i == count - 1) return p;
-        return p + new Vector2(Mathf.Sin(Time.time * 39f + seed + i * 3.7f),
-            Mathf.Cos(Time.time * 33f + seed + i * 2.3f)) * width * 0.12f;
-    }
-
-    private void AddNode(Vector2 p, float halfWidth, float opacity)
-    {
-        Color c = coreColor;
-        c.a *= Mathf.Clamp01(opacity);
-        float arm = halfWidth * 1.80f;
-        AddSegment(p + Vector2.left * arm, p + Vector2.right * arm,
-            halfWidth * 0.42f, c, 0.55f, 0.55f);
-        AddSegment(p + Vector2.down * arm, p + Vector2.up * arm,
-            halfWidth * 0.42f, c, 0.55f, 0.55f);
-    }
-
-    private void AddSegment(Vector2 a, Vector2 b, float halfWidth, Color color,
-        float startFade, float endFade, float uvStart = 0f, float uvEnd = 1f)
-    {
-        Vector2 tangent = (b - a).normalized;
-        if (tangent.sqrMagnitude < 0.001f) return;
-        Vector2 normal = new Vector2(-tangent.y, tangent.x) * halfWidth;
-        int first = _vertices.Count;
-        _vertices.Add(a + normal);
-        _vertices.Add(b + normal);
-        _vertices.Add(b - normal);
-        _vertices.Add(a - normal);
-        _uvs.Add(new Vector2(uvStart, 1f));
-        _uvs.Add(new Vector2(uvEnd, 1f));
-        _uvs.Add(new Vector2(uvEnd, 0f));
-        _uvs.Add(new Vector2(uvStart, 0f));
-        Color ca = color, cb = color;
-        ca.a *= startFade;
-        cb.a *= endFade;
-        _colors.Add(ca);
-        _colors.Add(cb);
-        _colors.Add(cb);
-        _colors.Add(ca);
-        _triangles.Add(first);
-        _triangles.Add(first + 1);
-        _triangles.Add(first + 2);
-        _triangles.Add(first);
-        _triangles.Add(first + 2);
-        _triangles.Add(first + 3);
-    }
 }

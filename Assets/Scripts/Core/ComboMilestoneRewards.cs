@@ -1,13 +1,11 @@
 using UnityEngine;
 
 /// <summary>
-/// Combo 脉冲里程碑：首次达到阈值后每隔 interval 触发一次范围脉冲（25/35/45…）。
+/// 显式协议奖励的脉冲服务。保留组件以兼容现有场景；Combo 不再触发伤害脉冲。
 /// </summary>
 public class ComboMilestoneRewards : MonoBehaviour
 {
     public static ComboMilestoneRewards Instance { get; private set; }
-
-    private int _lastPulseCombo;
 
     private GameConfig Config => GameManager.Instance != null ? GameManager.Instance.config : null;
 
@@ -21,61 +19,6 @@ public class ComboMilestoneRewards : MonoBehaviour
     {
         if (Instance == this) Instance = null;
     }
-
-    private void Start()
-    {
-        if (ComboSystem.Instance != null)
-            ComboSystem.Instance.onComboChanged.AddListener(OnComboChanged);
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.onGameStart.AddListener(ResetForNewGame);
-
-        if (WaveManager.Instance != null)
-            WaveManager.Instance.onWaveStart.AddListener(OnWaveStart);
-    }
-
-    private void OnComboChanged(int combo)
-    {
-        if (combo <= 0)
-        {
-            _lastPulseCombo = 0;
-            return;
-        }
-
-        if (!IsPulseMilestoneCombo(combo)) return;
-        if (combo <= _lastPulseCombo) return;
-
-        _lastPulseCombo = combo;
-        FirePulseMilestone(combo);
-    }
-
-    private bool IsPulseMilestoneCombo(int combo)
-    {
-        int first = GetEffectiveFirstThreshold();
-        int interval = GetPulseInterval();
-        if (combo < first) return false;
-        return (combo - first) % interval == 0;
-    }
-
-    private void FirePulseMilestone(int combo)
-    {
-        Vector2 pos = ComboSystem.Instance != null
-            ? ComboSystem.Instance.LastHitWorldPosition
-            : Vector2.zero;
-        if (BallController.Instance != null && pos == Vector2.zero)
-            pos = BallController.Instance.transform.position;
-
-        Color fx = NeonColors.Active.GetBase(NeonRole.Bumper);
-        BumperPulse.ReleaseAt(pos, fx);
-
-        CameraShake.Instance?.Shake(combo >= GetEffectiveFirstThreshold() + GetPulseInterval() * 3
-            ? CameraShake.Preset.Heavy
-            : CameraShake.Preset.Medium);
-    }
-
-    public void OnWaveStart(int _) => _lastPulseCombo = 0;
-
-    public void ResetForNewGame() => _lastPulseCombo = 0;
 
     public int GetBumperPulseDamage()
     {
@@ -92,14 +35,6 @@ public class ComboMilestoneRewards : MonoBehaviour
         return enemy.maxHits <= 2;
     }
 
-    private int GetEffectiveFirstThreshold() =>
-        ComboSystem.GetPulseEffectiveThreshold(GetPulseFirstThreshold());
-
-    private int GetPulseFirstThreshold() =>
-        Config != null ? Config.comboRewardThreshold25 : 25;
-
-    private int GetPulseInterval() =>
-        Config != null ? Config.comboPulseInterval : 10;
 }
 
 /// <summary>在指定世界坐标释放一次 Bumper 脉冲（伤害随波前扩散，与 VFX 同步）。</summary>

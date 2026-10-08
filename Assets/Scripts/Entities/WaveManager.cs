@@ -60,6 +60,7 @@ public class WaveManager : MonoBehaviour
     private void Start()
     {
         onWaveStart.AddListener(OnWaveStartedForChips);
+        onWaveStart.AddListener(ResetBomberEffectForWave);
         if (GameManager.Instance != null)
         {
             GameManager.Instance.onGameStart.AddListener(OnGameStart);
@@ -77,6 +78,7 @@ public class WaveManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        onWaveStart.RemoveListener(ResetBomberEffectForWave);
         MinionSpeedMultiplier = 1f;
     }
 
@@ -84,6 +86,7 @@ public class WaveManager : MonoBehaviour
     private void OnGameStart()
     {
         StopAllCoroutines();
+        _speedBoostCoroutine = null;
         ClearAll();
         _currentWave = 0;
         MinionSpeedMultiplier = 1f;
@@ -192,6 +195,7 @@ public class WaveManager : MonoBehaviour
     {
         if (_breachClearArmed) return;
         _breachClearArmed = true;
+        ResetBomberEffect();
         Phase6SplitSpawn.CancelAll();
         FreezeActiveMinions();
         _breachClearRoutine = StartCoroutine(ClearMinionsWithBreachFx());
@@ -312,7 +316,8 @@ public class WaveManager : MonoBehaviour
     // ── 爆弹兵效果：禁用所有 Bumper ──────────────────────────────────────
     public void TriggerBomberEffect(float duration)
     {
-        _bumperDisabledUntil = Time.time + duration;
+        if (duration <= 0f || (GameManager.Instance != null && !GameManager.Instance.IsWaveSimActive())) return;
+        _bumperDisabledUntil = Mathf.Max(_bumperDisabledUntil, Time.time + duration);
         if (_bomberCoroutine == null)
             _bomberCoroutine = StartCoroutine(BomberRoutine());
     }
@@ -332,6 +337,16 @@ public class WaveManager : MonoBehaviour
         // 最终恢复
         foreach (var b in bumpers) if (b != null) b.SetDisabled(false);
         _bomberCoroutine = null;
+    }
+
+    private void ResetBomberEffectForWave(int _) => ResetBomberEffect();
+
+    private void ResetBomberEffect()
+    {
+        if (_bomberCoroutine != null) StopCoroutine(_bomberCoroutine);
+        _bomberCoroutine = null;
+        _bumperDisabledUntil = 0f;
+        foreach (var bumper in FindObjectsOfType<Bumper>()) bumper.SetDisabled(false);
     }
 
     // ── 清理 ─────────────────────────────────────────────────────────────
@@ -373,6 +388,8 @@ public class WaveManager : MonoBehaviour
 
     private void ClearAll()
     {
+        // Also reached by Scene2's independent restart/cleanup path.
+        ResetBomberEffect();
         Phase6SplitSpawn.CancelAll();
         ClearMinions();
         if (_currentBoss != null) { Destroy(_currentBoss.gameObject); _currentBoss = null; }

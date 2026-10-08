@@ -1,0 +1,27 @@
+Generated with built-in image_gen. Standalone background candidate; existing scene asset references not changed.
+
+Create a redesigned finished BACKGROUND ONLY texture for the pinball game Rebound Protocol. Use the supplied original image as the sole strong MATERIAL and VISUAL REFERENCE. The user repeatedly rejected generic synthetic frames, armored rims and phone-case outlines as ugly. Match the original's premium polished black glass and architectural light quality faithfully, while keeping surface colors pure and avoiding all baked bloom. Portrait exact 9:16; requested 1152x2048; overhead orthographic camera, parallel side walls, no horizon or exterior scenery.
+
+THE NONNEGOTIABLE GAMEPLAY LAYOUT — TOP-ORIGIN IMAGE COORDINATES:
+- Entire image corresponds to a 10.83 x 19.25 world board at y=-0.375.
+- A rounded top wall arch at the upper edge transitions into straight wall centerlines at x=8.5% and x=91.5%; broad rounded arch occupies only the upper 13%.
+- Combat area x=15%-85%, y=14%-72% stays open.
+- The entire LOWER 28% (y=72%-100%) MUST remain broadly open and visually quiet.
+- Flipper pivots at x=30% and x=70%, y=81%. Reserve an UNOBSTRUCTED rectangular dark space x=17%-83%, y=75%-91% for their movement. There must be NO frame, bevel, triangular wedge, floor mark, lit strip, funnel slope or decorative plane within that rectangle.
+- Reserve a FULL WIDTH clean near-black HUD strip at y=91%-100% for the live UI: skill chips centered at x=12% and x=88%, weapon energy bar at x=30%-70%. No decorative slot shapes, no drawings of buttons, no labels. Make this region a clean blank part of the asset.
+- Central drain also stays open. NO bottom closing border. NO diagonal frame sweeping into the center, NO taper in the lower playfield.
+- Side perimeter architecture stays outside x=15%-85% throughout, stops by y=89%, and never turns inward across the flippers or HUD. Any lower structural transition must retreat OUTWARD toward the canvas edges, never inward.
+
+ART DIRECTION:
+Build a pinball court from ONE elegant continuous obsidian glass surface, bordered by slim clean sculptural black side walls and a smooth broad arched top. Perimeter is architecturally restrained and low-profile, not tubular, not chunky. Narrow planar bevels with precise cold neutral highlights reveal the glossy black material. Black remains black. Use long uninterrupted sleek planes and a few decisive chamfers, no stack of outline layers, no decorative blocks, no repeating armor sections. The image must look like a beautiful black digital arena in TRON LEGACY, specifically the materials in the original reference, not a mobile phone frame, not a futuristic dashboard.
+
+APPROVED FEATURE: LONG EMBEDDED LIGHT STRIPS:
+One narrow constant-width cyan inlaid strip in each straight side wall, with one short dark interruption at approximately y=48%. Cyan begins along the top arch, turns cleanly into the side walls, and ends at y=71%-73%, before the reserved flipper zone. Use a few short subdued cyan accent slits ONLY on the outermost side margins below that, outside x=15%-85%, ending above y=89%. The top arch has two gracefully curved cyan insets. At most two very small amber accent slits near outer side edges at y=65%. Cyan is clean flat #58C5D6, amber #C18135. No pure-white light cores. Light is embedded flush, the channel remains visibly crisp and accurate.
+
+NO BAKED BLOOM:
+Unity will perform bloom with HDR material settings. This image must not contain glow halos, light spill, fog, reflected cyan streaks, diffuse orange lighting, lens flare or exposure bloom. Draw clean source strips with controlled moderate brightness, sharp boundaries and NO surrounding glow.
+
+FLOOR:
+Perfectly smooth pristine pure near-black #080B10 glass, broad large quiet planes. No floor texture, no clouds, no stains, no grain, no diamond seams, no decorative glowing line down the center. Shape quality comes from precise silhouette, subtle clean neutral speculars on the perimeter and meaningful proportion, not effects. Center and lower 28% are uniform dark and clean. Smooth black lacquer highlights only, not silver steel. Image should have real premium polished-black depth at its edges without contaminating the flat playing surface.
+
+Avoid absolutely: flippers, balls, bumpers, slingshot triangles, launcher, interior rails, circles, towers, targets, mechanisms, city, sky, text, UI buttons, mock placeholders, bottom frame, inward bottom shoulders, lower diagonal light lines, trapezoidal glowing floor patterns, chrome, thick soft plastic rim, industrial hardware, screws, vents, plate joints, grid, scratches, noise, bloom. Do not fill the reserved spaces with anything. One finished opaque background PNG.

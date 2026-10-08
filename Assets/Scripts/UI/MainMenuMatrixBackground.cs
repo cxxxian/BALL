@@ -60,6 +60,48 @@ public class MainMenuMatrixBackground : MonoBehaviour
     [SerializeField] private float wakeDisplaceScale = 1f;
     [SerializeField, Min(0f)] private float wakeRecovery = 3f;
     [SerializeField] private float velocitySmooth = 18f;
+    // Optional bounded stage for the portfolio; normal menu defaults are unchanged.
+    private bool _showcaseMode, _showcaseInteraction, _showcaseStroke;
+    private Vector2 _showcaseCenter, _showcaseSize, _strokeFrom, _strokeTo;
+    public Material ShowcaseMaterial => _midMat;
+    public RenderTexture ShowcaseWake => _displacementA;
+    public bool ShowcaseReady => _built && _velA != null && _midMat != null;
+
+    public void ConfigureShowcase(Camera camera, Vector2 center, Vector2 size)
+    {
+        targetCamera = camera; _showcaseMode = true;
+        _showcaseCenter = center; _showcaseSize = size;
+        if (_built) { ResizeToCamera(); ApplyShowcaseStyle(); }
+    }
+    public void SetShowcaseInteraction(bool enabled)
+    {
+        _showcaseInteraction = enabled; _hasMouseSample = false;
+        ResetShowcase();
+    }
+    public void ResetShowcase() { ClearAllFluidRTs(); _showcaseStroke = false; _smoothVelocity = Vector2.zero; }
+    public void QueueShowcaseStroke(Vector2 from, Vector2 to)
+    {
+        _strokeFrom = from; _strokeTo = to; _showcaseStroke = true;
+    }
+    public void SetShowcasePreset(int level)
+    {
+        if (_midMat == null) return;
+        _midMat.SetFloat("_ColumnDensity", Mathf.Lerp(.35f,.95f,level/3f));
+        _midMat.SetFloat("_HeadBright", Mathf.Lerp(.8f,1.6f,level/3f));
+        _midMat.SetFloat("_TrailBright", .65f);
+    }
+    public void ShowcaseScan() { if(_midMat != null) { _midMat.SetFloat("_ScanBandActive",1f); _midMat.SetFloat("_ScanBandY",_showcaseCenter.y); } }
+    private void ApplyShowcaseStyle()
+    {
+        targetCamera.backgroundColor = Color.black;
+        if (_vignetteSr != null) _vignetteSr.enabled = false;
+        _midMat.SetColor("_BgColor",Color.black); _midMat.SetFloat("_BandStrength",0);
+        _midMat.SetFloat("_GridOverlay",0); _midMat.SetFloat("_PerspectiveFloor",0);
+        _midMat.SetFloat("_ColumnWidth",.38f); _midMat.SetFloat("_CharHeight",.30f);
+        _midMat.SetColor("_TrailColor",new Color(.03f,.58f,.62f,1));
+        _midMat.SetFloat("_RainBoost",1.35f);_midMat.SetFloat("_ScanlineStr",0);
+        SetShowcasePreset(3);
+    }
 
     private MeshFilter _rainFilter;
     private Material _midMat;
@@ -109,14 +151,16 @@ public class MainMenuMatrixBackground : MonoBehaviour
         if (!_built)
             return;
 
-        if (targetCamera != null && (!Mathf.Approximately(targetCamera.aspect, _lastAspect)
+        if (!_showcaseMode && targetCamera != null && (!Mathf.Approximately(targetCamera.aspect, _lastAspect)
             || !Mathf.Approximately(targetCamera.orthographicSize * 2f + padding, _worldHeight)))
             ResizeToCamera();
 
         if (_midMat != null)
         {
             _midMat.SetFloat(RainTimeId, Time.unscaledTime);
-            UpdateFluid();
+            if (!_showcaseMode || _showcaseInteraction) UpdateFluid();
+            else _midMat.SetFloat(WakeEnabledId,0f);
+            if (_showcaseMode) _midMat.SetFloat("_ScanBandActive",Mathf.Max(0,_midMat.GetFloat("_ScanBandActive")-Time.unscaledDeltaTime*2));
         }
 
 
@@ -159,6 +203,7 @@ public class MainMenuMatrixBackground : MonoBehaviour
         Vector2 mouseWorld = targetCamera.ScreenToWorldPoint(screen);
         Vector2 previousWorld = _lastMouseWorld;
         bool pointerValid = Application.isFocused && targetCamera.pixelRect.Contains(new Vector2(screen.x, screen.y));
+        if (_showcaseMode) pointerValid &= Mathf.Abs(mouseWorld.x-_showcaseCenter.x)<_showcaseSize.x*.5f && Mathf.Abs(mouseWorld.y-_showcaseCenter.y)<_showcaseSize.y*.5f;
         bool canInject = pointerValid && _hasMouseSample && frameDt <= 0.1f;
         if (!canInject) previousWorld = mouseWorld;
         Vector2 rawVel = (mouseWorld - previousWorld) / frameDt;
@@ -168,7 +213,7 @@ public class MainMenuMatrixBackground : MonoBehaviour
         _hasMouseSample = pointerValid;
         _lastMouseWorld = mouseWorld;
 
-        Vector2 origin = targetCamera.transform.position;
+        Vector2 origin = _showcaseMode ? _showcaseCenter : (Vector2)targetCamera.transform.position;
         Vector2 size = new Vector2(Mathf.Max(_worldWidth, 0.001f), Mathf.Max(_worldHeight, 0.001f));
         Vector2 uv = (mouseWorld - origin) / size + Vector2.one * 0.5f;
         Vector2 startUv = (previousWorld - origin) / size + Vector2.one * 0.5f;
@@ -177,6 +222,12 @@ public class MainMenuMatrixBackground : MonoBehaviour
         Vector2 injectVel = Vector2.ClampMagnitude(_smoothVelocity / size.y, 2.5f);
         float strength = canInject && rawVel.magnitude >= moveSpeedThreshold
             ? splatForce * Mathf.Clamp01(_smoothVelocity.magnitude / 8f) : 0f;
+        if (_showcaseMode && _showcaseStroke)
+        {
+            startUv = _strokeFrom; uv = _strokeTo;
+            injectVel = Vector2.ClampMagnitude((uv-startUv)*new Vector2(size.x/size.y,1f)/frameDt,2.5f);
+            strength = splatForce; _showcaseStroke = false;
+        }
         _fluidMat.SetFloat(VorticityId, vorticity);
         _fluidMat.SetFloat(RecoveryId, wakeRecovery);
 
@@ -257,6 +308,7 @@ public class MainMenuMatrixBackground : MonoBehaviour
         CreateFluid();
         CreateVignette();
         ResizeToCamera();
+        if (_showcaseMode) ApplyShowcaseStyle();
     }
 
     private void CreateFluid()
@@ -358,8 +410,8 @@ public class MainMenuMatrixBackground : MonoBehaviour
         _lastAspect = targetCamera.aspect;
         float halfH = targetCamera.orthographicSize;
         float halfW = halfH * _lastAspect;
-        _worldWidth = halfW * 2f + padding;
-        _worldHeight = halfH * 2f + padding;
+        _worldWidth = _showcaseMode ? _showcaseSize.x : halfW * 2f + padding;
+        _worldHeight = _showcaseMode ? _showcaseSize.y : halfH * 2f + padding;
 
         if (_rainFilter != null)
         {
@@ -380,8 +432,8 @@ public class MainMenuMatrixBackground : MonoBehaviour
         }
 
         transform.position = new Vector3(
-            targetCamera.transform.position.x,
-            targetCamera.transform.position.y,
+            _showcaseMode ? _showcaseCenter.x : targetCamera.transform.position.x,
+            _showcaseMode ? _showcaseCenter.y : targetCamera.transform.position.y,
             0f);
 
         if (_fluidMat != null) EnsureRTs();
