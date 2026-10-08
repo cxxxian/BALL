@@ -392,6 +392,7 @@ GameObject:
   - component: {fileID: 1357288197}
   - component: {fileID: 1357288196}
   - component: {fileID: 1357288198}
+  - component: {fileID: 1357288199}
   m_Layer: 0
   m_Name: Protocol Array - V2 Portrait
   m_TagString: Untagged
@@ -673,6 +674,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67af12c9b52bef644adbd0aac9f43624, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1357288199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357288191}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ec9edc25e667b344b6eada5cfaba34b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  relightingShader: {fileID: 4800000, guid: 1851eaf981adc044b8d8c7f1264b4d7d, type: 3}
+  albedo: {fileID: 2800000, guid: b9e8bfa07ad695f4aa493ba2dc890c5c, type: 3}
+  normalMap: {fileID: 2800000, guid: cc034e2ceecba2c4cb42c6883794a930, type: 3}
+  animateLight: 0
+  metallic: 0.5
+  normalStrength: 0.65
+  lampStrength: 0.85
+  rimStrength: 0.18
+  rimPower: 3
+  lightDirection: {x: -0.4, y: 0.6, z: 1}
 --- !u!1 &2027271158
 GameObject:
   m_ObjectHideFlags: 0

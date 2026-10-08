@@ -1,6 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <ui:Style src="SlotVisualLab.uss" />
-    <ui:VisualElement name="lab-root" class="lab-root">
-        <ui:VisualElement name="stage" class="stage" />
-    </ui:VisualElement>
-</ui:UXML>

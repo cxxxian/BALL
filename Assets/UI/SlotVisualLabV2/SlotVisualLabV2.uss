@@ -1,13 +1,13 @@
 .lab-root { flex-grow: 1; background-color: transparent; overflow: hidden; }
 .stage { position: absolute; left: 50%; top: 50%; margin-left: -360px; margin-top: -640px; width: 720px; height: 1280px; transform-origin: 0% 0%; }
-.machine-backplate { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-image: url("/Assets/Art/SlotVisualLabV2/terminal_portrait_clean_transparent.png"); -unity-background-scale-mode: stretch-to-fill; }
+.machine-backplate { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-image: url("/Assets/Art/SlotVisualLabV2/cabinet_albedo_trial.png"); -unity-background-scale-mode: stretch-to-fill; }
 Label { color: #bdf9ff; -unity-text-align: middle-center; white-space: normal; }
 .caption, .live-button { -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf"); }
 .caption, .live-button, .roll-control, .reel-window, .test-dock, .outcome-panel, .inspect-overlay { position: absolute; }
 .reel-window { overflow: hidden; }
 .protocol-cell { position: absolute; left: 16px; width: 92px; height: 92px; -unity-background-scale-mode: scale-to-fit; }
-.glass-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-image: url("/Assets/Art/SlotVisualLab/glass_edge_shade.png"); -unity-background-scale-mode: stretch-to-fill; }
-.selection-glow { position: absolute; left: 0; top: 159px; width: 100%; height: 118px; background-image: url("/Assets/Art/SlotVisualLab/selection_glow.png"); -unity-background-scale-mode: stretch-to-fill; }
+.glass-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-image: url("/Assets/Art/SlotVisualLabV2/glass_edge_shade.png"); -unity-background-scale-mode: stretch-to-fill; }
+.selection-glow { position: absolute; left: 0; top: 159px; width: 100%; height: 118px; background-image: url("/Assets/Art/SlotVisualLabV2/selection_glow.png"); -unity-background-scale-mode: stretch-to-fill; }
 .lock-line { position: absolute; left: 0; width: 100%; height: 1px; background-color: rgba(143, 240, 255, 0.35); }
 .buff-divider { position: absolute; width: 1px; height: 82px; background-color: rgba(112, 184, 196, 0.34); }
 .roll-frame, .fill-parent { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
@@ -25,7 +25,7 @@ Label { color: #bdf9ff; -unity-text-align: middle-center; white-space: normal; }
     margin: 0; padding: 0 6px; border-width: 0; border-color: transparent; border-radius: 0;
     background-image: none; background-color: transparent; color: #bdf9ff;
     -unity-font-definition: url("project://database/Assets/Fonts/Orbitron-Bold.ttf");
-    -unity-text-align: middle-center; white-space: pre-wrap;
+    -unity-text-align: middle-center; white-space: normal;
 }
 .reel-result { font-size: 22px; }
 .reel-result:hover { color: white; background-color: transparent; }
@@ -67,5 +67,78 @@ Label { color: #bdf9ff; -unity-text-align: middle-center; white-space: normal; }
 .cash-out-button:hover, .cash-out-button:focus { color: white; background-color: #10242a; }
 .inspect-overlay { background-color: rgba(2, 9, 13, 0.97); border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-color: #42d8f5; }
 .test-dock { display: none; background-color: rgba(5, 10, 15, 0.98); }
-.test-button, .test-button:hover, .test-button:focus, .test-button:active { font-size: 18px; background-color: rgba(3, 9, 14, 0.94); }
+.test-button, .test-button:hover, .test-button:focus, .test-button:active { font-size: 14px; background-color: rgba(3, 9, 14, 0.94); }
 .test-button:hover, .test-button:focus { color: white; background-color: #10242a; }
+
+
+/* UIWorkbench: #titleLabel */
+#titleLabel {
+    top: 130px;
+}
+/* /UIWorkbench: #titleLabel */
+
+
+/* UIWorkbench: #statusLabel */
+#statusLabel {
+    top: 175px;
+}
+/* /UIWorkbench: #statusLabel */
+
+
+/* UIWorkbench: #result1 */
+#result1 {
+    width: 140px;
+    height: 100px;
+    left: 120px;
+    top: 805px;
+}
+/* /UIWorkbench: #result1 */
+
+
+/* UIWorkbench: #result2 */
+#result2 {
+    width: 140px;
+    height: 100px;
+    top: 805px;
+    left: 292px;
+}
+/* /UIWorkbench: #result2 */
+
+
+/* UIWorkbench: #result3 */
+#result3 {
+    width: 140px;
+    height: 100px;
+    top: 805px;
+    position: absolute;
+    left: 465px;
+}
+/* /UIWorkbench: #result3 */
+
+
+/* UIWorkbench: #bankLabel */
+#bankLabel {
+    left: 170px;
+}
+/* /UIWorkbench: #bankLabel */
+
+
+/* UIWorkbench: #bankValue */
+#bankValue {
+    left: 245px;
+}
+/* /UIWorkbench: #bankValue */
+
+
+/* UIWorkbench: #nextLabel */
+#nextLabel {
+    left: 350px;
+}
+/* /UIWorkbench: #nextLabel */
+
+
+/* UIWorkbench: #nextCostValue */
+#nextCostValue {
+    left: 430px;
+}
+/* /UIWorkbench: #nextCostValue */

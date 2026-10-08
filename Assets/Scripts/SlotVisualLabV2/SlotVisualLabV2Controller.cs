@@ -1,15 +1,19 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Standalone V2 interaction preview. Chip changes are local to this scene; rewards are previewed
-/// through SlotMachineBuffRoller and are never applied to the live run.
+/// Slot cabinet presentation shared by the isolated preview and live rewards UI.
+/// In gameplayMode the BuffSelectionController owns rolls, chip costs and reward application.
 /// </summary>
 [ExecuteAlways, RequireComponent(typeof(UIDocument))]
 public sealed class SlotVisualLabV2Controller : MonoBehaviour
 {
+    public bool gameplayMode;
+    [Range(.65f, 1f)] public float gameplayScale = .84f;
+    public bool IsAssembling => assemblyStart != null || (assemblyTransition?.IsPlaying ?? false);
     public Texture2D backplate;
     public Texture2D[] glyphs;
     public Rect[] glyphBounds;
@@ -40,7 +44,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
     private SlotSpinSession session;
     private ReelResult pendingResult;
     private bool spinning, specialPreset, overlays = true, settled;
-    private float started;
+    private float started, spinDuration = 2f;
     private int activeReel = -1, localChips;
     private const int DemoWave = 1;
     private static readonly string[] OutcomeClasses =
@@ -48,9 +52,13 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
         "outcome-full", "outcome-scrap", "outcome-ignored", "outcome-applied", "outcome-empty"
     };
     private SlotAssemblyTransition assemblyTransition;
+    private Coroutine assemblyStart;
 
     private void OnEnable()
     {
+        // The live controller rebuilds synchronously in Start. A scheduled rebuild can
+        // wake when the reward panel first renders and cancel its assembly transition.
+        if (gameplayMode) return;
         var document = GetComponent<UIDocument>();
         if (document.rootVisualElement != null)
             document.rootVisualElement.schedule.Execute(Rebuild);
@@ -58,6 +66,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
 
     private void OnDisable()
     {
+        if (assemblyStart != null) { StopCoroutine(assemblyStart); assemblyStart = null; }
         assemblyTransition?.Dispose();
         if (root != null) root.UnregisterCallback<GeometryChangedEvent>(Fit);
         spinning = false;
@@ -67,6 +76,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
 
     public void Rebuild()
     {
+        if (assemblyStart != null) { StopCoroutine(assemblyStart); assemblyStart = null; }
         assemblyTransition?.Dispose();
         UnbindButtons();
         if (root != null) root.UnregisterCallback<GeometryChangedEvent>(Fit);
@@ -120,15 +130,15 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
             resultButtons[i].clicked += inspectCallbacks[i];
         }
 
-        rollButton.clicked += Advance;
-        cashOutButton.clicked += CashOut;
+        if (!gameplayMode) rollButton.clicked += Advance;
+        if (!gameplayMode) cashOutButton.clicked += CashOut;
         inspectClose.clicked += CloseInspect;
-        stage.Q<Button>("labButton").clicked += ToggleLab;
-        stage.Q<Button>("normalButton").clicked += RollNormal;
-        stage.Q<Button>("specialButton").clicked += RollSpecial;
-        stage.Q<Button>("bloomButton").clicked += ToggleBloom;
-        stage.Q<Button>("resetButton").clicked += ResetPreview;
-        stage.Q<Button>("audioButton").clicked += PreviewAudio;
+        if (stage.Q<Button>("labButton") is Button labButton) labButton.clicked += ToggleLab;
+        if (stage.Q<Button>("normalButton") is Button normalButton) normalButton.clicked += RollNormal;
+        if (stage.Q<Button>("specialButton") is Button specialButton) specialButton.clicked += RollSpecial;
+        if (stage.Q<Button>("bloomButton") is Button bloomButton) bloomButton.clicked += ToggleBloom;
+        if (stage.Q<Button>("resetButton") is Button resetButton) resetButton.clicked += ResetPreview;
+        if (stage.Q<Button>("audioButton") is Button audioButton) audioButton.clicked += PreviewAudio;
         stage.Query<Button>().ForEach(button =>
         {
             button.RegisterCallback<PointerEnterEvent>(OnButtonHover);
@@ -136,22 +146,62 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
         });
 
         root.RegisterCallback<GeometryChangedEvent>(Fit);
-        ResetPreview();
+        if (!gameplayMode) ResetPreview();
         FitStage();
-        if (Application.isPlaying) ReplayAssembly();
+        if (Application.isPlaying && !gameplayMode) ReplayAssembly();
     }
 
     public void ReplayAssembly()
     {
         if (!Application.isPlaying || stage == null || spinning) return;
+        if (assemblyStart != null) { StopCoroutine(assemblyStart); assemblyStart = null; }
         assemblyTransition?.Dispose();
+        if (gameplayMode)
+        {
+            GetComponent<SlotVisualLabV2Bloom>()?.SetCabinetFrameVisible(false);
+            assemblyStart = StartCoroutine(WaitForGameplayLayout());
+            return;
+        }
+        PlayCabinetAssembly();
+    }
+
+    private IEnumerator WaitForGameplayLayout()
+    {
+        // Display.None panels have zero geometry until UI Toolkit publishes a layout.
+        yield return null;
+        yield return null;
+        for (int frame = 0; frame < 60; frame++)
+        {
+            var output = GetComponent<SlotVisualLabV2Bloom>();
+            var host = output != null ? output.GameplayOverlayRoot : null;
+            if (output != null && output.IsBackdropReady && host != null && host.resolvedStyle.width > 0 && host.resolvedStyle.height > 0 &&
+                stage.resolvedStyle.width > 0 && stage.resolvedStyle.height > 0)
+            {
+                FitStage();
+                break;
+            }
+            yield return null;
+        }
+        PlayCabinetAssembly();
+        // Play hides the cabinet and schedules the initial assembly geometry. Keep
+        // the compositor hidden until UI Toolkit and the camera replace the old frame.
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        GetComponent<SlotVisualLabV2Bloom>()?.SetCabinetFrameVisible(true);
+        assemblyStart = null;
+    }
+
+    private void PlayCabinetAssembly()
+    {
         assemblyTransition = new SlotAssemblyTransition(stage);
         sfx?.PlayPress();
+        var relighting = GetComponent<SlotCabinetRelighting>();
+        Texture appearance = relighting != null ? relighting.GetAssemblyTexture() : backplate;
         assemblyTransition.Play(backplate, stage.Q("machineBackplate"), () =>
         {
             sfx?.PlayRollConfirm();
             rollButton.Focus();
-        }, GetComponent<SlotMechanicalAssembly3D>());
+        }, GetComponent<SlotMechanicalAssembly3D>(), appearance);
     }
 
     public void PreviewAssembly(float progress) => assemblyTransition?.Preview(progress);
@@ -206,7 +256,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
             for (int i = 0; i < 3; i++) RenderReel(i);
     }
 
-    private void FitStage()
+    public void FitStage()
     {
         if (stage == null || root == null) return;
         float width = root.resolvedStyle.width;
@@ -227,6 +277,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
         float designHeight = stage.resolvedStyle.height;
         if (float.IsNaN(designWidth) || float.IsNaN(designHeight) || designWidth <= 0 || designHeight <= 0) return;
         float scale = Mathf.Min(availableWidth / designWidth, availableHeight / designHeight);
+        if (gameplayMode) scale *= gameplayScale;
         stage.transform.scale = new Vector3(scale, scale, 1);
         // The USS centers the fixed 9:16 design canvas when viewed in UI Builder,
         // where this scene's runtime fitting controller is not present. Once this
@@ -246,9 +297,11 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
 
     private void Advance()
     {
+        if (gameplayMode) return;
         if (!Application.isPlaying || stage == null || spinning || settled || (assemblyTransition?.IsPlaying ?? false)) return;
         if (session == null) session = NewDemoSession();
 
+        spinDuration = 2f;
         int index = session.revealedReelCount;
         if (index >= 3) return;
         int cost = SlotMachineBuffRoller.GetContinueChipCost(session);
@@ -305,11 +358,11 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
 
     private void Update()
     {
-        if (Application.isPlaying && Input.GetKeyDown(KeyCode.F6)) ReplayAssembly();
+        if (!gameplayMode && Application.isPlaying && Input.GetKeyDown(KeyCode.F6)) ReplayAssembly();
         if (!Application.isPlaying || stage == null || !spinning || activeReel < 0) return;
         int reel = activeReel;
         float elapsed = Time.unscaledTime - started;
-        const float duration = 2f;
+        float duration = spinDuration;
         float t = Mathf.Clamp01(elapsed / duration);
         float progress = t < .15f
             ? .16f * Mathf.Pow(t / .15f, 2)
@@ -329,7 +382,8 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
             reelSettled[reel] = true;
             sfx?.PlayReelStop(reel);
             if (specialPreset && reel == 2) sfx?.PlaySpecialReveal();
-            CommitPendingReel(reel);
+            if (gameplayMode) SetGameplayResult(reel, pendingResult);
+            else CommitPendingReel(reel);
         }
         if (elapsed >= duration)
         {
@@ -358,7 +412,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
             SlotMachineBuffRoller.EvaluateSession(session, grantFreeRerolls: true);
     }
 
-    private static int GlyphForBuff(BuffDefinition buff)
+    public static int GlyphForBuff(BuffDefinition buff)
     {
         if (buff == null) return 7;
         return buff.effectType switch
@@ -387,6 +441,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
 
     private void RefreshInfo()
     {
+        if (gameplayMode) { RefreshOutcomeFeedback(); return; }
         if (session == null) session = NewDemoSession();
         RefreshOutcomeFeedback();
         bankValue.text = localChips.ToString("00");
@@ -539,7 +594,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
         RefreshInfo();
     }
 
-    private void InspectReel(int index)
+    public void InspectReel(int index)
     {
         if (session == null || index < 0 || index >= session.revealedReelCount) return;
         BuffDefinition buff = session.reels[index].buff;
@@ -598,6 +653,82 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
         }
     }
 
+    public void SetGameplaySession(SlotSpinSession liveSession)
+    {
+        session = liveSession;
+        settled = false; spinning = false; activeReel = -1;
+        if (inspectOverlay != null) inspectOverlay.style.display = DisplayStyle.None;
+        for (int i = 0; i < 3; i++) SetGameplayIdle(i);
+        SyncGameplay();
+    }
+
+    public void SyncGameplay()
+    {
+        if (!gameplayMode || session == null) return;
+        bankValue.text = Mathf.Max(0, RunSession.Chips).ToString("00");
+        int cost = SlotMachineBuffRoller.GetContinueChipCost(session);
+        nextCostValue.text = session.revealedReelCount == 0 ? "免费" : session.revealedReelCount < 3 ? cost.ToString("00") : "—";
+        RefreshOutcomeFeedback();
+    }
+
+    public void SetPresentationVisible(bool visible)
+    {
+        GetComponent<SlotVisualLabV2Bloom>()?.SetGameplayVisible(visible);
+        if (!visible)
+        {
+            spinning = false; activeReel = -1;
+            if (assemblyStart != null) { StopCoroutine(assemblyStart); assemblyStart = null; }
+        assemblyTransition?.Dispose();
+            if (inspectOverlay != null) inspectOverlay.style.display = DisplayStyle.None;
+        }
+    }
+
+    public void SetGameplayIdle(int index)
+    {
+        if (windows[index] == null) return;
+        offsets[index] = 0;
+        resultButtons[index].text = "未揭晓\n等待抽取";
+        resultButtons[index].SetEnabled(false);
+        outcomeLabels[index].text = "";
+        RemoveOutcomeClasses(windows[index]); RemoveOutcomeClasses(resultButtons[index]); RemoveOutcomeClasses(outcomeLabels[index]);
+        windows[index].EnableInClassList("reel-selected", false);
+        RenderReel(index);
+    }
+
+    public void SetGameplayResult(int index, ReelResult result)
+    {
+        glyphResults[index] = GlyphForBuff(result.buff);
+        offsets[index] = 0;
+        resultButtons[index].text = result.isEmptySpin ? "空转" : ReelSummary(result);
+        resultButtons[index].SetEnabled(result.buff != null);
+        RenderReel(index);
+        SyncGameplay();
+    }
+
+    public IEnumerator AnimateGameplayReel(int index, ReelResult result, float duration)
+    {
+        spinDuration = Mathf.Max(.05f, duration);
+        pendingResult = result; activeReel = index; started = Time.unscaledTime;
+        spinning = true; reelSettled[index] = false; lastTickCycle[index] = 12 + index * 2;
+        resultButtons[index].text = "···";
+        resultButtons[index].SetEnabled(false);
+        sfx?.PlaySpinStart();
+        while (spinning && activeReel == index) yield return null;
+    }
+
+    public void SetGameplaySelection(int index, bool selected)
+    {
+        windows[index].EnableInClassList("reel-selected", selected);
+    }
+
+    public void SetGameplayHint(int index, bool hint)
+    {
+        windows[index].EnableInClassList("reel-selectable-hint", hint);
+    }
+
+    public void SetGameplayBadge(int index, string text) { outcomeLabels[index].text = text ?? ""; }
+    public VisualElement GameplayReel(int index) => windows[index];
+
     private void ReleaseGlyphs()
     {
         if (centeredGlyphs == null) return;
@@ -612,6 +743,7 @@ public sealed class SlotVisualLabV2Controller : MonoBehaviour
 
     public void ResetPreview()
     {
+        if (gameplayMode) return;
         spinning = false;
         settled = false;
         activeReel = -1;

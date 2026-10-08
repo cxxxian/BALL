@@ -1,5 +1,12 @@
 # Slot Visual Lab V2
 
+## 法线光照试验
+
+场景的 `SlotCabinetRelighting` 固定使用独立底色图和近似法线图。组装部件与最终机身共用同一张实时材质输出，组装结束时不会换回另一张机身图。进入 Play 后按 F8 切换固定／移动灯光，也可在 LAB 面板点击对应按钮。选中 `Protocol Array - V2 Portrait`，Inspector 的 `Slot Cabinet Relighting` 可调整 Metallic、Normal Strength、Lamp Strength、Rim Strength 与 Light Direction。Metallic 默认 0.2，可在 0.15～0.3 间微调；这是外壳的风格化金属高光强度，并非完整 PBR 材质。
+
+开场为带倒角厚度的黑色实体启动棒，细青色灯槽点亮后两端保持横向拉开。四根实体导轨从两端接口向上下连续挤出，亮光位于生成前沿；启动握柄逐渐缩入边框，导轨随当地机身外壳生成逐段吸收。橙色三角灯在后段点亮。按 F6 重播动画。
+白色硬描线由试验底色图清理，法线控制倒角与滚轮表面的光照变化。灯带遮罩在 GPU 上从原图的明亮彩色像素单独提取，最终光晕继续由 URP Bloom 处理。试验法线由图像生成工具近似制作，尚不是从精确 3D 模型烘焙的法线。素材提示词和实现边界见 `CabinetRelightingTrial.md`。
+
 V1 的独立老虎机造型，按竖屏收窄肩部，减少背景信息；保留三滚轮、青色灯带、琥珀色锁定指示及六边形 ROLL 按钮。
 弹珠台参考仅用于平滑黑玻璃的材质处理，不复用或融合弹珠台造型。
 
@@ -31,7 +38,7 @@ V1、原老虎机、弹珠台资源、原有渲染管线资产及玩法脚本均
 
 ## 侧边与图标对齐优化
 
-当前机身使用 `terminal_portrait_clean_transparent.png`。两侧滚轮外缘改成连续黑色导轨，清理碎反光并移除中部外凸菱形。减速动画以待揭晓 Buff 图标作为目标帧，因此滚轮停止和结算提交使用同一图标，不会在终止瞬间跳格。
+当前机身使用 `cabinet_albedo_trial.png` 和 `cabinet_normal_trial.png`；`terminal_portrait_clean_transparent.png` 仅提供灯带遮罩与轮廓数据。两侧滚轮外缘改成连续黑色导轨，清理碎反光并移除中部外凸菱形。减速动画以待揭晓 Buff 图标作为目标帧，因此滚轮停止和结算提交使用同一图标，不会在终止瞬间跳格。
 图标从完整的 384×512 图集单元切出，避免原方形裁剪截断图形。`glyphBounds` 保存 Alpha ≥32 的可见轮廓范围，运行时生成居中的 Sprite，在统一 92px 方框内等比显示；三个锁定结果的中心共用设计坐标 y=584。
 1080×1920 实际 Game View 截图：`Captures/SlotVisualLabV2/V2_CleanRails_Aligned.png`。
 
@@ -58,3 +65,5 @@ V1、原老虎机、弹珠台资源、原有渲染管线资产及玩法脚本均
 
 `SlotMachineSfx` 是可复用组件，可挂在任意槽机对象上，并在 Inspector 里指定 AudioSource、片段和音量；`PlayHover`、`PlayPress`、`PlaySpinStart`、`PlayReelTick`、`PlayReelStop`、`PlayRollConfirm`、`PlaySpecialReveal` 可由玩法事件复用。V2 已连接按钮反馈、抽取开始、逐轮节拍/锁定和特殊结果；测试面板 AUDIO 顺序试听整套 V2，并保留滚动声原样。
 
+
+后半段保留像素电路扩散与像素块材质成型，前沿使用分簇噪声逐块生成，最终 UI 采用平滑交接。

@@ -28,10 +28,9 @@ public static class SlotVisualLabV2Builder
         Debug.Log($"V2 demo Buff pool refreshed: {controller.demoBuffPool.Length} assets.");
     }
 
-    [MenuItem("Rebound Protocol/Slot Visual Lab/Edit V2 UI in UI Builder")]
     public static void OpenUILayout()
     {
-        AssetDatabase.OpenAsset(AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/SlotVisualLabV2/SlotVisualLabV2.uxml"));
+        UIWorkbenchWindow.Open();
     }
 
     public static void CreateScene()
@@ -80,7 +79,7 @@ public static class SlotVisualLabV2Builder
         var panel = AssetDatabase.LoadAssetAtPath<PanelSettings>(panelPath);
         if (panel == null)
         {
-            panel = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/SlotVisualLab/SlotVisualLabPanelSettings.asset"));
+            panel = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/SlotGamePanelSettings.asset"));
             panel.name = "SlotVisualLabV2PanelSettings";
             AssetDatabase.CreateAsset(panel, panelPath);
         }
@@ -139,8 +138,8 @@ public static class SlotVisualLabV2Builder
         controller.glyphs = glyphs;
         controller.glyphBounds = glyphBounds;
         controller.demoBuffPool = LoadDemoBuffPool();
-        controller.edgeShade = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/SlotVisualLab/glass_edge_shade.png");
-        controller.selectionGlow = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/SlotVisualLab/selection_glow.png");
+        controller.edgeShade = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/SlotVisualLabV2/glass_edge_shade.png");
+        controller.selectionGlow = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/SlotVisualLabV2/selection_glow.png");
         controller.displayFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Orbitron-Bold.ttf");
         string materialPath = "Assets/Settings/SlotVisualLabV2/SlotUIHDR.mat";
         var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
@@ -158,6 +157,10 @@ public static class SlotVisualLabV2Builder
         engineBloom.outputCamera = camera;
         engineBloom.displayMaterial = material;
         engineBloom.bloomVolume = volume;
+        var relighting = host.AddComponent<SlotCabinetRelighting>();
+        relighting.relightingShader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/SlotVisualLabV2/SlotCabinetRelighting.shader");
+        relighting.albedo = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/SlotVisualLabV2/cabinet_albedo_trial.png");
+        relighting.normalMap = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/SlotVisualLabV2/cabinet_normal_trial.png");
         var sfxSource = host.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
         sfxSource.loop = false;

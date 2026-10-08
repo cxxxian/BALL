@@ -1,125 +1,56 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
-    <ui:Style src="ProtocolNeonTheme.uss" />
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <ui:Style src="BuffSelection.uss" />
+    <ui:VisualElement name="overlay" class="lab-root gameplay-overlay">
+        <ui:VisualElement name="stage" class="stage">
+            <ui:VisualElement name="machineBackplate" class="machine-backplate" picking-mode="Ignore" />
+            <ui:Label name="brandLabel" text="REBOUND  /  PROTOCOL" class="caption" picking-mode="Ignore" style="left: 140px; top: 94px; width: 440px; height: 28px; font-size: 18px; color: rgb(92,166,181);" />
+            <ui:Label name="titleLabel" text="PROTOCOL ARRAY" class="caption" picking-mode="Ignore" style="left: 90px;  width: 540px; height: 54px; font-size: 34px;" />
+            <ui:Label name="statusLabel" text="免费揭晓第一轮 · 可选择兑现或继续" class="caption status-label" picking-mode="Ignore" style="left: 80px;  width: 560px; height: 38px; font-size: 20px; color: rgb(160,226,235);" />
 
-    <ui:VisualElement name="overlay" class="overlay">
-        <ui:VisualElement name="slot-panel" class="slot-panel">
-
-            <ui:VisualElement name="panel-chrome" class="panel-chrome" picking-mode="Ignore">
-                <ui:VisualElement class="corner corner-tl" />
-                <ui:VisualElement class="corner corner-tr" />
-                <ui:VisualElement class="corner corner-bl" />
-                <ui:VisualElement class="corner corner-br" />
+            <ui:VisualElement name="reel1" class="reel-window" picking-mode="Ignore" style="left: 122px; top: 310px; width: 122px; height: 435px;">
+                <ui:Image name="cell0" class="protocol-cell" picking-mode="Ignore" style="top: -218px;" /><ui:Image name="cell1" class="protocol-cell" picking-mode="Ignore" style="top: -100px;" /><ui:Image name="cell2" class="protocol-cell" picking-mode="Ignore" style="top: 18px;" /><ui:Image name="cell3" class="protocol-cell" picking-mode="Ignore" style="top: 136px;" /><ui:Image name="cell4" class="protocol-cell" picking-mode="Ignore" style="top: 254px;" /><ui:Image name="cell5" class="protocol-cell" picking-mode="Ignore" style="top: 372px;" /><ui:Image name="cell6" class="protocol-cell" picking-mode="Ignore" style="top: 490px;" />
+                <ui:VisualElement name="glassShade" class="glass-shade" picking-mode="Ignore" /><ui:VisualElement name="selectionGlow" class="selection-glow" picking-mode="Ignore" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 159px;" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 277px;" />
             </ui:VisualElement>
+            <ui:VisualElement name="buffDivider1" class="buff-divider" picking-mode="Ignore" style="left: 271px; top: 812px;" />
+            <ui:Button name="result1" text="未揭晓&#xA;等待抽取" class="caption reel-result" />
+            <ui:Label name="outcome1" class="caption reel-outcome" picking-mode="Ignore" style="left: 94px; top: 920px; width: 176px; height: 24px;" />
 
-            <ui:VisualElement name="status-strip" class="status-strip">
-                <ui:VisualElement class="led led-cyan" />
-                <ui:VisualElement class="led led-fuchsia" />
-                <ui:Label name="status-text" text="SYS · READY" class="status-text" />
-                <ui:Label name="chips-label" text="CHIPS 00" class="status-meta" />
+            <ui:VisualElement name="reel2" class="reel-window" picking-mode="Ignore" style="left: 299px; top: 310px; width: 122px; height: 435px;">
+                <ui:Image name="cell0" class="protocol-cell" picking-mode="Ignore" style="top: -218px;" /><ui:Image name="cell1" class="protocol-cell" picking-mode="Ignore" style="top: -100px;" /><ui:Image name="cell2" class="protocol-cell" picking-mode="Ignore" style="top: 18px;" /><ui:Image name="cell3" class="protocol-cell" picking-mode="Ignore" style="top: 136px;" /><ui:Image name="cell4" class="protocol-cell" picking-mode="Ignore" style="top: 254px;" /><ui:Image name="cell5" class="protocol-cell" picking-mode="Ignore" style="top: 372px;" /><ui:Image name="cell6" class="protocol-cell" picking-mode="Ignore" style="top: 490px;" />
+                <ui:VisualElement name="glassShade" class="glass-shade" picking-mode="Ignore" /><ui:VisualElement name="selectionGlow" class="selection-glow" picking-mode="Ignore" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 159px;" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 277px;" />
             </ui:VisualElement>
+            <ui:VisualElement name="buffDivider2" class="buff-divider" picking-mode="Ignore" style="left: 449px; top: 812px;" />
+            <ui:Button name="result2" text="未揭晓&#xA;等待抽取" class="caption reel-result" />
+            <ui:Label name="outcome2" class="caption reel-outcome" picking-mode="Ignore" style="left: 272px; top: 920px; width: 176px; height: 24px;" />
 
-            <ui:VisualElement name="panel-header" class="panel-header">
-                <ui:Label name="title-label" text="— POWER SLOT —" class="title" />
-                <ui:Label name="wave-label" text="WAVE CLEAR" class="wave-tag" />
+            <ui:VisualElement name="reel3" class="reel-window" picking-mode="Ignore" style="left: 476px; top: 310px; width: 122px; height: 435px;">
+                <ui:Image name="cell0" class="protocol-cell" picking-mode="Ignore" style="top: -218px;" /><ui:Image name="cell1" class="protocol-cell" picking-mode="Ignore" style="top: -100px;" /><ui:Image name="cell2" class="protocol-cell" picking-mode="Ignore" style="top: 18px;" /><ui:Image name="cell3" class="protocol-cell" picking-mode="Ignore" style="top: 136px;" /><ui:Image name="cell4" class="protocol-cell" picking-mode="Ignore" style="top: 254px;" /><ui:Image name="cell5" class="protocol-cell" picking-mode="Ignore" style="top: 372px;" /><ui:Image name="cell6" class="protocol-cell" picking-mode="Ignore" style="top: 490px;" />
+                <ui:VisualElement name="glassShade" class="glass-shade" picking-mode="Ignore" /><ui:VisualElement name="selectionGlow" class="selection-glow" picking-mode="Ignore" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 159px;" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 277px;" />
             </ui:VisualElement>
+            <ui:Button name="result3" text="未揭晓&#xA;等待抽取" class="caption reel-result" />
+            <ui:Label name="outcome3" class="caption reel-outcome" picking-mode="Ignore" style="left: 450px; top: 920px; width: 176px; height: 24px;" />
 
-            <ui:VisualElement name="combo-header" class="combo-header">
-                <ui:Label name="combo-label" text="" class="combo-label" />
-                <ui:Label name="combo-rule-label" text="" class="combo-rule" />
+            <ui:Label name="bankLabel" text="筹码" class="caption" picking-mode="Ignore" style=" top: 970px; width: 120px; height: 31px; font-size: 20px; color: rgb(102,156,166);" />
+            <ui:Label name="bankValue" text="08" class="caption" picking-mode="Ignore" style=" top: 970px; width: 74px; height: 31px; font-size: 24px; color: rgb(255,173,87);" />
+            <ui:Label name="nextLabel" text="下一轮" class="caption" picking-mode="Ignore" style=" top: 970px; width: 116px; height: 31px; font-size: 20px; color: rgb(102,156,166);" />
+            <ui:Label name="nextCostValue" text="免费" class="caption" picking-mode="Ignore" style=" top: 970px; width: 95px; height: 31px; font-size: 22px; color: rgb(255,173,87);" />
+
+            <ui:VisualElement name="rollControl" class="roll-control" style="left: 100px; top: 1030px; width: 340px; height: 74px;">
+                <ui:VisualElement name="rollFrame" class="roll-frame" picking-mode="Ignore" />
+                <ui:Button name="rollButton" text="PULL · FREE" class="live-button fill-parent" />
             </ui:VisualElement>
+            <ui:Button name="cashOutButton" text="立即兑现&#xA;收下当前奖励" class="cash-out-button" style="left: 490px; top: 1030px; width: 174px; height: 72px; display: none;" />
+            
+            
 
-            <ui:VisualElement name="machine-row" class="machine-row">
-                <ui:VisualElement name="machine-center" class="machine-center">
-                    <ui:VisualElement class="lever-spacer" />
-                    <ui:VisualElement name="reels-row" class="reels-row">
+            
 
-                        <ui:VisualElement name="reel-0" class="reel">
-                            <ui:Label name="outcome-badge-0" text="" class="outcome-badge" />
-                            <ui:Label name="reel-tag-0" text="左" class="reel-tag" />
-                            <ui:VisualElement name="reel-viewport-0" class="reel-viewport">
-                                <ui:VisualElement name="reel-strip-0" class="reel-strip" />
-                            </ui:VisualElement>
-                            <ui:VisualElement name="reel-result-0" class="reel-result">
-                                <ui:Label name="rarity-0" text="—" class="rarity-label rarity-common" />
-                                <ui:Label name="name-0" text="等待" class="buff-name" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-
-                        <ui:VisualElement name="reel-1" class="reel">
-                            <ui:Label name="outcome-badge-1" text="" class="outcome-badge" />
-                            <ui:Label name="reel-tag-1" text="中" class="reel-tag" />
-                            <ui:VisualElement name="reel-viewport-1" class="reel-viewport">
-                                <ui:VisualElement name="reel-strip-1" class="reel-strip" />
-                            </ui:VisualElement>
-                            <ui:VisualElement name="reel-result-1" class="reel-result">
-                                <ui:Label name="rarity-1" text="—" class="rarity-label rarity-rare" />
-                                <ui:Label name="name-1" text="等待" class="buff-name" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-
-                        <ui:VisualElement name="reel-2" class="reel">
-                            <ui:Label name="outcome-badge-2" text="" class="outcome-badge" />
-                            <ui:Label name="reel-tag-2" text="右" class="reel-tag" />
-                            <ui:VisualElement name="reel-viewport-2" class="reel-viewport">
-                                <ui:VisualElement name="reel-strip-2" class="reel-strip" />
-                            </ui:VisualElement>
-                            <ui:VisualElement name="reel-result-2" class="reel-result">
-                                <ui:Label name="rarity-2" text="—" class="rarity-label rarity-epic" />
-                                <ui:Label name="name-2" text="等待" class="buff-name" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-
-                    </ui:VisualElement>
-
-                    <ui:VisualElement name="lever-assembly" class="lever-assembly">
-                        <ui:VisualElement name="lever-housing" class="lever-housing" />
-                        <ui:VisualElement name="lever-base" class="lever-base" />
-                        <ui:VisualElement name="lever-arm" class="lever-arm">
-                            <ui:VisualElement name="lever-knob" class="lever-knob">
-                                <ui:VisualElement class="lever-knob-shine" />
-                            </ui:VisualElement>
-                        </ui:VisualElement>
-                        <ui:Label name="lever-hint" text="PULL" class="lever-hint" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
+            <ui:VisualElement name="inspectOverlay" class="inspect-overlay" style="left: 70px; top: 260px; width: 580px; height: 140px; display: none;">
+                <ui:Label name="inspectName" text="BUFF NAME" class="caption" style="left: 18px; top: 8px; width: 450px; height: 34px; font-size: 24px; -unity-text-align: middle-left;" />
+                <ui:Label name="inspectRarity" text="RARITY · REEL" class="caption" style="left: 18px; top: 42px; width: 450px; height: 28px; font-size: 18px; color: rgb(112,184,196); -unity-text-align: middle-left;" />
+                <ui:Label name="inspectDescription" text="Buff description" class="caption" style="left: 18px; top: 71px; width: 510px; height: 60px; font-size: 20px; -unity-text-align: middle-left;" />
+                <ui:Button name="inspectClose" text="×" class="live-button" style="left: 520px; top: 4px; width: 46px; height: 42px; font-size: 28px;" />
             </ui:VisualElement>
-
-            <ui:Label name="reroll-hint-label" text="拉动右侧能量杆开始" class="reroll-hint" />
-
-            <ui:VisualElement name="outcome-panel" class="outcome-panel">
-                <ui:VisualElement class="outcome-title-row">
-                    <ui:Label name="outcome-title" text="效果说明" class="outcome-title" />
-                    <ui:Label name="outcome-badge" text="IDLE" class="outcome-badge-status" />
-                </ui:VisualElement>
-                <ui:VisualElement name="outcome-list" class="outcome-list" />
-            </ui:VisualElement>
-
-            <ui:VisualElement name="stage-action-row" class="stage-action-row">
-                <ui:Button name="cashout-btn" text="兑现" class="cashout-btn" />
-                <ui:Button name="continue-btn" text="继续 -1" class="continue-btn" />
-            </ui:VisualElement>
-
-            <ui:Button name="confirm-btn" text="领取" class="confirm-btn" />
-
-        </ui:VisualElement>
-
-        <ui:VisualElement name="debuff-modal" class="debuff-modal">
-            <ui:VisualElement name="debuff-card" class="debuff-card">
-                <ui:Label name="debuff-title" text="轮位税" class="debuff-modal-title" />
-                <ui:VisualElement name="debuff-list" class="debuff-list" />
-                <ui:Button name="debuff-continue-btn" text="继续" class="debuff-continue-btn" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-
-        <ui:VisualElement name="tower-choice" class="tower-choice">
-            <ui:Label name="tower-choice-title" text="— 塔类 Buff —" class="title" />
-            <ui:Label name="tower-choice-hint" text="选择如何使用本次塔卡。" class="wave-tag" />
-            <ui:VisualElement class="tower-choice-buttons">
-                <ui:Button name="tower-btn-place" text="放置新塔" class="select-btn" />
-                <ui:Button name="tower-btn-upgrade" text="升级已有塔" class="select-btn" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-
-    </ui:VisualElement>
+        <ui:Button name="confirm-btn" text="领取奖励" class="cash-out-button gameplay-claim" /><ui:Label name="reroll-hint-label" class="caption gameplay-hint" /><ui:Label name="combo-label" class="caption gameplay-combo" /><ui:Label name="combo-rule-label" class="caption gameplay-combo-rule" /></ui:VisualElement>
+    <ui:VisualElement name="debuff-modal" class="debuff-modal"><ui:VisualElement name="debuff-card" class="debuff-card"><ui:Label name="debuff-title" text="轮位税" class="debuff-modal-title" /><ui:VisualElement name="debuff-list" class="debuff-list" /><ui:Button name="debuff-continue-btn" text="继续" class="debuff-continue-btn" /></ui:VisualElement></ui:VisualElement><ui:VisualElement name="tower-choice" class="tower-choice"><ui:Label name="tower-choice-title" text="— 塔类 Buff —" class="title" /><ui:Label name="tower-choice-hint" text="选择如何使用本次塔卡。" class="wave-tag" /><ui:VisualElement class="tower-choice-buttons"><ui:Button name="tower-btn-place" text="放置新塔" class="select-btn" /><ui:Button name="tower-btn-upgrade" text="升级已有塔" class="select-btn" /></ui:VisualElement></ui:VisualElement></ui:VisualElement>
 </ui:UXML>

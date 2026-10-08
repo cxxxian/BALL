@@ -4,15 +4,15 @@
         <ui:VisualElement name="stage" class="stage">
             <ui:VisualElement name="machineBackplate" class="machine-backplate" picking-mode="Ignore" />
             <ui:Label name="brandLabel" text="REBOUND  /  PROTOCOL" class="caption" picking-mode="Ignore" style="left: 140px; top: 94px; width: 440px; height: 28px; font-size: 18px; color: rgb(92,166,181);" />
-            <ui:Label name="titleLabel" text="PROTOCOL ARRAY" class="caption" picking-mode="Ignore" style="left: 90px; top: 148px; width: 540px; height: 54px; font-size: 34px;" />
-            <ui:Label name="statusLabel" text="免费揭晓第一轮 · 可选择兑现或继续" class="caption status-label" picking-mode="Ignore" style="left: 80px; top: 188px; width: 560px; height: 38px; font-size: 20px; color: rgb(160,226,235);" />
+            <ui:Label name="titleLabel" text="PROTOCOL ARRAY" class="caption" picking-mode="Ignore" style="left: 90px;  width: 540px; height: 54px; font-size: 34px;" />
+            <ui:Label name="statusLabel" text="免费揭晓第一轮 · 可选择兑现或继续" class="caption status-label" picking-mode="Ignore" style="left: 80px;  width: 560px; height: 38px; font-size: 20px; color: rgb(160,226,235);" />
 
             <ui:VisualElement name="reel1" class="reel-window" picking-mode="Ignore" style="left: 122px; top: 310px; width: 122px; height: 435px;">
                 <ui:Image name="cell0" class="protocol-cell" picking-mode="Ignore" style="top: -218px;" /><ui:Image name="cell1" class="protocol-cell" picking-mode="Ignore" style="top: -100px;" /><ui:Image name="cell2" class="protocol-cell" picking-mode="Ignore" style="top: 18px;" /><ui:Image name="cell3" class="protocol-cell" picking-mode="Ignore" style="top: 136px;" /><ui:Image name="cell4" class="protocol-cell" picking-mode="Ignore" style="top: 254px;" /><ui:Image name="cell5" class="protocol-cell" picking-mode="Ignore" style="top: 372px;" /><ui:Image name="cell6" class="protocol-cell" picking-mode="Ignore" style="top: 490px;" />
                 <ui:VisualElement name="glassShade" class="glass-shade" picking-mode="Ignore" /><ui:VisualElement name="selectionGlow" class="selection-glow" picking-mode="Ignore" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 159px;" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 277px;" />
             </ui:VisualElement>
             <ui:VisualElement name="buffDivider1" class="buff-divider" picking-mode="Ignore" style="left: 271px; top: 812px;" />
-            <ui:Button name="result1" text="未揭晓&#10;等待抽取" class="caption reel-result" style="left: 94px; top: 796px; width: 176px; height: 124px;" />
+            <ui:Button name="result1" text="未揭晓&#xA;等待抽取" class="caption reel-result" />
             <ui:Label name="outcome1" class="caption reel-outcome" picking-mode="Ignore" style="left: 94px; top: 920px; width: 176px; height: 24px;" />
 
             <ui:VisualElement name="reel2" class="reel-window" picking-mode="Ignore" style="left: 299px; top: 310px; width: 122px; height: 435px;">
@@ -20,26 +20,26 @@
                 <ui:VisualElement name="glassShade" class="glass-shade" picking-mode="Ignore" /><ui:VisualElement name="selectionGlow" class="selection-glow" picking-mode="Ignore" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 159px;" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 277px;" />
             </ui:VisualElement>
             <ui:VisualElement name="buffDivider2" class="buff-divider" picking-mode="Ignore" style="left: 449px; top: 812px;" />
-            <ui:Button name="result2" text="未揭晓&#10;等待抽取" class="caption reel-result" style="left: 272px; top: 796px; width: 176px; height: 124px;" />
+            <ui:Button name="result2" text="未揭晓&#xA;等待抽取" class="caption reel-result" />
             <ui:Label name="outcome2" class="caption reel-outcome" picking-mode="Ignore" style="left: 272px; top: 920px; width: 176px; height: 24px;" />
 
             <ui:VisualElement name="reel3" class="reel-window" picking-mode="Ignore" style="left: 476px; top: 310px; width: 122px; height: 435px;">
                 <ui:Image name="cell0" class="protocol-cell" picking-mode="Ignore" style="top: -218px;" /><ui:Image name="cell1" class="protocol-cell" picking-mode="Ignore" style="top: -100px;" /><ui:Image name="cell2" class="protocol-cell" picking-mode="Ignore" style="top: 18px;" /><ui:Image name="cell3" class="protocol-cell" picking-mode="Ignore" style="top: 136px;" /><ui:Image name="cell4" class="protocol-cell" picking-mode="Ignore" style="top: 254px;" /><ui:Image name="cell5" class="protocol-cell" picking-mode="Ignore" style="top: 372px;" /><ui:Image name="cell6" class="protocol-cell" picking-mode="Ignore" style="top: 490px;" />
                 <ui:VisualElement name="glassShade" class="glass-shade" picking-mode="Ignore" /><ui:VisualElement name="selectionGlow" class="selection-glow" picking-mode="Ignore" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 159px;" /><ui:VisualElement class="lock-line" picking-mode="Ignore" style="top: 277px;" />
             </ui:VisualElement>
-            <ui:Button name="result3" text="未揭晓&#10;等待抽取" class="caption reel-result" style="left: 450px; top: 796px; width: 176px; height: 124px;" />
+            <ui:Button name="result3" text="未揭晓&#xA;等待抽取" class="caption reel-result" />
             <ui:Label name="outcome3" class="caption reel-outcome" picking-mode="Ignore" style="left: 450px; top: 920px; width: 176px; height: 24px;" />
 
-            <ui:Label name="bankLabel" text="筹码" class="caption" picking-mode="Ignore" style="left: 112px; top: 970px; width: 120px; height: 31px; font-size: 20px; color: rgb(102,156,166);" />
-            <ui:Label name="bankValue" text="08" class="caption" picking-mode="Ignore" style="left: 230px; top: 970px; width: 74px; height: 31px; font-size: 24px; color: rgb(255,173,87);" />
-            <ui:Label name="nextLabel" text="下一轮" class="caption" picking-mode="Ignore" style="left: 409px; top: 970px; width: 116px; height: 31px; font-size: 20px; color: rgb(102,156,166);" />
-            <ui:Label name="nextCostValue" text="免费" class="caption" picking-mode="Ignore" style="left: 520px; top: 970px; width: 95px; height: 31px; font-size: 22px; color: rgb(255,173,87);" />
+            <ui:Label name="bankLabel" text="筹码" class="caption" picking-mode="Ignore" style=" top: 970px; width: 120px; height: 31px; font-size: 20px; color: rgb(102,156,166);" />
+            <ui:Label name="bankValue" text="08" class="caption" picking-mode="Ignore" style=" top: 970px; width: 74px; height: 31px; font-size: 24px; color: rgb(255,173,87);" />
+            <ui:Label name="nextLabel" text="下一轮" class="caption" picking-mode="Ignore" style=" top: 970px; width: 116px; height: 31px; font-size: 20px; color: rgb(102,156,166);" />
+            <ui:Label name="nextCostValue" text="免费" class="caption" picking-mode="Ignore" style=" top: 970px; width: 95px; height: 31px; font-size: 22px; color: rgb(255,173,87);" />
 
             <ui:VisualElement name="rollControl" class="roll-control" style="left: 100px; top: 1030px; width: 340px; height: 74px;">
                 <ui:VisualElement name="rollFrame" class="roll-frame" picking-mode="Ignore" />
                 <ui:Button name="rollButton" text="PULL · FREE" class="live-button fill-parent" />
             </ui:VisualElement>
-            <ui:Button name="cashOutButton" text="立即兑现&#10;收下当前奖励" class="cash-out-button" style="left: 490px; top: 1030px; width: 174px; height: 72px; display: none;" />
+            <ui:Button name="cashOutButton" text="立即兑现&#xA;收下当前奖励" class="cash-out-button" style="left: 490px; top: 1030px; width: 174px; height: 72px; display: none;" />
             <ui:Label name="previewLabel" text="LOCAL TEST WALLET  /  不影响正式对局" class="caption" picking-mode="Ignore" style="display: none;" />
             <ui:Button name="labButton" text="LAB" class="live-button lab-button" style="left: 540px; top: 100px; width: 60px; height: 48px; font-size: 14px;" />
 

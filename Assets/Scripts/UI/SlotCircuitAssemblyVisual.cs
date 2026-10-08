@@ -11,11 +11,11 @@ public sealed class SlotCircuitAssemblyVisual : VisualElement
         public float start, duration;
     }
     private readonly List<Route> routes = new List<Route>();
-    private readonly Texture2D plate;
+    private readonly Texture plate;
     private float progress;
     public float Progress { get => progress; set { progress = value; MarkDirtyRepaint(); } }
 
-    public SlotCircuitAssemblyVisual(Texture2D plate)
+    public SlotCircuitAssemblyVisual(Texture plate)
     {
         this.plate = plate;
         pickingMode = PickingMode.Ignore;
